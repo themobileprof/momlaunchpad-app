@@ -4,43 +4,49 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../providers/auth_provider.dart';
-import 'register_screen.dart';
 
-/// Login screen
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+/// Registration screen
+class RegisterScreen extends ConsumerStatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      await ref.read(authProvider.notifier).login(
+      await ref.read(authProvider.notifier).register(
+            name: _nameController.text.trim(),
             email: _emailController.text.trim(),
             password: _passwordController.text,
+            language: 'en', // Default to English
           );
       // Navigation handled by AppInitializer
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(ref.read(authProvider).error ?? 'Login failed'),
+            content: Text(ref.read(authProvider).error ?? 'Registration failed'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -54,22 +60,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.spaceLG),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: AppSpacing.spaceXXL),
-              
               // Logo
               Center(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                   child: Image.asset(
                     'assets/images/logo.png',
-                    width: 120,
-                    height: 120,
+                    width: 100,
+                    height: 100,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -79,7 +91,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               
               // Title
               Text(
-                'Welcome Back',
+                'Create Account',
                 style: AppTypography.headingLarge,
                 textAlign: TextAlign.center,
               ),
@@ -87,18 +99,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: AppSpacing.spaceSM),
               
               Text(
-                'Your pregnancy companion',
+                'Join your pregnancy journey',
                 style: AppTypography.caption,
                 textAlign: TextAlign.center,
               ),
               
-              const SizedBox(height: AppSpacing.spaceXXL),
+              const SizedBox(height: AppSpacing.spaceXL),
               
-              // Login Form
+              // Registration Form
               Form(
                 key: _formKey,
                 child: Column(
                   children: [
+                    // Name Field
+                    TextFormField(
+                      controller: _nameController,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(
+                        labelText: 'Full Name',
+                        hintText: 'Jane Doe',
+                        prefixIcon: Icon(Icons.person_outlined),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your name';
+                        }
+                        if (value.length < 2) {
+                          return 'Name must be at least 2 characters';
+                        }
+                        return null;
+                      },
+                    ),
+                    
+                    const SizedBox(height: AppSpacing.spaceMD),
+                    
                     // Email Field
                     TextFormField(
                       controller: _emailController,
@@ -112,7 +146,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your email';
                         }
-                        if (!value.contains('@')) {
+                        if (!value.contains('@') || !value.contains('.')) {
                           return 'Please enter a valid email';
                         }
                         return null;
@@ -144,7 +178,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
+                          return 'Please enter a password';
                         }
                         if (value.length < 6) {
                           return 'Password must be at least 6 characters';
@@ -153,11 +187,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       },
                     ),
                     
+                    const SizedBox(height: AppSpacing.spaceMD),
+                    
+                    // Confirm Password Field
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      obscureText: !_isConfirmPasswordVisible,
+                      decoration: InputDecoration(
+                        labelText: 'Confirm Password',
+                        hintText: '••••••••',
+                        prefixIcon: const Icon(Icons.lock_outlined),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isConfirmPasswordVisible
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                            });
+                          },
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm your password';
+                        }
+                        if (value != _passwordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
+                    ),
+                    
                     const SizedBox(height: AppSpacing.spaceXL),
                     
-                    // Login Button
+                    // Register Button
                     ElevatedButton(
-                      onPressed: authState.isLoading ? null : _handleLogin,
+                      onPressed: authState.isLoading ? null : _handleRegister,
                       child: authState.isLoading
                           ? const SizedBox(
                               height: 20,
@@ -167,22 +235,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 valueColor: AlwaysStoppedAnimation(Colors.white),
                               ),
                             )
-                          : const Text('Login'),
+                          : const Text('Create Account'),
                     ),
                     
                     const SizedBox(height: AppSpacing.spaceMD),
                     
-                    // Register Link
+                    // Login Link
                     TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const RegisterScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text('Don\'t have an account? Sign up'),
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Already have an account? Login'),
                     ),
                   ],
                 ),

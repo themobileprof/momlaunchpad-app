@@ -54,11 +54,15 @@ class RemindersState {
   }
 }
 
-/// Reminders provider (StateNotifier)
-class RemindersNotifier extends StateNotifier<RemindersState> {
-  final ApiService _apiService;
+/// Reminders provider (Notifier)
+class RemindersNotifier extends Notifier<RemindersState> {
+  late final ApiService _apiService;
 
-  RemindersNotifier(this._apiService) : super(RemindersState());
+  @override
+  RemindersState build() {
+    _apiService = ref.read(apiServiceProvider);
+    return RemindersState();
+  }
 
   /// Fetch all reminders from backend
   Future<void> fetchReminders() async {
@@ -168,10 +172,7 @@ class RemindersNotifier extends StateNotifier<RemindersState> {
 }
 
 /// Reminders provider instance
-final remindersProvider = StateNotifierProvider<RemindersNotifier, RemindersState>((ref) {
-  final apiService = ref.watch(apiServiceProvider);
-  return RemindersNotifier(apiService);
-});
+final remindersProvider = NotifierProvider<RemindersNotifier, RemindersState>(RemindersNotifier.new);
 
 /// Convenience provider for today's reminders
 final todayRemindersProvider = Provider<List<Reminder>>((ref) {

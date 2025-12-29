@@ -34,13 +34,17 @@ class AuthState {
   }
 }
 
-/// Auth provider (StateNotifier)
-class AuthNotifier extends StateNotifier<AuthState> {
-  final ApiService _apiService;
-  final StorageService _storageService;
+/// Auth provider (Notifier)
+class AuthNotifier extends Notifier<AuthState> {
+  late final ApiService _apiService;
+  late final StorageService _storageService;
 
-  AuthNotifier(this._apiService, this._storageService) : super(AuthState()) {
+  @override
+  AuthState build() {
+    _apiService = ref.read(apiServiceProvider);
+    _storageService = ref.read(storageServiceProvider);
     _checkLoginStatus();
+    return AuthState();
   }
 
   /// Check if user is logged in on app start
@@ -149,11 +153,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 /// Auth provider instance
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  final apiService = ref.watch(apiServiceProvider);
-  final storageService = ref.watch(storageServiceProvider);
-  return AuthNotifier(apiService, storageService);
-});
+final authProvider = NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
 
 /// Convenience provider for current user
 final currentUserProvider = Provider<User?>((ref) {

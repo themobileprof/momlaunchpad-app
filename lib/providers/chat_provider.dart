@@ -39,12 +39,16 @@ class ChatState {
   }
 }
 
-/// Chat provider (StateNotifier)
-class ChatNotifier extends StateNotifier<ChatState> {
-  final WebSocketService _wsService;
+/// Chat provider (Notifier)
+class ChatNotifier extends Notifier<ChatState> {
+  late final WebSocketService _wsService;
   StreamSubscription<WebSocketMessage>? _messageSubscription;
 
-  ChatNotifier(this._wsService) : super(ChatState());
+  @override
+  ChatState build() {
+    _wsService = ref.read(webSocketServiceProvider);
+    return ChatState();
+  }
 
   /// Connect to WebSocket
   Future<void> connect() async {
@@ -162,17 +166,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     _messageSubscription?.cancel();
     state = state.copyWith(isConnected: false);
   }
-
-  @override
-  void dispose() {
-    _messageSubscription?.cancel();
-    _wsService.dispose();
-    super.dispose();
-  }
 }
 
 /// Chat provider instance
-final chatProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) {
-  final wsService = ref.watch(webSocketServiceProvider);
-  return ChatNotifier(wsService);
-});
+final chatProvider = NotifierProvider<ChatNotifier, ChatState>(ChatNotifier.new);
