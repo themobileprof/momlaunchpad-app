@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
+import '../models/savings_summary.dart';
+import '../models/savings_entry.dart';
 import '../providers/savings_provider.dart';
 
 /// Savings screen with EDD, goal tracking, and entries
@@ -127,7 +129,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     );
   }
 
-  Widget _buildSummaryCard(summary) {
+  Widget _buildSummaryCard(SavingsSummary summary) {
     final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
     
     return Card(
@@ -213,7 +215,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     );
   }
 
-  Widget _buildEntryCard(entry) {
+  Widget _buildEntryCard(SavingsEntry entry) {
     final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
     
     return Card(

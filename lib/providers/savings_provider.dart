@@ -76,7 +76,7 @@ class SavingsNotifier extends Notifier<SavingsState> {
     DateTime? entryDate,
   }) async {
     try {
-      final entry = await _apiService.createSavingsEntry(
+      await _apiService.createSavingsEntry(
         amount: amount,
         description: description,
         entryDate: entryDate,
