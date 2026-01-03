@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user.dart';
-import '../models/auth_response.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import 'service_providers.dart';
@@ -43,7 +42,8 @@ class AuthNotifier extends Notifier<AuthState> {
   AuthState build() {
     _apiService = ref.read(apiServiceProvider);
     _storageService = ref.read(storageServiceProvider);
-    _checkLoginStatus();
+    // Check login status asynchronously after initialization
+    Future.microtask(() => _checkLoginStatus());
     return AuthState();
   }
 
@@ -92,12 +92,18 @@ class AuthNotifier extends Notifier<AuthState> {
         isLoading: false,
         error: e.message,
       );
+      print('Registration API error: ${e.message}');
       rethrow;
     } catch (e) {
+      final errorMsg = e.toString().contains('Failed host lookup') || 
+                       e.toString().contains('Connection refused')
+          ? 'Unable to connect to server. Please check your internet connection.'
+          : 'Registration failed. Please try again.';
       state = state.copyWith(
         isLoading: false,
-        error: 'Registration failed. Please try again.',
+        error: errorMsg,
       );
+      print('Registration error: $e');
       rethrow;
     }
   }
@@ -125,12 +131,18 @@ class AuthNotifier extends Notifier<AuthState> {
         isLoading: false,
         error: e.message,
       );
+      print('Login API error: ${e.message}');
       rethrow;
     } catch (e) {
+      final errorMsg = e.toString().contains('Failed host lookup') || 
+                       e.toString().contains('Connection refused')
+          ? 'Unable to connect to server. Please check your internet connection.'
+          : 'Login failed. Please check your credentials.';
       state = state.copyWith(
         isLoading: false,
-        error: 'Login failed. Please check your credentials.',
+        error: errorMsg,
       );
+      print('Login error: $e');
       rethrow;
     }
   }

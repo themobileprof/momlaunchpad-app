@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import '../models/auth_response.dart';
 import '../models/user.dart';
 import '../models/reminder.dart';
+import '../models/savings_summary.dart';
+import '../models/savings_entry.dart';
 import 'storage_service.dart';
 
 /// HTTP service for REST API calls
@@ -196,6 +198,105 @@ class ApiService {
       throw ApiException(
         statusCode: response.statusCode,
         message: 'Failed to delete reminder',
+      );
+    }
+  }
+
+  // ============ SAVINGS ENDPOINTS ============
+
+  /// Get savings summary with EDD, goal, and progress
+  Future<SavingsSummary> getSavingsSummary() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/savings/summary'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      return SavingsSummary.fromJson(jsonDecode(response.body));
+    } else {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: 'Failed to fetch savings summary',
+      );
+    }
+  }
+
+  /// Get all savings entries for the current user
+  Future<List<SavingsEntry>> getSavingsEntries() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/savings/entries'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => SavingsEntry.fromJson(json)).toList();
+    } else {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: 'Failed to fetch savings entries',
+      );
+    }
+  }
+
+  /// Create a new savings entry
+  Future<SavingsEntry> createSavingsEntry({
+    required double amount,
+    required String description,
+    DateTime? entryDate,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/savings/entries'),
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        'amount': amount,
+        'description': description,
+        if (entryDate != null) 'entry_date': entryDate.toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return SavingsEntry.fromJson(jsonDecode(response.body));
+    } else {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: 'Failed to create savings entry',
+      );
+    }
+  }
+
+  /// Update expected delivery date
+  Future<void> updateExpectedDeliveryDate(DateTime? edd) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/savings/edd'),
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        'expected_delivery_date': edd?.toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: 'Failed to update expected delivery date',
+      );
+    }
+  }
+
+  /// Update savings goal
+  Future<void> updateSavingsGoal(double goal) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/savings/goal'),
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        'savings_goal': goal,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: 'Failed to update savings goal',
       );
     }
   }

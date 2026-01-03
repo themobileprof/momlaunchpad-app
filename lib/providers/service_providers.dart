@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import '../services/websocket_service.dart';
+import '../config/app_config.dart';
 
 /// Storage service provider (singleton)
 final storageServiceProvider = Provider<StorageService>((ref) {
@@ -11,15 +12,11 @@ final storageServiceProvider = Provider<StorageService>((ref) {
 /// API service provider (singleton)
 final apiServiceProvider = Provider<ApiService>((ref) {
   final storage = ref.watch(storageServiceProvider);
-  // TODO: Replace with actual backend URL
-  const baseUrl = 'http://localhost:8080';
-  return ApiService(baseUrl: baseUrl, storage: storage);
+  return ApiService(baseUrl: AppConfig.baseUrl, storage: storage);
 });
 
 /// WebSocket service provider (singleton)
 final webSocketServiceProvider = Provider<WebSocketService>((ref) {
   final storage = ref.watch(storageServiceProvider);
-  // TODO: Replace with actual backend WebSocket URL
-  const wsUrl = 'ws://localhost:8080';
-  return WebSocketService(wsUrl: wsUrl, storage: storage);
+  return WebSocketService(wsUrl: AppConfig.chatWsUrl, storage: storage);
 });

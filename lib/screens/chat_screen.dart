@@ -22,10 +22,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _connectWebSocket();
+    // Only connect when user wants to send a message (chat is for history viewing)
   }
 
   Future<void> _connectWebSocket() async {
+    if (_isConnected) return; // Already connected
     await ref.read(chatProvider.notifier).connect();
     setState(() {
       _isConnected = ref.read(chatProvider).isConnected;
@@ -36,13 +37,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
-    ref.read(chatProvider.notifier).disconnect();
+    if (_isConnected) {
+      ref.read(chatProvider.notifier).disconnect();
+    }
     super.dispose();
   }
 
-  void _sendMessage() {
+  void _sendMessage() async {
     final content = _messageController.text.trim();
     if (content.isEmpty) return;
+
+    // Connect to WebSocket if not already connected (lazy connection)
+    if (!_isConnected) {
+      await _connectWebSocket();
+    }
 
     ref.read(chatProvider.notifier).sendMessage(content);
     _messageController.clear();
@@ -66,9 +74,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Chat',
-          style: AppTypography.headingMedium,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Chat History',
+              style: AppTypography.headingMedium,
+            ),
+            Text(
+              'View past conversations & transcripts',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textLight,
+              ),
+            ),
+          ],
         ),
         actions: [
           // Connection status indicator
@@ -91,13 +110,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(
-                          Icons.chat_bubble_outline,
+                          Icons.history,
                           size: 64,
                           color: AppColors.textLight,
                         ),
                         const SizedBox(height: AppSpacing.spaceMD),
                         Text(
-                          'Start a conversation',
+                          'No conversation history yet',
                           style: AppTypography.caption,
                         ),
                         const SizedBox(height: AppSpacing.spaceSM),

@@ -31,6 +31,42 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       ),
       body: remindersState.isLoading
           ? const Center(child: CircularProgressIndicator())
+          : remindersState.error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: AppColors.error,
+                      ),
+                      const SizedBox(height: AppSpacing.spaceMD),
+                      Text(
+                        'Failed to load reminders',
+                        style: AppTypography.bodyText.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: AppSpacing.spaceSM),
+                      Text(
+                        remindersState.error!,
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.textLight,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppSpacing.spaceLG),
+                      ElevatedButton.icon(
+                        onPressed: () => ref.read(remindersProvider.notifier).fetchReminders(),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryPink,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
           : remindersState.reminders.isEmpty
               ? Center(
                   child: Column(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../theme/colors.dart';
-import '../providers/auth_provider.dart';
+import 'call_screen.dart';
 import 'chat_screen.dart';
 import 'calendar_screen.dart';
 import 'savings_screen.dart';
@@ -19,6 +18,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = const [
+    CallScreen(),
     ChatScreen(),
     CalendarScreen(),
     SavingsScreen(),
@@ -37,6 +37,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           });
         },
         items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.phone_outlined),
+            activeIcon: Icon(Icons.phone),
+            label: 'Call',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline),
             activeIcon: Icon(Icons.chat_bubble),
