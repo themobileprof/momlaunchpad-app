@@ -1,4 +1,4 @@
-package com.momlaunchpad.momlaunchpad_mobile
+package com.momlaunchpad.app
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -87,6 +87,31 @@ class ApiService {
     }
   }
 
+  /// Google Sign-In
+  Future<AuthResponse> googleSignIn({
+    required String idToken,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/auth/google/token'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'id_token': idToken,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final authResponse = AuthResponse.fromJson(jsonDecode(response.body));
+      await _storage.saveToken(authResponse.token);
+      await _storage.saveUserId(authResponse.user.id);
+      return authResponse;
+    } else {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: jsonDecode(response.body)['error'] ?? 'Google sign-in failed',
+      );
+    }
+  }
+
   /// Get current user info
   Future<User> getCurrentUser() async {
     final response = await http.get(

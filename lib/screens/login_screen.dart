@@ -48,6 +48,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    try {
+      await ref.read(authProvider.notifier).signInWithGoogle();
+      // Navigation handled by AppInitializer
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(ref.read(authProvider).error ?? 'Google sign-in failed'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -168,6 +184,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                             )
                           : const Text('Login'),
+                    ),
+                    
+                    const SizedBox(height: AppSpacing.spaceMD),
+                    
+                    // Divider with "OR"
+                    Row(
+                      children: [
+                        const Expanded(child: Divider()),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceMD),
+                          child: Text(
+                            'OR',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textLight,
+                            ),
+                          ),
+                        ),
+                        const Expanded(child: Divider()),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: AppSpacing.spaceMD),
+                    
+                    // Google Sign-In Button
+                    OutlinedButton.icon(
+                      onPressed: authState.isLoading ? null : _handleGoogleSignIn,
+                      icon: Image.asset(
+                        'assets/images/google_logo.png',
+                        height: 20,
+                        width: 20,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(Icons.g_mobiledata, size: 24);
+                        },
+                      ),
+                      label: const Text('Continue with Google'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: BorderSide(color: Colors.grey[300]!),
+                        foregroundColor: AppColors.textDark,
+                      ),
                     ),
                     
                     const SizedBox(height: AppSpacing.spaceMD),

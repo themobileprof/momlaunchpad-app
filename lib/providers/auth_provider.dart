@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
@@ -143,6 +144,68 @@ class AuthNotifier extends Notifier<AuthState> {
         error: errorMsg,
       );
       print('Login error: $e');
+      rethrow;
+    }
+  }
+
+  /// Google Sign-In
+  Future<void> signInWithGoogle() async {
+    state = state.copyWith(isLoading: true, error: null);
+    
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+      );
+
+      // Sign out first to ensure account picker shows
+      await googleSignIn.signOut();
+      
+      // Trigger Google Sign-In flow
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        // User cancelled the sign-in
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Sign-in cancelled',
+        );
+        return;
+      }
+
+      // Get authentication details
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      
+      if (googleAuth.idToken == null) {
+        throw Exception('Failed to get ID token from Google');
+      }
+
+      // Send ID token to backend
+      final authResponse = await _apiService.googleSignIn(
+        idToken: googleAuth.idToken!,
+      );
+      
+      state = AuthState(
+        user: authResponse.user,
+        isLoggedIn: true,
+        isLoading: false,
+      );
+    } on ApiException catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.message,
+      );
+      print('Google Sign-In API error: ${e.message}');
+      rethrow;
+    } catch (e) {
+      final errorMsg = e.toString().contains('Failed host lookup') || 
+                       e.toString().contains('Connection refused')
+          ? 'Unable to connect to server. Please check your internet connection.'
+          : 'Google sign-in failed. Please try again.';
+      state = state.copyWith(
+        isLoading: false,
+        error: errorMsg,
+      );
+      print('Google Sign-In error: $e');
       rethrow;
     }
   }
