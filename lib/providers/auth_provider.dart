@@ -122,6 +122,10 @@ class AuthNotifier extends Notifier<AuthState> {
         password: password,
       );
       
+      print('🔍 Login response - User name: ${authResponse.user.name}');
+      print('🔍 Login response - User email: ${authResponse.user.email}');
+      print('🔍 Login response - User ID: ${authResponse.user.id}');
+      
       state = AuthState(
         user: authResponse.user,
         isLoggedIn: true,

@@ -429,7 +429,7 @@ class _CallScreenState extends ConsumerState<CallScreen> with WidgetsBindingObse
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Hi ${user?.name ?? "there"}! 👋',
+                              'Hi ${user?.name.isNotEmpty == true ? user!.name : (user?.email.split('@').first ?? "there")}! 👋',
                               style: AppTypography.headingLarge.copyWith(
                                 color: AppColors.primaryPurple,
                                 fontWeight: FontWeight.w700,
