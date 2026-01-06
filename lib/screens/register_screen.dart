@@ -41,7 +41,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             password: _passwordController.text,
             language: 'en', // Default to English
           );
-      // Navigation handled by AppInitializer
+      
+      // Registration successful - pop back to root for AppInitializer to handle
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -57,7 +61,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Future<void> _handleGoogleSignIn() async {
     try {
       await ref.read(authProvider.notifier).signInWithGoogle();
-      // Navigation handled by AppInitializer
+      
+      // Sign-in successful - pop back to root for AppInitializer to handle
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

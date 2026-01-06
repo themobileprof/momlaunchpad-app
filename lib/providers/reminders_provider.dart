@@ -52,6 +52,18 @@ class RemindersState {
     return reminders.where((r) => r.isOverdue).toList()
       ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
   }
+
+  /// Get past reminders (completed or past date)
+  List<Reminder> get pastReminders {
+    final now = DateTime.now();
+    return reminders
+        .where((r) => 
+            r.scheduledTime.isBefore(now) && 
+            !r.isToday
+        )
+        .toList()
+      ..sort((a, b) => b.scheduledTime.compareTo(a.scheduledTime)); // Most recent first
+  }
 }
 
 /// Reminders provider (Notifier)

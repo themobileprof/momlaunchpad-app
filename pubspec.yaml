@@ -42,7 +42,7 @@ dependencies:
   google_sign_in: ^6.2.2
   
   # Voice Features (STT/TTS)
-  speech_to_text: ^6.6.2
+  speech_to_text: ^7.3.0
   flutter_tts: ^4.0.2
 
 dev_dependencies:

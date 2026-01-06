@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'colors.dart';
 import 'spacing.dart';
 import 'typography.dart';
+import 'theme_extensions.dart';
 
 /// Main app theme using Material 3
 /// Follows design guide principles: soft colors, rounded corners, generous spacing
@@ -188,5 +189,12 @@ ThemeData buildAppTheme() {
       color: AppColors.textDark,
       size: 24,
     ),
+    
+    // Theme extensions for easy access
+    extensions: const [
+      AppColorsExtension.light,
+      AppSpacingExtension.standard,
+      AppTypographyExtension.standard,
+    ],
   );
 }
