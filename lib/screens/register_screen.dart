@@ -54,6 +54,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    try {
+      await ref.read(authProvider.notifier).signInWithGoogle();
+      // Navigation handled by AppInitializer
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(ref.read(authProvider).error ?? 'Google sign-in failed'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -236,6 +252,91 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               ),
                             )
                           : const Text('Create Account'),
+                    ),
+                    
+                    const SizedBox(height: AppSpacing.spaceMD),
+                    
+                    // Divider with "OR"
+                    Row(
+                      children: [
+                        const Expanded(child: Divider()),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceMD),
+                          child: Text(
+                            'OR',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textLight,
+                            ),
+                          ),
+                        ),
+                        const Expanded(child: Divider()),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: AppSpacing.spaceMD),
+                    
+                    // Google Sign-In Button
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: authState.isLoading ? null : _handleGoogleSignIn,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF1F1F1F),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: Colors.grey[200]!,
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'assets/images/google_logo.png',
+                              height: 24,
+                              width: 24,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  height: 24,
+                                  width: 24,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Icon(
+                                    Icons.g_mobiledata,
+                                    size: 20,
+                                    color: Color(0xFF4285F4),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Continue with Google',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0.15,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                     
                     const SizedBox(height: AppSpacing.spaceMD),

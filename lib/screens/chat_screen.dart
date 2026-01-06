@@ -4,7 +4,10 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../providers/chat_provider.dart';
-import '../providers/auth_provider.dart';
+import '../providers/service_providers.dart';
+import '../services/network_monitor.dart';
+import '../utils/chat_utils.dart';
+import '../models/reminder.dart';
 
 /// Chat screen - Primary feature
 class ChatScreen extends ConsumerStatefulWidget {
@@ -18,11 +21,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isConnected = false;
+  NetworkMonitor? _networkMonitor;
 
   @override
   void initState() {
     super.initState();
-    // Only connect when user wants to send a message (chat is for history viewing)
+    // Start network monitoring for auto-reconnection
+    _networkMonitor = NetworkMonitor(ref);
+    _networkMonitor?.startMonitoring();
   }
 
   Future<void> _connectWebSocket() async {
@@ -37,6 +43,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _networkMonitor?.dispose();
     if (_isConnected) {
       ref.read(chatProvider.notifier).disconnect();
     }
@@ -70,7 +77,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final chatState = ref.watch(chatProvider);
-    final user = ref.watch(currentUserProvider);
+
+    // Show calendar suggestion dialog when available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (chatState.pendingSuggestion != null) {
+        _showCalendarSuggestionDialog(chatState.pendingSuggestion!);
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -172,32 +185,78 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ),
               ],
             ),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(
-                      hintText: 'Type a message...',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.spaceMD,
-                        vertical: AppSpacing.spaceSM,
+                // Rate limit indicator
+                if (!ref.read(chatProvider.notifier).canSendMessage())
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.spaceSM),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.timer,
+                          size: 14,
+                          color: AppColors.warning,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Sending too fast. Please wait a moment.',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.warning,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        decoration: InputDecoration(
+                          hintText: 'Type a message...',
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.spaceMD,
+                            vertical: AppSpacing.spaceSM,
+                          ),
+                          suffixIcon: chatState.isConnected
+                              ? null
+                              : const Tooltip(
+                                  message: 'Connecting...',
+                                  child: Icon(
+                                    Icons.cloud_off,
+                                    size: 16,
+                                    color: AppColors.textLight,
+                                  ),
+                                ),
+                        ),
+                        maxLines: null,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _sendMessage(),
+                        enabled: chatState.isConnected &&
+                            ref.read(chatProvider.notifier).canSendMessage(),
                       ),
                     ),
-                    maxLines: null,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.spaceSM),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  color: AppColors.primaryPink,
-                  onPressed: chatState.isConnected &&
-                          ref.read(chatProvider.notifier).canSendMessage()
-                      ? _sendMessage
-                      : null,
+                    const SizedBox(width: AppSpacing.spaceSM),
+                    IconButton(
+                      icon: const Icon(Icons.send),
+                      color: AppColors.primaryPink,
+                      onPressed: chatState.isConnected &&
+                              ref.read(chatProvider.notifier).canSendMessage()
+                          ? _sendMessage
+                          : null,
+                      tooltip: !chatState.isConnected
+                          ? 'Connecting...'
+                          : !ref.read(chatProvider.notifier).canSendMessage()
+                              ? 'Rate limit reached'
+                              : 'Send message',
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -235,6 +294,92 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             color: isUser ? AppColors.white : AppColors.textDark,
           ),
         ),
+      ),
+    );
+  }
+
+  /// Show calendar suggestion dialog
+  void _showCalendarSuggestionDialog(CalendarSuggestion suggestion) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.calendar_today, color: AppColors.primaryPink),
+            SizedBox(width: 8),
+            Text('Add Reminder?'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              suggestion.title,
+              style: AppTypography.headingMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              suggestion.description ?? '',
+              style: AppTypography.bodyText,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Icon(Icons.access_time, size: 16, color: AppColors.textLight),
+                const SizedBox(width: 4),
+                Text(
+                  formatTimestamp(suggestion.suggestedTime),
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textLight,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              ref.read(chatProvider.notifier).clearCalendarSuggestion();
+              Navigator.pop(context);
+            },
+            child: const Text('Not Now'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              // Create reminder via API
+              try {
+                final apiService = ref.read(apiServiceProvider);
+                await apiService.createReminder(
+                  title: suggestion.title,
+                  description: suggestion.description,
+                  scheduledTime: suggestion.suggestedTime,
+                  priority: 'medium',
+                );
+
+                ref.read(chatProvider.notifier).clearCalendarSuggestion();
+                Navigator.pop(context);
+
+                // Show success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Reminder created successfully'),
+                    backgroundColor: AppColors.success,
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to create reminder: $e'),
+                    backgroundColor: AppColors.error,
+                  ),
+                );
+              }
+            },
+            child: const Text('Add Reminder'),
+          ),
+        ],
       ),
     );
   }

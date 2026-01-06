@@ -37,7 +37,14 @@ PORT=8080
 
 # Redis (optional)
 REDIS_URL=redis://localhost:6379/0
+
+# Twilio Voice (optional - for premium voice calls)
+TWILIO_ACCOUNT_SID=your-twilio-account-sid
+TWILIO_AUTH_TOKEN=your-twilio-auth-token
+TWILIO_PHONE_NUMBER=+1234567890
 ```
+
+**Note:** Twilio credentials are optional. If not provided, voice call endpoints will not be registered.
 
 ## Step 3: Run Database Migrations
 
@@ -103,6 +110,55 @@ curl -X POST http://localhost:8080/api/auth/register \
 ```
 
 Save the token for subsequent requests.
+
+### Test OAuth (Google Sign-In)
+
+**Web Flow (Browser):**
+```bash
+# Open in browser
+open http://localhost:8080/api/auth/google
+
+# Or with curl (will redirect)
+curl -L http://localhost:8080/api/auth/google
+```
+
+**Mobile Flow (ID Token Verification):**
+```bash
+# Simulate mobile app sending ID token
+curl -X POST http://localhost:8080/api/auth/google/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2M..."
+  }'
+```
+
+**Response:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "uuid-here",
+    "email": "user@gmail.com",
+    "username": "user"
+  }
+}
+```
+
+**Testing Email-Based Account Linking:**
+```bash
+# 1. Register with email/password
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@gmail.com",
+    "password": "password123",
+    "name": "Test User"
+  }'
+
+# 2. Later, sign in with Google using same email
+# Backend will recognize the email and link accounts
+# Both auth methods will access the same user account
+```
 
 ### Create a Reminder
 
@@ -253,8 +309,50 @@ Error: invalid token
 ## Next Steps
 
 - Read [API.md](API.md) for complete API documentation
-- See [BACKEND_SPEC.md](BACKEND_SPEC.md) for architecture details
-- Review [.github/copilot-instructions.md](.github/copilot-instructions.md) for development guidelines
+- See [VOICE.md](VOICE.md) for Twilio voice call setup
+- Review [BACKEND_SPEC.md](BACKEND_SPEC.md) for architecture details
+- Check [WEBSOCKET_GUIDE.md](WEBSOCKET_GUIDE.md) for WebSocket details
+- Read [.github/copilot-instructions.md](.github/copilot-instructions.md) for development guidelines
+
+## Testing Premium Features
+
+### Voice Calls (Premium Only)
+
+**Prerequisites:**
+1. Twilio account with purchased phone number
+2. Configure webhooks in Twilio Console:
+   - Incoming: `https://your-domain.com/api/voice/incoming`
+   - Status: `https://your-domain.com/api/voice/status`
+3. User must have premium subscription
+
+**Upgrade User to Premium:**
+```sql
+-- Connect to database
+psql $DATABASE_URL
+
+-- Upgrade user to premium
+UPDATE subscriptions 
+SET plan_id = (SELECT id FROM plans WHERE code = 'premium')
+WHERE user_id = 'user-uuid-here';
+```
+
+**Test Voice Call:**
+1. Start server with Twilio credentials in `.env`
+2. Call your Twilio number from registered phone
+3. System will greet you and process your questions
+4. View logs to see speech-to-text transcription
+
+**Local Testing with ngrok:**
+```bash
+# Start ngrok tunnel
+ngrok http 8080
+
+# Copy HTTPS URL (e.g., https://abc123.ngrok.io)
+# Configure Twilio webhooks to use this URL
+# Now you can test voice calls locally
+```
+
+See [VOICE.md](VOICE.md) for comprehensive voice setup documentation.
 
 ## Common Development Commands
 

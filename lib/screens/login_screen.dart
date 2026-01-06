@@ -208,21 +208,66 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: AppSpacing.spaceMD),
                     
                     // Google Sign-In Button
-                    OutlinedButton.icon(
-                      onPressed: authState.isLoading ? null : _handleGoogleSignIn,
-                      icon: Image.asset(
-                        'assets/images/google_logo.png',
-                        height: 20,
-                        width: 20,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(Icons.g_mobiledata, size: 24);
-                        },
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      label: const Text('Continue with Google'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: BorderSide(color: Colors.grey[300]!),
-                        foregroundColor: AppColors.textDark,
+                      child: ElevatedButton(
+                        onPressed: authState.isLoading ? null : _handleGoogleSignIn,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF1F1F1F),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: Colors.grey[200]!,
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'assets/images/google_logo.png',
+                              height: 24,
+                              width: 24,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  height: 24,
+                                  width: 24,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Icon(
+                                    Icons.g_mobiledata,
+                                    size: 20,
+                                    color: Color(0xFF4285F4),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Continue with Google',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0.15,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     
