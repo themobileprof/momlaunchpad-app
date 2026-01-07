@@ -61,6 +61,7 @@ class ChatNotifier extends Notifier<ChatState> {
 
   /// Handle incoming WebSocket messages
   void _handleMessage(WebSocketMessage wsMessage) {
+    print('ChatProvider received message: type=${wsMessage.type}, content=${wsMessage.content}');
     switch (wsMessage.type) {
       case MessageType.message:
         // Streaming AI response chunk
@@ -135,7 +136,9 @@ class ChatNotifier extends Notifier<ChatState> {
     );
 
     // Send to backend via WebSocket
+    print('Sending message from ChatProvider: $content');
     final sent = _wsService.sendMessage(content);
+    print('Message send result: $sent');
     
     if (!sent) {
       // Rate limited or connection error

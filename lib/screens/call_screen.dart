@@ -41,8 +41,8 @@ class _CallScreenState extends ConsumerState<CallScreen> with WidgetsBindingObse
   bool _isMuted = false;
   bool _showTranscript = false;
   
-  // VAD settings
-  static const Duration _silenceThreshold = Duration(seconds: 2);
+  // VAD settings - longer pause for natural conversation flow
+  static const Duration _silenceThreshold = Duration(seconds: 4);
   
   @override
   void initState() {
@@ -83,16 +83,22 @@ class _CallScreenState extends ConsumerState<CallScreen> with WidgetsBindingObse
       _speechEnabled = await _speechToText.initialize(
         onError: (error) {
           print('Speech recognition error: $error');
-          setState(() => _isListening = false);
+          if (mounted) {
+            setState(() => _isListening = false);
+          }
         },
         onStatus: (status) {
           print('Speech status: $status');
           if (status == 'done' || status == 'notListening') {
-            setState(() => _isListening = false);
+            if (mounted) {
+              setState(() => _isListening = false);
+            }
           }
         },
       );
-      setState(() {});
+      if (mounted) {
+        setState(() {});
+      }
     } catch (e) {
       print('Failed to initialize speech recognition: $e');
       _speechEnabled = false;
@@ -251,35 +257,43 @@ class _CallScreenState extends ConsumerState<CallScreen> with WidgetsBindingObse
 
     await _speechToText.listen(
       onResult: (result) {
+        print('Speech result - words: "${result.recognizedWords}", final: ${result.finalResult}');
         setState(() {
           _currentUtterance = result.recognizedWords;
         });
 
-        // SMART INTERRUPTION: Wait 2 seconds before stopping AI (filter coughs/quick sounds)
+        // SMART INTERRUPTION: Require substantial speech before stopping AI
+        // This filters out echo, background noise, and accidental sounds
         if (_isSpeaking && result.recognizedWords.trim().isNotEmpty) {
-          _interruptionTimer?.cancel();
-          _interruptionTimer = Timer(const Duration(seconds: 2), () {
-            // User has been speaking for 2 seconds - genuine interruption
-            _flutterTts.stop();
-            _sentenceBuffer = ''; // Clear buffer
-            _wasInterrupted = true;
-            setState(() => _isSpeaking = false);
-          });
+          final wordCount = result.recognizedWords.trim().split(RegExp(r'\s+')).length;
+          
+          // Only interrupt if user speaks at least 3 words continuously
+          if (wordCount >= 3) {
+            _interruptionTimer?.cancel();
+            _interruptionTimer = Timer(const Duration(milliseconds: 800), () {
+              // User has spoken multiple words - genuine interruption
+              _flutterTts.stop();
+              _sentenceBuffer = ''; // Clear buffer
+              _wasInterrupted = true;
+              setState(() => _isSpeaking = false);
+            });
+          }
         }
 
         // Voice Activity Detection: Reset silence timer on speech
         _silenceTimer?.cancel();
         if (!result.finalResult && result.recognizedWords.trim().isNotEmpty) {
           _silenceTimer = Timer(_silenceThreshold, () {
-            // User stopped speaking for 2 seconds
+            // User stopped speaking - send message
             _stopListeningAndSend();
           });
         }
       },
-      listenMode: ListenMode.confirmation,
+      listenMode: ListenMode.dictation, // Use dictation mode for continuous listening
       cancelOnError: true,
       partialResults: true,
-      listenFor: const Duration(seconds: 30), // Max listen duration
+      listenFor: const Duration(minutes: 2), // Max listen duration (extended for longer conversations)
+      pauseFor: const Duration(seconds: 10), // Don't auto-stop on pauses
     );
   }
 
@@ -287,21 +301,28 @@ class _CallScreenState extends ConsumerState<CallScreen> with WidgetsBindingObse
   void _stopListening() {
     _silenceTimer?.cancel();
     _speechToText.stop();
-    setState(() => _isListening = false);
+    if (mounted) {
+      setState(() => _isListening = false);
+    }
   }
 
   /// Stop listening and send message
   Future<void> _stopListeningAndSend() async {
+    print('=== _stopListeningAndSend called ===');
+    print('Current utterance: "$_currentUtterance"');
     _stopListening();
 
     if (_currentUtterance.trim().isNotEmpty) {
       final utterance = _currentUtterance.trim().toLowerCase();
+      print('Trimmed utterance: "$utterance"');
       
       // Check if user wants to continue previous response
       if (_isContinuePhrase(utterance) && _lastAIResponse.isNotEmpty) {
+        print('Detected continue phrase - replaying previous response');
         // Replay last AI response with prefix
         _replayPreviousResponse();
       } else {
+        print('Sending message to chat provider: "${_currentUtterance.trim()}"');
         // Send message via WebSocket
         ref.read(chatProvider.notifier).sendMessage(_currentUtterance.trim());
       }
@@ -309,6 +330,8 @@ class _CallScreenState extends ConsumerState<CallScreen> with WidgetsBindingObse
       setState(() {
         _currentUtterance = '';
       });
+    } else {
+      print('No utterance to send (empty or whitespace only)');
     }
   }
   
@@ -435,16 +458,26 @@ class _CallScreenState extends ConsumerState<CallScreen> with WidgetsBindingObse
 
     // Listen to message updates for TTS
     ref.listen<ChatState>(chatProvider, (previous, next) {
-      if (!_isCallActive) return;
+      print('=== ChatState changed ===');
+      print('Is call active: $_isCallActive');
+      print('Messages count: ${next.messages.length}');
+      
+      if (!_isCallActive) {
+        print('Call not active - skipping TTS');
+        return;
+      }
 
       // Check for new AI message
       if (next.messages.isNotEmpty && !next.messages.last.isUser) {
         final latestMessage = next.messages.last;
+        print('Latest AI message - streaming: ${latestMessage.isStreaming}, content length: ${latestMessage.content.length}');
         
         // Process streaming chunks
         if (latestMessage.isStreaming) {
+          print('Processing streaming chunk');
           _handleAIResponseChunk(latestMessage.content);
         } else {
+          print('Response done - flushing buffer');
           // Response done - flush remaining buffer
           _flushBuffer();
           // Store complete response for potential replay
@@ -646,34 +679,6 @@ class _CallScreenState extends ConsumerState<CallScreen> with WidgetsBindingObse
                         ),
                         
                         const SizedBox(height: AppSpacing.spaceXL),
-                        
-                        // Current utterance display
-                        if (_isListening && _currentUtterance.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.spaceLG,
-                              vertical: AppSpacing.spaceMD,
-                            ),
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.spaceXL,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              _currentUtterance,
-                              style: AppTypography.bodyText,
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
                         
                         const SizedBox(height: AppSpacing.spaceMD),
                         

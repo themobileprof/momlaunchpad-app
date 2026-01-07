@@ -37,9 +37,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollController.dispose();
     _inputFocusNode.dispose();
     _networkMonitor?.dispose();
-    if (_isConnected) {
-      ref.read(chatProvider.notifier).disconnect();
-    }
+    // Don't use ref in dispose - it's unsafe
     super.dispose();
   }
 
@@ -389,6 +387,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             content: const Text('Reminder created successfully'),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'View',
+              textColor: Colors.white,
+              onPressed: () {
+                // Show hint to switch to Calendar tab
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Switch to Calendar tab to view your reminders'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),

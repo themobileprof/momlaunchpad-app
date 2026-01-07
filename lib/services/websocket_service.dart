@@ -41,7 +41,7 @@ class WebSocketService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$wsUrl/ws/chat?token=$token');
+      final uri = Uri.parse('$wsUrl?token=$token');
       _channel = WebSocketChannel.connect(uri);
       _isConnected = true;
       _reconnectAttempts = 0;
@@ -65,8 +65,11 @@ class WebSocketService {
   /// Handle incoming WebSocket messages
   void _handleIncomingMessage(dynamic data) {
     try {
+      print('Received raw WebSocket data: $data');
       final json = jsonDecode(data as String) as Map<String, dynamic>;
+      print('Parsed JSON: $json');
       final message = WebSocketMessage.fromJson(json);
+      print('WebSocket message type: ${message.type}, content: ${message.content}');
       _messageController?.add(message);
     } catch (e) {
       print('Error parsing WebSocket message: $e');
@@ -132,9 +135,11 @@ class WebSocketService {
 
     try {
       final message = jsonEncode({'content': content});
+      print('Sending message to WebSocket: $message');
       _channel!.sink.add(message);
       _messageCount++;
       _lastMessageTime = DateTime.now();
+      print('Message sent successfully');
       return true;
     } catch (e) {
       print('Error sending message: $e');
