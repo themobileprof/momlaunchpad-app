@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -98,6 +99,57 @@ class _CallScreenState extends ConsumerState<CallScreen> with WidgetsBindingObse
     }
   }
 
+  /// Request microphone permission with better UX
+  Future<bool> _requestMicrophonePermission() async {
+    final status = await Permission.microphone.status;
+    
+    if (status.isGranted) {
+      return true;
+    }
+    
+    if (status.isDenied) {
+      // First time or user previously denied - request again
+      final result = await Permission.microphone.request();
+      if (result.isGranted) {
+        // Re-initialize speech after permission granted
+        await _initSpeech();
+        return true;
+      }
+    }
+    
+    if (status.isPermanentlyDenied || await Permission.microphone.isPermanentlyDenied) {
+      // Show dialog with option to open settings
+      if (!mounted) return false;
+      
+      final shouldOpenSettings = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Microphone Access Required'),
+          content: const Text(
+            'Voice calling requires microphone access. Please enable it in your device settings.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Open Settings'),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldOpenSettings == true) {
+        await openAppSettings();
+      }
+      return false;
+    }
+    
+    return false;
+  }
+
   /// Initialize text-to-speech
   Future<void> _initTts() async {
     await _flutterTts.setLanguage('en-US');
@@ -139,10 +191,14 @@ class _CallScreenState extends ConsumerState<CallScreen> with WidgetsBindingObse
 
   /// Start voice call
   Future<void> _startCall() async {
-    if (!_speechEnabled) {
+    // Request permission proactively
+    final hasPermission = await _requestMicrophonePermission();
+    
+    if (!hasPermission || !_speechEnabled) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Microphone permission required. Please enable in settings.'),
+          content: Text('Microphone access is required for voice calls'),
           backgroundColor: AppColors.error,
         ),
       );
