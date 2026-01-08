@@ -23,12 +23,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final FocusNode _inputFocusNode = FocusNode();
   bool _isConnected = false;
   NetworkMonitor? _networkMonitor;
+  String? _lastShownSuggestionId; // Track which suggestion was shown
 
   @override
   void initState() {
     super.initState();
     _networkMonitor = NetworkMonitor(ref);
     _networkMonitor?.startMonitoring();
+    
+    // Auto-connect WebSocket when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _connectWebSocket();
+    });
   }
 
   @override
@@ -81,9 +87,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     final chatState = ref.watch(chatProvider);
 
-    // Show calendar suggestion dialog when available
+    // Show calendar suggestion dialog when available (only once per suggestion)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (chatState.pendingSuggestion != null) {
+      if (chatState.pendingSuggestion != null && 
+          _lastShownSuggestionId != chatState.pendingSuggestion!.title) {
+        _lastShownSuggestionId = chatState.pendingSuggestion!.title;
         _showCalendarSuggestionDialog(chatState.pendingSuggestion!);
       }
     });

@@ -68,8 +68,19 @@ class ChatNotifier extends Notifier<ChatState> {
         final updatedResponse = state.currentResponse + (wsMessage.content ?? '');
         state = state.copyWith(currentResponse: updatedResponse);
         
-        // Update the last message (AI response) with streamed content
-        if (state.messages.isNotEmpty && !state.messages.last.isUser) {
+        // Ensure there's an AI message to update
+        if (state.messages.isEmpty || state.messages.last.isUser) {
+          // Create new AI message if none exists
+          final aiMessage = Message(
+            id: 'ai_${DateTime.now().millisecondsSinceEpoch}',
+            content: updatedResponse,
+            isUser: false,
+            timestamp: DateTime.now(),
+            isStreaming: true,
+          );
+          state = state.copyWith(messages: [...state.messages, aiMessage]);
+        } else {
+          // Update existing AI message with streamed content
           final updatedMessages = List<Message>.from(state.messages);
           updatedMessages[updatedMessages.length - 1] = updatedMessages.last.copyWith(
             content: updatedResponse,

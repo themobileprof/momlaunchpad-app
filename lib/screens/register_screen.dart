@@ -313,25 +313,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Image.asset(
-                              'assets/images/google_logo.png',
-                              height: 24,
-                              width: 24,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  height: 24,
-                                  width: 24,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Icon(
-                                    Icons.g_mobiledata,
-                                    size: 20,
-                                    color: Color(0xFF4285F4),
-                                  ),
-                                );
-                              },
+                            const Icon(
+                              Icons.login,
+                              size: 24,
+                              color: Colors.white,
                             ),
                             const SizedBox(width: 12),
                             const Text(
