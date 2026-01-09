@@ -14,8 +14,10 @@ class WebSocketService {
   StreamController<WebSocketMessage>? _messageController;
   bool _isConnected = false;
   bool _shouldReconnect = true;
+  bool _isConnecting = false; // Prevent duplicate connection attempts
   int _reconnectAttempts = 0;
   static const int _maxReconnectAttempts = 5;
+  DateTime? _lastConnectionAttempt;
 
   // Rate limiting (10 messages per minute)
   DateTime? _lastMessageTime;
@@ -35,15 +37,38 @@ class WebSocketService {
 
   /// Connect to WebSocket with JWT token
   Future<void> connect() async {
+    // Prevent duplicate connection attempts
+    if (_isConnecting || _isConnected) {
+      print('Connection already in progress or connected');
+      return;
+    }
+
+    // Minimum 5 seconds between connection attempts
+    if (_lastConnectionAttempt != null) {
+      final timeSinceLastAttempt = DateTime.now().difference(_lastConnectionAttempt!);
+      if (timeSinceLastAttempt < const Duration(seconds: 5)) {
+        print('Too soon to reconnect. Wait ${5 - timeSinceLastAttempt.inSeconds} more seconds');
+        return;
+      }
+    }
+
+    _isConnecting = true;
+    _lastConnectionAttempt = DateTime.now();
+
     try {
       final token = await _storage.getToken();
       if (token == null) {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$wsUrl?token=$token');
+      // Parse base URL and add token as query parameter
+      final baseUri = Uri.parse(wsUrl);
+      final uri = baseUri.replace(queryParameters: {'token': token});
+      
+      print('Connecting to WebSocket: $uri');
       _channel = WebSocketChannel.connect(uri);
       _isConnected = true;
+      _isConnecting = false;
       _reconnectAttempts = 0;
 
       // Listen to incoming messages
@@ -58,6 +83,7 @@ class WebSocketService {
     } catch (e) {
       print('WebSocket connection error: $e');
       _isConnected = false;
+      _isConnecting = false;
       _attemptReconnect();
     }
   }
@@ -105,9 +131,9 @@ class WebSocketService {
     }
 
     _reconnectAttempts++;
-    final delay = Duration(seconds: _reconnectAttempts * 2); // Exponential backoff
+    final delay = Duration(seconds: _reconnectAttempts * 3); // 3, 6, 9, 12, 15 seconds
     
-    print('Reconnecting in ${delay.inSeconds} seconds... (attempt $_reconnectAttempts)');
+    print('Reconnecting in ${delay.inSeconds} seconds... (attempt $_reconnectAttempts/$_maxReconnectAttempts)');
     
     Timer(delay, () {
       if (_shouldReconnect) {

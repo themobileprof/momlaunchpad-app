@@ -9,6 +9,8 @@ class NetworkMonitor {
   final WidgetRef _ref;
   StreamSubscription<List<ConnectivityResult>>? _subscription;
   bool _wasConnected = true;
+  Timer? _reconnectTimer;
+  DateTime? _lastReconnectAttempt;
 
   NetworkMonitor(this._ref);
 
@@ -21,16 +23,37 @@ class NetworkMonitor {
 
       // Network restored after being disconnected
       if (isConnected && !_wasConnected) {
-        print('Network restored, attempting to reconnect WebSocket...');
-        _reconnectChat();
+        print('Network restored, scheduling reconnect...');
+        _scheduleReconnect();
       }
 
       _wasConnected = isConnected;
     });
   }
 
+  /// Schedule reconnection with debouncing (wait 10 seconds minimum)
+  void _scheduleReconnect() {
+    // Cancel any pending reconnect
+    _reconnectTimer?.cancel();
+
+    // Don't reconnect if we just tried recently
+    if (_lastReconnectAttempt != null) {
+      final timeSinceLastAttempt = DateTime.now().difference(_lastReconnectAttempt!);
+      if (timeSinceLastAttempt < const Duration(seconds: 10)) {
+        print('Skipping reconnect - too soon (${timeSinceLastAttempt.inSeconds}s ago)');
+        return;
+      }
+    }
+
+    // Wait 10 seconds before attempting reconnect
+    _reconnectTimer = Timer(const Duration(seconds: 10), () {
+      _reconnectChat();
+    });
+  }
+
   /// Reconnect chat WebSocket
   void _reconnectChat() async {
+    _lastReconnectAttempt = DateTime.now();
     try {
       final chatNotifier = _ref.read(chatProvider.notifier);
       await chatNotifier.connect();
@@ -42,5 +65,6 @@ class NetworkMonitor {
   /// Stop monitoring
   void dispose() {
     _subscription?.cancel();
+    _reconnectTimer?.cancel();
   }
 }

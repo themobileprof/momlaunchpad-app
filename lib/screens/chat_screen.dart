@@ -31,9 +31,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _networkMonitor = NetworkMonitor(ref);
     _networkMonitor?.startMonitoring();
     
-    // Auto-connect WebSocket when screen loads
+    // Auto-connect WebSocket when screen loads (only if not already connected)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _connectWebSocket();
+      if (!ref.read(chatProvider).isConnected) {
+        _connectWebSocket();
+      }
     });
   }
 

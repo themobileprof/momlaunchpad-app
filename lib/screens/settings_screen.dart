@@ -5,6 +5,7 @@ import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/widgets.dart';
+import 'symptom_stats_screen.dart';
 
 /// Settings screen - User preferences and account management
 class SettingsScreen extends ConsumerWidget {
@@ -27,6 +28,24 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.spaceLG),
 
           // Settings sections
+          _buildSectionHeader('Health'),
+          AppListTileCard(
+            leadingIcon: Icons.health_and_safety_rounded,
+            iconColor: AppColors.primaryPink,
+            title: 'Symptom Tracker',
+            subtitle: 'View your symptom history & stats',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SymptomStatsScreen(),
+                ),
+              );
+            },
+          ),
+
+          const SizedBox(height: AppSpacing.spaceLG),
+
           _buildSectionHeader('Preferences'),
           AppListTileCard(
             leadingIcon: Icons.language_rounded,

@@ -1,4 +1,5 @@
 /// Chat utility functions
+library;
 
 /// Check if message is small talk (instant response, no AI call)
 bool isSmallTalk(String content) {
