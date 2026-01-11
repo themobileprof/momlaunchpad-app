@@ -62,32 +62,43 @@ class ChatNotifier extends Notifier<ChatState> {
   /// Handle incoming WebSocket messages
   void _handleMessage(WebSocketMessage wsMessage) {
     print('ChatProvider received message: type=${wsMessage.type}, content=${wsMessage.content}');
+    print('Current state - messages count: ${state.messages.length}, currentResponse length: ${state.currentResponse.length}');
+    
     switch (wsMessage.type) {
       case MessageType.message:
         // Streaming AI response chunk
-        final updatedResponse = state.currentResponse + (wsMessage.content ?? '');
-        state = state.copyWith(currentResponse: updatedResponse);
+        print('Processing message chunk: "${wsMessage.content}"');
         
         // Ensure there's an AI message to update
         if (state.messages.isEmpty || state.messages.last.isUser) {
-          // Create new AI message if none exists
+          // Create new AI message if none exists - start fresh
+          print('Creating new AI message with content: "${wsMessage.content}"');
           final aiMessage = Message(
             id: 'ai_${DateTime.now().millisecondsSinceEpoch}',
-            content: updatedResponse,
+            content: wsMessage.content ?? '',
             isUser: false,
             timestamp: DateTime.now(),
             isStreaming: true,
           );
-          state = state.copyWith(messages: [...state.messages, aiMessage]);
+          state = state.copyWith(
+            messages: [...state.messages, aiMessage],
+            currentResponse: wsMessage.content ?? '', // Start accumulating from this chunk
+          );
         } else {
-          // Update existing AI message with streamed content
+          // Update existing AI message with new chunk
+          final updatedResponse = state.currentResponse + (wsMessage.content ?? '');
+          print('Updating AI message - old length: ${state.currentResponse.length}, new chunk: "${wsMessage.content}", total: ${updatedResponse.length}');
           final updatedMessages = List<Message>.from(state.messages);
           updatedMessages[updatedMessages.length - 1] = updatedMessages.last.copyWith(
             content: updatedResponse,
             isStreaming: true,
           );
-          state = state.copyWith(messages: updatedMessages);
+          state = state.copyWith(
+            messages: updatedMessages,
+            currentResponse: updatedResponse,
+          );
         }
+        print('After processing - last message content: "${state.messages.last.content}"');
         break;
 
       case MessageType.done:
@@ -123,6 +134,8 @@ class ChatNotifier extends Notifier<ChatState> {
   void sendMessage(String content) {
     if (content.trim().isEmpty) return;
 
+    print('=== sendMessage called with: "$content" ===');
+
     // Add user message to UI
     final userMessage = Message(
       id: DateTime.now().toString(),
@@ -131,20 +144,15 @@ class ChatNotifier extends Notifier<ChatState> {
       timestamp: DateTime.now(),
     );
 
-    // Add empty AI message for streaming
-    final aiMessage = Message(
-      id: 'ai_${DateTime.now()}',
-      content: '',
-      isUser: false,
-      timestamp: DateTime.now(),
-      isStreaming: true,
-    );
-
+    // DON'T create AI message here - let the first chunk create it
+    // This prevents duplicate AI messages
     state = state.copyWith(
-      messages: [...state.messages, userMessage, aiMessage],
-      currentResponse: '',
+      messages: [...state.messages, userMessage],
+      currentResponse: '', // Reset accumulator for new response
       error: null,
     );
+
+    print('User message added. Total messages: ${state.messages.length}');
 
     // Send to backend via WebSocket
     print('Sending message from ChatProvider: $content');

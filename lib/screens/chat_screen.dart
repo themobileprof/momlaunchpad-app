@@ -8,6 +8,7 @@ import '../providers/service_providers.dart';
 import '../services/network_monitor.dart';
 import '../widgets/widgets.dart';
 import '../models/reminder.dart';
+import '../models/conversation_group.dart';
 
 /// Chat screen - Primary text-based chat feature
 class ChatScreen extends ConsumerStatefulWidget {
@@ -211,15 +212,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         horizontal: AppSpacing.spaceMD,
         vertical: AppSpacing.spaceSM,
       ),
-      itemCount: chatState.messages.length,
+      itemCount: _calculateListItemCount(chatState.messages),
       itemBuilder: (context, index) {
-        final message = chatState.messages[index];
-        return ChatBubble(
-          content: message.content,
-          isUser: message.isUser,
-          timestamp: message.timestamp,
-          isStreaming: message.isStreaming,
-        );
+        return _buildGroupedMessage(context, chatState.messages, index);
       },
     );
   }
@@ -427,6 +422,124 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         );
       }
     }
+  }
+
+  // Helper methods for conversation grouping
+
+  int _calculateListItemCount(List messages) {
+    if (messages.isEmpty) return 0;
+    
+    final groups = groupMessagesByConversation(messages.cast());
+    int count = 0;
+    
+    for (final group in groups) {
+      count++; // Date/time header
+      count += group.messages.length; // Messages
+    }
+    
+    return count;
+  }
+
+  Widget _buildGroupedMessage(BuildContext context, List messages, int flatIndex) {
+    final groups = groupMessagesByConversation(messages.cast());
+    
+    int currentIndex = 0;
+    
+    for (var groupIdx = 0; groupIdx < groups.length; groupIdx++) {
+      final group = groups[groupIdx];
+      
+      // Check if this is the header position
+      if (currentIndex == flatIndex) {
+        return _buildConversationHeader(group);
+      }
+      currentIndex++;
+      
+      // Check if this is one of the message positions
+      for (var msgIdx = 0; msgIdx < group.messages.length; msgIdx++) {
+        if (currentIndex == flatIndex) {
+          final message = group.messages[msgIdx];
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: msgIdx == group.messages.length - 1 
+                ? AppSpacing.spaceLG 
+                : AppSpacing.spaceXS,
+            ),
+            child: ChatBubble(
+              content: message.content,
+              isUser: message.isUser,
+              timestamp: message.timestamp,
+              isStreaming: message.isStreaming,
+            ),
+          );
+        }
+        currentIndex++;
+      }
+    }
+    
+    // Should not reach here
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildConversationHeader(ConversationGroup group) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.spaceMD,
+      ),
+      child: Column(
+        children: [
+          // Date divider
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 1,
+                  color: AppColors.textLight.withOpacity(0.1),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.spaceSM,
+                ),
+                child: Text(
+                  group.dateHeader,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textLight,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  height: 1,
+                  color: AppColors.textLight.withOpacity(0.1),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.spaceXS),
+          // Time badge
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.spaceSM,
+              vertical: 4,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.primaryPink.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(AppRadius.radiusSmall),
+            ),
+            child: Text(
+              'Started at ${group.timeHeader}',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.primaryPink,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

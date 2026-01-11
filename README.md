@@ -1,6 +1,6 @@
 # momlaunchpad_mobile
 
-A new Flutter project.
+The mobile App for our pregnancy support system at momlaunchpad.
 
 ## Getting Started
 
