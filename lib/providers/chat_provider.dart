@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/message.dart';
 import '../models/reminder.dart';
 import '../services/websocket_service.dart';
+import '../services/conversation_service.dart';
 import 'service_providers.dart';
 
 /// Chat state
@@ -12,6 +13,8 @@ class ChatState {
   final String? error;
   final String currentResponse; // For streaming responses
   final CalendarSuggestion? pendingSuggestion;
+  final String? currentConversationId;
+  final bool isLoading;
 
   ChatState({
     this.messages = const [],
@@ -19,6 +22,8 @@ class ChatState {
     this.error,
     this.currentResponse = '',
     this.pendingSuggestion,
+    this.currentConversationId,
+    this.isLoading = false,
   });
 
   ChatState copyWith({
@@ -28,6 +33,8 @@ class ChatState {
     String? currentResponse,
     CalendarSuggestion? pendingSuggestion,
     bool clearSuggestion = false,
+    String? currentConversationId,
+    bool? isLoading,
   }) {
     return ChatState(
       messages: messages ?? this.messages,
@@ -35,6 +42,8 @@ class ChatState {
       error: error,
       currentResponse: currentResponse ?? this.currentResponse,
       pendingSuggestion: clearSuggestion ? null : (pendingSuggestion ?? this.pendingSuggestion),
+      currentConversationId: currentConversationId ?? this.currentConversationId,
+      isLoading: isLoading ?? this.isLoading,
     );
   }
 }
@@ -42,37 +51,70 @@ class ChatState {
 /// Chat provider (Notifier)
 class ChatNotifier extends Notifier<ChatState> {
   late final WebSocketService _wsService;
+  late final ConversationService _conversationService;
   StreamSubscription<WebSocketMessage>? _messageSubscription;
 
   @override
   ChatState build() {
     _wsService = ref.read(webSocketServiceProvider);
+    _conversationService = ref.read(conversationServiceProvider);
     return ChatState();
   }
 
+  /// Initialize chat with a specific conversation
+  Future<void> initialize(String conversationId) async {
+    // If already initialized for this conversation, do nothing
+    if (state.currentConversationId == conversationId) return;
+
+    // Reset state for new conversation
+    state = ChatState(
+      currentConversationId: conversationId,
+      isLoading: true,
+    );
+    
+    // Disconnect previous connection if any
+    disconnect();
+
+    try {
+      // Load existing messages
+      final messages = await _conversationService.getMessages(conversationId);
+      state = state.copyWith(
+        messages: messages.reversed.toList(), // Assuming API returns newest first, or we adjust sort order
+        isLoading: false,
+      );
+
+      // Connect to WebSocket for this conversation
+      await connect(conversationId: conversationId);
+      
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Failed to load conversation: $e',
+      );
+    }
+  }
+
   /// Connect to WebSocket
-  Future<void> connect() async {
-    await _wsService.connect();
+  Future<void> connect({String? conversationId}) async {
+    final id = conversationId ?? state.currentConversationId;
+    await _wsService.connect(conversationId: id);
     state = state.copyWith(isConnected: _wsService.isConnected);
 
     // Listen to WebSocket messages
+    _messageSubscription?.cancel();
     _messageSubscription = _wsService.messages.listen(_handleMessage);
   }
 
   /// Handle incoming WebSocket messages
   void _handleMessage(WebSocketMessage wsMessage) {
     print('ChatProvider received message: type=${wsMessage.type}, content=${wsMessage.content}');
-    print('Current state - messages count: ${state.messages.length}, currentResponse length: ${state.currentResponse.length}');
     
     switch (wsMessage.type) {
       case MessageType.message:
         // Streaming AI response chunk
-        print('Processing message chunk: "${wsMessage.content}"');
-        
         // Ensure there's an AI message to update
         if (state.messages.isEmpty || state.messages.last.isUser) {
           // Create new AI message if none exists - start fresh
-          print('Creating new AI message with content: "${wsMessage.content}"');
           final aiMessage = Message(
             id: 'ai_${DateTime.now().millisecondsSinceEpoch}',
             content: wsMessage.content ?? '',
@@ -82,12 +124,11 @@ class ChatNotifier extends Notifier<ChatState> {
           );
           state = state.copyWith(
             messages: [...state.messages, aiMessage],
-            currentResponse: wsMessage.content ?? '', // Start accumulating from this chunk
+            currentResponse: wsMessage.content ?? '', 
           );
         } else {
           // Update existing AI message with new chunk
           final updatedResponse = state.currentResponse + (wsMessage.content ?? '');
-          print('Updating AI message - old length: ${state.currentResponse.length}, new chunk: "${wsMessage.content}", total: ${updatedResponse.length}');
           final updatedMessages = List<Message>.from(state.messages);
           updatedMessages[updatedMessages.length - 1] = updatedMessages.last.copyWith(
             content: updatedResponse,
@@ -98,7 +139,6 @@ class ChatNotifier extends Notifier<ChatState> {
             currentResponse: updatedResponse,
           );
         }
-        print('After processing - last message content: "${state.messages.last.content}"');
         break;
 
       case MessageType.done:
@@ -134,8 +174,6 @@ class ChatNotifier extends Notifier<ChatState> {
   void sendMessage(String content) {
     if (content.trim().isEmpty) return;
 
-    print('=== sendMessage called with: "$content" ===');
-
     // Add user message to UI
     final userMessage = Message(
       id: DateTime.now().toString(),
@@ -145,22 +183,16 @@ class ChatNotifier extends Notifier<ChatState> {
     );
 
     // DON'T create AI message here - let the first chunk create it
-    // This prevents duplicate AI messages
     state = state.copyWith(
       messages: [...state.messages, userMessage],
-      currentResponse: '', // Reset accumulator for new response
+      currentResponse: '', 
       error: null,
     );
 
-    print('User message added. Total messages: ${state.messages.length}');
-
     // Send to backend via WebSocket
-    print('Sending message from ChatProvider: $content');
     final sent = _wsService.sendMessage(content);
-    print('Message send result: $sent');
     
     if (!sent) {
-      // Rate limited or connection error
       state = state.copyWith(
         error: 'Could not send message. Please try again.',
       );

@@ -12,7 +12,14 @@ import '../models/conversation_group.dart';
 
 /// Chat screen - Primary text-based chat feature
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({super.key});
+  final String conversationId;
+  final String? conversationTitle;
+
+  const ChatScreen({
+    super.key,
+    required this.conversationId,
+    this.conversationTitle,
+  });
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -32,11 +39,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _networkMonitor = NetworkMonitor(ref);
     _networkMonitor?.startMonitoring();
     
-    // Auto-connect WebSocket when screen loads (only if not already connected)
+    // Initialize chat with specific conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!ref.read(chatProvider).isConnected) {
-        _connectWebSocket();
-      }
+      ref.read(chatProvider.notifier).initialize(widget.conversationId);
     });
   }
 
@@ -46,24 +51,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollController.dispose();
     _inputFocusNode.dispose();
     _networkMonitor?.dispose();
-    // Don't use ref in dispose - it's unsafe
+    // Use addPostFrameCallback to avoid state errors during dispose
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Optional: Disconnect when leaving screen to save resources
+      // ref.read(chatProvider.notifier).disconnect(); 
+      // Kept commented out if we want to keep connection alive for a bit
+    });
     super.dispose();
   }
 
-  Future<void> _connectWebSocket() async {
+  void _connectWebSocket() async {
     if (_isConnected) return;
-    await ref.read(chatProvider.notifier).connect();
-    setState(() {
-      _isConnected = ref.read(chatProvider).isConnected;
-    });
+    await ref.read(chatProvider.notifier).connect(conversationId: widget.conversationId);
   }
 
   void _sendMessage() async {
     final content = _messageController.text.trim();
     if (content.isEmpty) return;
 
-    if (!_isConnected) {
-      await _connectWebSocket();
+    if (!ref.read(chatProvider).isConnected) {
+      await ref.read(chatProvider.notifier).connect(conversationId: widget.conversationId);
     }
 
     ref.read(chatProvider.notifier).sendMessage(content);
@@ -89,6 +96,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final chatState = ref.watch(chatProvider);
+    _isConnected = chatState.isConnected;
 
     // Show calendar suggestion dialog when available (only once per suggestion)
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -101,18 +109,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     return Scaffold(
       appBar: _buildAppBar(chatState),
-      body: Column(
-        children: [
-          // Error banner
-          if (chatState.error != null) _buildErrorBanner(chatState.error!),
+      body: chatState.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                // Error banner
+                if (chatState.error != null) _buildErrorBanner(chatState.error!),
 
-          // Messages list
-          Expanded(child: _buildMessagesList(chatState)),
+                // Messages list
+                Expanded(child: _buildMessagesList(chatState)),
 
-          // Input field
-          _buildInputArea(chatState),
-        ],
-      ),
+                // Input field
+                _buildInputArea(chatState),
+              ],
+            ),
     );
   }
 
@@ -122,7 +132,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Chat History', style: AppTypography.headingMedium),
+          Text(
+            widget.conversationTitle ?? 'Chat', 
+            style: AppTypography.headingMedium,
+            overflow: TextOverflow.ellipsis,
+          ),
           Row(
             children: [
               StatusDot(
@@ -199,10 +213,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (chatState.messages.isEmpty) {
       return EmptyState(
         icon: Icons.chat_bubble_outline_rounded,
-        title: 'No conversation history yet',
-        description: 'Ask me anything about pregnancy\nI\'m here to help!',
-        actionLabel: 'Start Chat',
-        onAction: () => _inputFocusNode.requestFocus(),
+        title: 'No messages yet',
+        description: 'Start the conversation!',
+        actionLabel: 'Say Hello',
+        onAction: () {
+          _messageController.text = "Hello!";
+          _inputFocusNode.requestFocus();
+        },
       );
     }
 

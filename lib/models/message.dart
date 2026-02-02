@@ -44,8 +44,8 @@ class Message {
     return Message(
       id: json['id'] as String,
       content: json['content'] as String,
-      isUser: json['is_user'] as bool,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      isUser: (json['role'] == 'user') || (json['is_user'] == true), // Support both formats
+      timestamp: DateTime.parse(json['created_at'] ?? json['timestamp'] as String),
       isStreaming: json['is_streaming'] as bool? ?? false,
     );
   }

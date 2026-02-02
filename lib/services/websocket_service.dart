@@ -35,8 +35,8 @@ class WebSocketService {
     return _messageController!.stream;
   }
 
-  /// Connect to WebSocket with JWT token
-  Future<void> connect() async {
+  /// Connect to WebSocket with JWT token and optional conversation ID
+  Future<void> connect({String? conversationId}) async {
     // Prevent duplicate connection attempts
     if (_isConnecting || _isConnected) {
       print('Connection already in progress or connected');
@@ -63,7 +63,12 @@ class WebSocketService {
 
       // Parse base URL and add token as query parameter
       final baseUri = Uri.parse(wsUrl);
-      final uri = baseUri.replace(queryParameters: {'token': token});
+      final queryParams = {'token': token};
+      if (conversationId != null) {
+        queryParams['conversation_id'] = conversationId;
+      }
+      
+      final uri = baseUri.replace(queryParameters: queryParams);
       
       print('Connecting to WebSocket: $uri');
       _channel = WebSocketChannel.connect(uri);

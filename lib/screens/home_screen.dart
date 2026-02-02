@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import 'call_screen.dart';
-import 'chat_screen.dart';
+import 'conversation_list_screen.dart';
 import 'calendar_screen.dart';
 import 'savings_screen.dart';
 import 'settings_screen.dart';
@@ -48,7 +48,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       icon: Icons.chat_bubble_outline_rounded,
       activeIcon: Icons.chat_bubble_rounded,
       label: 'Chat',
-      screen: ChatScreen(),
+      screen: ConversationListScreen(),
     ),
     _NavItem(
       icon: Icons.calendar_today_outlined,
