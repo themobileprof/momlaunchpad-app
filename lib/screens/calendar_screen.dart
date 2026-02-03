@@ -190,7 +190,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(AppSpacing.spaceMD),
+      padding: const EdgeInsets.only(
+        top: AppSpacing.spaceMD,
+        left: AppSpacing.spaceMD,
+        right: AppSpacing.spaceMD,
+        bottom: 120, // Space for floating navbar + FAB
+      ),
       itemCount: reminders.length,
       itemBuilder: (context, index) {
         final reminder = reminders[index];

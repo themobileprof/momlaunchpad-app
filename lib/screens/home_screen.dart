@@ -171,7 +171,7 @@ class _NavBarItem extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.spaceMD,
+          horizontal: AppSpacing.spaceSM,
           vertical: AppSpacing.spaceSM,
         ),
         decoration: BoxDecoration(

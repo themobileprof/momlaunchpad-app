@@ -20,7 +20,12 @@ class SettingsScreen extends ConsumerWidget {
         title: Text('Settings', style: AppTypography.headingMedium),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.spaceMD),
+        padding: const EdgeInsets.only(
+          top: AppSpacing.spaceMD,
+          left: AppSpacing.spaceMD,
+          right: AppSpacing.spaceMD,
+          bottom: 120, // Space for floating navbar
+        ),
         children: [
           // User profile card
           _buildProfileCard(user),

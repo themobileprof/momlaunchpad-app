@@ -99,7 +99,12 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                   : RefreshIndicator(
                       onRefresh: () => ref.read(savingsProvider.notifier).fetchSavingsData(),
                       child: ListView(
-                        padding: const EdgeInsets.all(AppSpacing.spaceMD),
+                        padding: const EdgeInsets.only(
+                          top: AppSpacing.spaceMD,
+                          left: AppSpacing.spaceMD,
+                          right: AppSpacing.spaceMD,
+                          bottom: 120, // Space for floating navbar
+                        ),
                         children: [
                           // Summary card
                           _buildSummaryCard(summary),

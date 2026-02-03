@@ -81,7 +81,12 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
               :  RefreshIndicator(
                   onRefresh: () => ref.read(conversationProvider.notifier).loadConversations(),
                   child: ListView.separated(
-                    padding: const EdgeInsets.all(AppSpacing.spaceMD),
+                    padding: const EdgeInsets.only(
+                      top: AppSpacing.spaceMD,
+                      left: AppSpacing.spaceMD,
+                      right: AppSpacing.spaceMD,
+                      bottom: 120, // Space for floating navbar
+                    ),
                     itemCount: state.conversations.length,
                     separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.spaceSM),
                     itemBuilder: (context, index) {
