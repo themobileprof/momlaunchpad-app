@@ -294,7 +294,7 @@ Authorization: Bearer <token>
     "user_id": "uuid",
     "title": "Doctor appointment",
     "description": "Prenatal checkup",
-    "scheduled_time": "2024-01-20T14:00:00Z",
+    "reminder_time": "2024-01-20T14:00:00Z",
     "priority": "high",
     "is_completed": false,
     "created_at": "2024-01-15T10:00:00Z",
@@ -316,7 +316,7 @@ Authorization: Bearer <token>
 {
   "title": "Doctor appointment",
   "description": "Prenatal checkup",
-  "scheduled_time": "2024-01-20T14:00:00Z",
+  "reminder_time": "2024-01-20T14:00:00Z",
   "priority": "high"
 }
 ```
@@ -328,7 +328,7 @@ Authorization: Bearer <token>
   "user_id": "uuid",
   "title": "Doctor appointment",
   "description": "Prenatal checkup",
-  "scheduled_time": "2024-01-20T14:00:00Z",
+  "reminder_time": "2024-01-20T14:00:00Z",
   "priority": "high",
   "is_completed": false,
   "created_at": "2024-01-15T10:00:00Z",
@@ -349,7 +349,7 @@ Authorization: Bearer <token>
 {
   "title": "Doctor appointment - Updated",
   "description": "Prenatal checkup with ultrasound",
-  "scheduled_time": "2024-01-20T15:00:00Z",
+  "reminder_time": "2024-01-20T15:00:00Z",
   "priority": "urgent",
   "is_completed": true
 }

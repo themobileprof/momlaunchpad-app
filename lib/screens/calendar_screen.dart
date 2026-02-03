@@ -293,39 +293,173 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
-    final diff = dateTime.difference(now);
+    final localDateTime = dateTime.toLocal();
+    final diff = localDateTime.difference(now);
     
     if (diff.inDays == 0) {
-      final hour = dateTime.hour.toString().padLeft(2, '0');
-      final minute = dateTime.minute.toString().padLeft(2, '0');
+      final hour = localDateTime.hour.toString().padLeft(2, '0');
+      final minute = localDateTime.minute.toString().padLeft(2, '0');
       return 'Today at $hour:$minute';
     } else if (diff.inDays == 1) {
-      final hour = dateTime.hour.toString().padLeft(2, '0');
-      final minute = dateTime.minute.toString().padLeft(2, '0');
+      final hour = localDateTime.hour.toString().padLeft(2, '0');
+      final minute = localDateTime.minute.toString().padLeft(2, '0');
       return 'Tomorrow at $hour:$minute';
     } else if (diff.inDays == -1) {
       return 'Yesterday';
     } else {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+      return '${localDateTime.day}/${localDateTime.month}/${localDateTime.year}';
     }
   }
 
   void _showAddReminderDialog() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Add reminder feature coming soon!'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.primaryPurple,
-      ),
-    );
+    _showReminderDialog();
   }
 
   void _showEditReminderDialog(Reminder reminder) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Edit reminder feature coming soon!'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.primaryPurple,
+    _showReminderDialog(reminder: reminder);
+  }
+
+  void _showReminderDialog({Reminder? reminder}) {
+    final titleController = TextEditingController(text: reminder?.title);
+    final descriptionController = TextEditingController(text: reminder?.description);
+    DateTime selectedDate = reminder?.scheduledTime.toLocal() ?? DateTime.now().add(const Duration(hours: 1));
+    String selectedPriority = reminder?.priority ?? 'medium';
+    
+    final isEditing = reminder != null;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(isEditing ? 'Edit Reminder' : 'Add Reminder'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Title',
+                    hintText: 'e.g., Doctor Appointment',
+                  ),
+                  textCapitalization: TextCapitalization.sentences,
+                ),
+                const SizedBox(height: AppSpacing.spaceMD),
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description (Optional)',
+                  ),
+                  textCapitalization: TextCapitalization.sentences,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: AppSpacing.spaceMD),
+                
+                // Date & Time Picker
+                InkWell(
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                    );
+                    if (date != null) {
+                      final time = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.fromDateTime(selectedDate),
+                      );
+                      if (time != null) {
+                        setState(() {
+                          selectedDate = DateTime(
+                            date.year,
+                            date.month,
+                            date.day,
+                            time.hour,
+                            time.minute,
+                          );
+                        });
+                      }
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Time',
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDateTime(selectedDate)),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.spaceMD),
+
+                // Priority Dropdown
+                DropdownButtonFormField<String>(
+                  value: selectedPriority,
+                  decoration: const InputDecoration(labelText: 'Priority'),
+                  items: const [
+                    DropdownMenuItem(value: 'low', child: Text('Low')),
+                    DropdownMenuItem(value: 'medium', child: Text('Medium')),
+                    DropdownMenuItem(value: 'high', child: Text('High')),
+                    DropdownMenuItem(value: 'urgent', child: Text('Urgent')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) setState(() => selectedPriority = value);
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (titleController.text.trim().isEmpty) return;
+
+                try {
+                  if (isEditing) {
+                    await ref.read(remindersProvider.notifier).updateReminder(
+                      id: reminder.id,
+                      title: titleController.text,
+                      description: descriptionController.text,
+                      scheduledTime: selectedDate,
+                      priority: selectedPriority,
+                    );
+                  } else {
+                    await ref.read(remindersProvider.notifier).addReminder(
+                      title: titleController.text,
+                      description: descriptionController.text,
+                      scheduledTime: selectedDate,
+                      priority: selectedPriority,
+                    );
+                  }
+                  if (context.mounted) Navigator.pop(context);
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to save: $e')),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryPink,
+                foregroundColor: Colors.white,
+              ),
+              child: Text(isEditing ? 'Save' : 'Add'),
+            ),
+          ],
+        ),
       ),
     );
   }

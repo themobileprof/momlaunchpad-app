@@ -167,7 +167,7 @@ class ApiService {
       body: jsonEncode({
         'title': title,
         if (description != null) 'description': description,
-        'scheduled_time': scheduledTime.toIso8601String(),
+        'reminder_time': scheduledTime.toUtc().toIso8601String(),
         'priority': priority,
       }),
     );
@@ -198,7 +198,7 @@ class ApiService {
         if (title != null) 'title': title,
         if (description != null) 'description': description,
         if (scheduledTime != null)
-          'scheduled_time': scheduledTime.toIso8601String(),
+          'reminder_time': scheduledTime.toUtc().toIso8601String(),
         if (priority != null) 'priority': priority,
         if (isCompleted != null) 'is_completed': isCompleted,
       }),
@@ -294,7 +294,7 @@ class ApiService {
       body: jsonEncode({
         'amount': amount,
         'description': description,
-        if (entryDate != null) 'entry_date': entryDate.toIso8601String(),
+        if (entryDate != null) 'entry_date': entryDate.toUtc().toIso8601String(),
       }),
     );
 
@@ -315,7 +315,7 @@ class ApiService {
       Uri.parse('$baseUrl/api/savings/edd'),
       headers: await _getHeaders(),
       body: jsonEncode({
-        'expected_delivery_date': edd?.toIso8601String(),
+        'expected_delivery_date': edd?.toUtc().toIso8601String(),
       }),
     );
 

@@ -96,8 +96,8 @@ class RemindersNotifier extends Notifier<RemindersState> {
     }
   }
 
-  /// Create new reminder
-  Future<void> createReminder({
+  /// Add new reminder
+  Future<void> addReminder({
     required String title,
     String? description,
     required DateTime scheduledTime,
