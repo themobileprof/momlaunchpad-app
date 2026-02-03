@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_calendar/table_calendar.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -16,134 +17,191 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
+  late DateTime _focusedDay;
+  late DateTime _selectedDay;
+
   @override
   void initState() {
     super.initState();
+    _focusedDay = DateTime.now();
+    _selectedDay = DateTime.now();
     Future.microtask(() => ref.read(remindersProvider.notifier).fetchReminders());
+  }
+
+  List<Reminder> _getRemindersForDay(DateTime day, List<Reminder> allReminders) {
+    return allReminders.where((reminder) {
+      final scheduled = reminder.scheduledTime.toLocal();
+      return scheduled.year == day.year &&
+          scheduled.month == day.month &&
+          scheduled.day == day.day;
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final remindersState = ref.watch(remindersProvider);
+    final remindersForSelectedDay = _getRemindersForDay(_selectedDay, remindersState.reminders);
 
     return Scaffold(
+      backgroundColor: AppColors.creamBackground,
       appBar: AppBar(
-        title: Text('Calendar', style: AppTypography.headingMedium),
-        actions: [
-          if (remindersState.reminders.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.filter_list_rounded),
-              onPressed: () => _showFilterBottomSheet(),
-              tooltip: 'Filter reminders',
+        title: Text('Calendar', style: AppTypography.headingLarge),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+      ),
+      body: Column(
+        children: [
+          _buildCalendar(remindersState.reminders),
+          const SizedBox(height: AppSpacing.spaceMD),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceLG),
+            child: Row(
+              children: [
+                Text(
+                  '${_selectedDay.day}/${_selectedDay.month}',
+                  style: AppTypography.headingMedium,
+                ),
+                const Spacer(),
+                if (remindersForSelectedDay.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.blushPrimary.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${remindersForSelectedDay.length} items',
+                      style: AppTypography.caption.copyWith(
+                          color: AppColors.textDark, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+              ],
             ),
+          ),
+          const SizedBox(height: AppSpacing.spaceSM),
+          Expanded(
+            child: _buildReminderList(remindersForSelectedDay, remindersState),
+          ),
         ],
       ),
-      body: _buildBody(remindersState),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddReminderDialog(),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Reminder'),
-        backgroundColor: AppColors.primaryPink,
-        foregroundColor: AppColors.white,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80.0), // Raise above floating navbar
+        child: NeumorphicButton(
+          borderRadius: 30,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          color: AppColors.blushPrimary,
+          onPressed: () => _showAddReminderDialog(initialDate: _selectedDay),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add_rounded, color: AppColors.textDark),
+              SizedBox(width: 8),
+              Text(
+                'Add Reminder',
+                style: AppTypography.button.copyWith(color: AppColors.textDark),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildBody(RemindersState state) {
+  Widget _buildCalendar(List<Reminder> allReminders) {
+    return Container(
+      margin: const EdgeInsets.all(AppSpacing.spaceMD),
+      padding: const EdgeInsets.only(bottom: AppSpacing.spaceMD),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowDark.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: TableCalendar<Reminder>(
+        firstDay: DateTime.now().subtract(const Duration(days: 365)),
+        lastDay: DateTime.now().add(const Duration(days: 365)),
+        focusedDay: _focusedDay,
+        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+        calendarFormat: CalendarFormat.month,
+        availableCalendarFormats: const {CalendarFormat.month: 'Month'},
+        headerStyle: HeaderStyle(
+          titleCentered: true,
+          titleTextStyle: AppTypography.headingMedium,
+          leftChevronIcon: Icon(Icons.chevron_left_rounded, color: AppColors.textDark),
+          rightChevronIcon: Icon(Icons.chevron_right_rounded, color: AppColors.textDark),
+        ),
+        calendarStyle: CalendarStyle(
+          outsideDaysVisible: false,
+          weekendTextStyle: TextStyle(color: AppColors.textMedium),
+          defaultTextStyle: TextStyle(color: AppColors.textDark),
+          selectedDecoration: const BoxDecoration(
+            color: AppColors.blushPrimary,
+            shape: BoxShape.circle,
+          ),
+          todayDecoration: BoxDecoration(
+            color: AppColors.blushPrimary.withOpacity(0.3),
+            shape: BoxShape.circle,
+          ),
+          markerDecoration: const BoxDecoration(
+            color: AppColors.lavenderSecondary,
+            shape: BoxShape.circle,
+          ),
+          markersMaxCount: 1,
+        ),
+        eventLoader: (day) => _getRemindersForDay(day, allReminders),
+        onDaySelected: (selectedDay, focusedDay) {
+          setState(() {
+            _selectedDay = selectedDay;
+            _focusedDay = focusedDay;
+          });
+        },
+        onPageChanged: (focusedDay) {
+          _focusedDay = focusedDay;
+        },
+      ),
+    );
+  }
+
+  Widget _buildReminderList(List<Reminder> reminders, RemindersState state) {
     if (state.isLoading) {
       return const LoadingState(message: 'Loading reminders...');
     }
 
-    if (state.error != null) {
-      return ErrorState(
-        title: 'Failed to load reminders',
-        description: state.error,
-        onRetry: () => ref.read(remindersProvider.notifier).fetchReminders(),
+    if (reminders.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.event_available_rounded, size: 64, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            Text(
+              'No reminders for this day',
+              style: TextStyle(color: Colors.grey[500], fontSize: 16),
+            ),
+          ],
+        ),
       );
     }
 
-    if (state.reminders.isEmpty) {
-      return EmptyState(
-        icon: Icons.calendar_today_outlined,
-        title: 'No reminders yet',
-        description: 'Chat with me to get personalized\nreminder suggestions for your pregnancy',
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: () => ref.read(remindersProvider.notifier).fetchReminders(),
-      color: AppColors.primaryPink,
-      child: ListView(
-        padding: const EdgeInsets.all(AppSpacing.spaceMD),
-        children: [
-          // Today's reminders
-          if (state.todayReminders.isNotEmpty) ...[
-            _buildSectionHeader(
-              'Today',
-              count: state.todayReminders.length,
-              color: AppColors.primaryPink,
-            ),
-            ...state.todayReminders.map(_buildReminderCard),
-            const SizedBox(height: AppSpacing.spaceLG),
-          ],
-
-          // Upcoming reminders
-          if (state.upcomingReminders.isNotEmpty) ...[
-            _buildSectionHeader(
-              'Upcoming',
-              count: state.upcomingReminders.length,
-              color: AppColors.primaryPurple,
-            ),
-            ...state.upcomingReminders.map(_buildReminderCard),
-          ],
-
-          // Past reminders (if any)
-          if (state.pastReminders.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.spaceLG),
-            _buildSectionHeader(
-              'Past',
-              count: state.pastReminders.length,
-              color: AppColors.textLight,
-            ),
-            ...state.pastReminders.map((r) => _buildReminderCard(r, isPast: true)),
-          ],
-
-          // Bottom padding for FAB
-          const SizedBox(height: 80),
-        ],
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.all(AppSpacing.spaceMD),
+      itemCount: reminders.length,
+      itemBuilder: (context, index) {
+        final reminder = reminders[index];
+        return _buildReminderCard(reminder);
+      },
     );
   }
 
-  Widget _buildSectionHeader(String title, {int? count, Color? color}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.spaceSM),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 20,
-            decoration: BoxDecoration(
-              color: color ?? AppColors.primaryPink,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.spaceSM),
-          Text(title, style: AppTypography.headingMedium),
-          if (count != null) ...[
-            const SizedBox(width: AppSpacing.spaceSM),
-            AppBadge(
-              label: count.toString(),
-              variant: AppBadgeVariant.secondary,
-              small: true,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReminderCard(Reminder reminder, {bool isPast = false}) {
+  Widget _buildReminderCard(Reminder reminder) {
+    bool isPast = reminder.scheduledTime.isBefore(DateTime.now()) && !reminder.isToday;
+    
     return Opacity(
       opacity: isPast ? 0.6 : 1.0,
       child: AppCard(
@@ -179,8 +237,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           ),
                         ),
                       ),
-                      if (!isPast)
-                        _buildPriorityBadge(reminder.priority),
+                      _buildPriorityBadge(reminder.priority),
                     ],
                   ),
                   if (reminder.description?.isNotEmpty == true) ...[
@@ -202,7 +259,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        _formatDateTime(reminder.scheduledTime),
+                        _formatTime(reminder.scheduledTime),
                         style: AppTypography.caption.copyWith(
                           fontSize: 12,
                           color: AppColors.textLight,
@@ -212,43 +269,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   ),
                 ],
               ),
-            ),
-            
-            // Actions
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: AppColors.textLight),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit_rounded, size: 18),
-                      SizedBox(width: 8),
-                      Text('Edit'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete_rounded, size: 18, color: AppColors.error),
-                      SizedBox(width: 8),
-                      Text('Delete', style: TextStyle(color: AppColors.error)),
-                    ],
-                  ),
-                ),
-              ],
-              onSelected: (value) {
-                if (value == 'edit') {
-                  _showEditReminderDialog(reminder);
-                } else if (value == 'delete') {
-                  _confirmDeleteReminder(reminder);
-                }
-              },
             ),
           ],
         ),
@@ -291,38 +311,42 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
   }
 
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
+  String _formatTime(DateTime dateTime) {
     final localDateTime = dateTime.toLocal();
-    final diff = localDateTime.difference(now);
-    
-    if (diff.inDays == 0) {
-      final hour = localDateTime.hour.toString().padLeft(2, '0');
-      final minute = localDateTime.minute.toString().padLeft(2, '0');
-      return 'Today at $hour:$minute';
-    } else if (diff.inDays == 1) {
-      final hour = localDateTime.hour.toString().padLeft(2, '0');
-      final minute = localDateTime.minute.toString().padLeft(2, '0');
-      return 'Tomorrow at $hour:$minute';
-    } else if (diff.inDays == -1) {
-      return 'Yesterday';
-    } else {
-      return '${localDateTime.day}/${localDateTime.month}/${localDateTime.year}';
-    }
+    final hour = localDateTime.hour.toString().padLeft(2, '0');
+    final minute = localDateTime.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
   }
 
-  void _showAddReminderDialog() {
-    _showReminderDialog();
+  void _showAddReminderDialog({DateTime? initialDate}) {
+    _showReminderDialog(initialDate: initialDate);
   }
 
   void _showEditReminderDialog(Reminder reminder) {
     _showReminderDialog(reminder: reminder);
   }
 
-  void _showReminderDialog({Reminder? reminder}) {
+  void _showReminderDialog({Reminder? reminder, DateTime? initialDate}) {
     final titleController = TextEditingController(text: reminder?.title);
     final descriptionController = TextEditingController(text: reminder?.description);
-    DateTime selectedDate = reminder?.scheduledTime.toLocal() ?? DateTime.now().add(const Duration(hours: 1));
+    
+    // Use initialDate (from selected calendar day) or reminder date or now + 1 hour
+    DateTime selectedDate = reminder?.scheduledTime.toLocal() ?? 
+                           initialDate ?? 
+                           DateTime.now().add(const Duration(hours: 1));
+                           
+    // If using initialDate (which is usually midnight), set default time to now's hour + 1
+    if (reminder == null && initialDate != null) {
+      final now = DateTime.now();
+      selectedDate = DateTime(
+        initialDate.year,
+        initialDate.month,
+        initialDate.day,
+        now.hour + 1,
+        0,
+      );
+    }
+                           
     String selectedPriority = reminder?.priority ?? 'medium';
     
     final isEditing = reminder != null;
@@ -392,7 +416,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(_formatDateTime(selectedDate)),
+                        Text('${selectedDate.day}/${selectedDate.month}/${selectedDate.year} ${_formatTime(selectedDate)}'),
                         const Icon(Icons.calendar_today, size: 20),
                       ],
                     ),
@@ -517,7 +541,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   const Icon(Icons.schedule_rounded, color: AppColors.primaryPurple),
                   const SizedBox(width: AppSpacing.spaceMD),
                   Text(
-                    _formatDateTime(reminder.scheduledTime),
+                    '${reminder.scheduledTime.day}/${reminder.scheduledTime.month}/${reminder.scheduledTime.year} • ${_formatTime(reminder.scheduledTime)}',
                     style: AppTypography.bodyText.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
@@ -613,15 +637,5 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         }
       }
     }
-  }
-
-  void _showFilterBottomSheet() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Filter feature coming soon!'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.primaryPurple,
-      ),
-    );
   }
 }

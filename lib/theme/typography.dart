@@ -1,39 +1,42 @@
 import 'package:flutter/material.dart';
 import 'colors.dart';
 
-/// Typography system - 2-3 font sizes maximum for visual hierarchy
+/// Typography system - Serene, clean, sans-serif
 class AppTypography {
   static const TextStyle headingLarge = TextStyle(
-    fontSize: 24,
-    fontWeight: FontWeight.w600,
+    fontSize: 32, // Larger header
+    fontWeight: FontWeight.w300, // Light weight
     color: AppColors.textDark,
-    height: 1.3,
+    height: 1.2,
+    letterSpacing: -0.5,
   );
 
   static const TextStyle headingMedium = TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.w500,
+    fontSize: 24,
+    fontWeight: FontWeight.w400, // Regular weight
     color: AppColors.textDark,
-    height: 1.4,
+    height: 1.3,
+    letterSpacing: -0.3,
   );
 
   static const TextStyle bodyText = TextStyle(
     fontSize: 16,
-    fontWeight: FontWeight.normal,
+    fontWeight: FontWeight.w300, // Light weight for airy feel
     color: AppColors.textDark,
-    height: 1.6,
+    height: 1.6, // Generous line height
   );
 
   static const TextStyle caption = TextStyle(
     fontSize: 14,
-    fontWeight: FontWeight.normal,
-    color: AppColors.textLight,
+    fontWeight: FontWeight.w300,
+    color: AppColors.textMedium,
     height: 1.5,
   );
 
   static const TextStyle button = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w500,
+    letterSpacing: 0.5,
     height: 1.2,
   );
 

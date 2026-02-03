@@ -33,14 +33,13 @@ class RemindersState {
       ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
   }
 
-  /// Get upcoming reminders (next 7 days)
+  /// Get upcoming reminders (future dates, excluding today)
   List<Reminder> get upcomingReminders {
     final now = DateTime.now();
-    final weekFromNow = now.add(const Duration(days: 7));
     return reminders
         .where((r) => 
             r.scheduledTime.isAfter(now) && 
-            r.scheduledTime.isBefore(weekFromNow) &&
+            !r.isToday && 
             !r.isCompleted
         )
         .toList()

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
+import '../widgets/widgets.dart'; // Import this to get GlassContainer
 import 'call_screen.dart';
 import 'conversation_list_screen.dart';
 import 'calendar_screen.dart';
@@ -105,6 +106,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.creamBackground,
+      extendBody: true, // Allow body to extend behind navbar
       body: PageView(
         controller: _pageController,
         onPageChanged: _onPageChanged,
@@ -116,35 +119,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.spaceSM,
-            vertical: AppSpacing.spaceSM,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(
-              _navItems.length,
-              (index) => _NavBarItem(
-                icon: _navItems[index].icon,
-                activeIcon: _navItems[index].activeIcon,
-                label: _navItems[index].label,
-                isSelected: _currentIndex == index,
-                onTap: () => _onNavTap(index),
-              ),
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.spaceMD),
+      child: GlassContainer(
+        blur: 15,
+        opacity: 0.8,
+        borderRadius: BorderRadius.circular(32),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.spaceSM,
+          vertical: AppSpacing.spaceSM,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(
+            _navItems.length,
+            (index) => _NavBarItem(
+              icon: _navItems[index].icon,
+              activeIcon: _navItems[index].activeIcon,
+              label: _navItems[index].label,
+              isSelected: _currentIndex == index,
+              onTap: () => _onNavTap(index),
             ),
           ),
         ),
@@ -182,9 +176,9 @@ class _NavBarItem extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primaryPink.withOpacity(0.1)
+              ? AppColors.blushPrimary.withOpacity(0.2)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -194,7 +188,7 @@ class _NavBarItem extends StatelessWidget {
               child: Icon(
                 isSelected ? activeIcon : icon,
                 key: ValueKey(isSelected),
-                color: isSelected ? AppColors.primaryPink : AppColors.textLight,
+                color: isSelected ? AppColors.textDark : AppColors.textMedium,
                 size: 24,
               ),
             ),
@@ -203,8 +197,8 @@ class _NavBarItem extends StatelessWidget {
               duration: const Duration(milliseconds: 200),
               style: TextStyle(
                 fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected ? AppColors.primaryPink : AppColors.textLight,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected ? AppColors.textDark : AppColors.textMedium,
               ),
               child: Text(label),
             ),

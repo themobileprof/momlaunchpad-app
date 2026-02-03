@@ -38,12 +38,13 @@ class AppCard extends StatelessWidget {
         border: variant == AppCardVariant.outlined
             ? Border.all(color: AppColors.textLight.withOpacity(0.2))
             : null,
-        boxShadow: variant == AppCardVariant.elevated
+          boxShadow: variant == AppCardVariant.elevated
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
+                  color: AppColors.shadowDark.withOpacity(0.08), // Much softer shadow
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                  spreadRadius: -2,
                 ),
               ]
             : null,
