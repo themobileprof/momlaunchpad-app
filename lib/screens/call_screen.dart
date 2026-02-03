@@ -11,6 +11,8 @@ import '../theme/typography.dart';
 import '../providers/chat_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/conversation_provider.dart';
+import '../widgets/widgets.dart';
+import 'dart:convert'; // For jsonDecode if used in local handlers
 
 /// Call screen - Voice-first interface with Phone Call aesthetic
 class CallScreen extends ConsumerStatefulWidget {
@@ -42,6 +44,7 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
   Timer? _callTimer;
   int _callDurationSeconds = 0;
   String? _currentConversationId;
+  String _callStatus = 'Ready';
 
   // UI Animations
   late AnimationController _pulseController;
@@ -116,52 +119,101 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
     }
   }
 
+  void _handleServerMessage(dynamic data) {
+    try {
+      final json = jsonDecode(data);
+      print('DEBUG: Parsing server message: ${json['type']}');
+      
+      if (json['type'] == 'message' || json['type'] == 'chunk') {
+        final content = json['content'] as String;
+        setState(() {
+           _lastAIResponse = content; // In real app, append for stream
+           _callStatus = 'AI Speaking...';
+        });
+        _speak(content);
+      } else if (json['type'] == 'done') {
+        print('DEBUG: AI finished generating response');
+        setState(() => _callStatus = 'Listening...');
+      }
+    } catch (e) {
+      print('DEBUG: Error handling server message: $e');
+    }
+  }
+
   Future<void> _initTts() async {
     await _flutterTts.setLanguage('en-US');
     await _flutterTts.setSpeechRate(0.5);
     
     _flutterTts.setStartHandler(() {
       if (_isListening) _speechToText.stop();
-      if (mounted) setState(() { _isSpeaking = true; _isListening = false; });
+      if (mounted) setState(() { _isSpeaking = true; _isListening = false; _callStatus = 'AI Speaking...'; }); // Updated status
     });
 
     _flutterTts.setCompletionHandler(() {
       if (mounted) setState(() => _isSpeaking = false);
       if (_isCallActive && !_isMuted) {
         Future.delayed(const Duration(milliseconds: 500), _startListening);
+        if (mounted) setState(() => _callStatus = 'Listening...'); // Updated status
       }
     });
 
     _flutterTts.setErrorHandler((msg) {
       if (mounted) setState(() => _isSpeaking = false);
+      print('DEBUG: TTS Error: $msg'); // Added debug print
     });
+  }
+
+  Future<void> _speak(String text) async {
+    if (text.isNotEmpty) {
+      print('DEBUG: TTS speaking: "$text"'); // Added debug print
+      await _flutterTts.speak(text);
+    }
   }
 
   // --- Call Logic ---
 
   Future<void> _startCall() async {
+    print('DEBUG: _startCall initiated');
+    setState(() => _callStatus = 'Initializing...');
+    
     final hasPermission = await Permission.microphone.request().isGranted;
-    if (!hasPermission) return;
+    if (!hasPermission) {
+      print('DEBUG: Microphone permission denied');
+      return;
+    }
 
     setState(() => _isCallActive = true);
     
     // 1. Create Conversation
     try {
+      print('DEBUG: Creating conversation for voice call...');
       final title = 'Voice Call ${DateFormat('MMM d, h:mm a').format(DateTime.now())}';
       final conversation = await ref.read(conversationProvider.notifier).createConversation(title);
       
-      if (conversation != null) {
-        _currentConversationId = conversation.id;
-        // 2. Connect WebSocket
-        await ref.read(chatProvider.notifier).connect(conversationId: conversation.id);
-        
-        // 3. Start Timer & Listening
-        _startTimer();
-        _startListening();
-      } else {
+      if (conversation == null) {
+        print('DEBUG: Failed to create conversation object');
         throw Exception('Failed to create conversation');
       }
+      print('DEBUG: Conversation created with ID: ${conversation.id}');
+
+      print('DEBUG: Conversation created with ID: ${conversation.id}');
+
+      setState(() {
+        _currentConversationId = conversation.id;
+        _callStatus = 'Connecting...';
+      });
+
+      // 2. Connect WebSocket via Provider
+      print('DEBUG: Connecting via ChatProvider...');
+      await ref.read(chatProvider.notifier).connect(conversationId: conversation.id);
+      print('DEBUG: ChatProvider connected');
+        
+      // 3. Start Timer & Listening
+      _startTimer();
+      _speak("Hello, I am Mom Launchpad AI. How can I help you today?");
+      // _startListening() will be triggered by _flutterTts.setCompletionHandler 
     } catch (e) {
+      print('DEBUG: Failed to start call: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to start call: $e')));
         _endCall();
@@ -170,6 +222,7 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
   }
 
   void _endCall() {
+    print('DEBUG: _endCall initiated');
     _cleanupCall();
     setState(() {
       _isCallActive = false;
@@ -283,10 +336,12 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
             style: TextStyle(color: Colors.white70),
           ),
           const SizedBox(height: 48),
-          AppButton(
-            label: 'Start Call',
-            onPressed: _startCall,
+          SizedBox(
             width: 200,
+            child: AppButton(
+              label: 'Start Call',
+              onPressed: _startCall,
+            ),
           ),
         ],
       ),
@@ -323,8 +378,8 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.grey[800],
-              image: const DecorationImage(
-                image: AssetImage('assets/images/ai_avatar_placeholder.png'), // Need to ensure asset exists or use icon
+              image: DecorationImage(
+                image: const AssetImage('assets/images/ai_avatar_placeholder.png'), // Need to ensure asset exists or use icon
                 fit: BoxFit.cover,
                 onError: (_, __) {}, // Fallback handled by child
               ),
@@ -406,7 +461,46 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
             ],
           ),
         ),
+        // Debug input for emulator
+        if (true) // In a real app check kDebugMode
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: TextButton(
+              onPressed: () => _showDebugInputDialog(),
+              child: const Text('Debug: Type Message (Emulator)', style: TextStyle(color: Colors.white24)),
+            ),
+          ),
       ],
+    );
+  }
+
+  void _showDebugInputDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Simulate Voice Input'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(hintText: 'Type what you want to say...'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              if (controller.text.isNotEmpty) {
+                 // Simulate recognition
+                 setState(() => _currentUtterance = controller.text);
+                 Future.delayed(const Duration(milliseconds: 500), () {
+                   _sendMessage(controller.text);
+                 });
+              }
+            },
+            child: const Text('Send'),
+          ),
+        ],
+      ),
     );
   }
 

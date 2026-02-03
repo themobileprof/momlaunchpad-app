@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../theme/spacing.dart';
@@ -25,45 +26,33 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
   }
 
   Future<void> _createNewConversation() async {
-    final titleController = TextEditingController();
+    print('DEBUG: _createNewConversation called');
+    final title = 'Chat ${DateFormat('MMM d, h:mm a').format(DateTime.now())}';
+    print('DEBUG: Generated title: $title');
     
-    final title = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('New Chat'),
-        content: TextField(
-          controller: titleController,
-          decoration: const InputDecoration(
-            hintText: 'Enter chat title',
-            labelText: 'Title',
-          ),
-          autofocus: true,
-          textCapitalization: TextCapitalization.sentences,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, titleController.text.trim()),
-            child: const Text('Create'),
-          ),
-        ],
-      ),
-    );
-
-    if (title != null && title.isNotEmpty) {
-      if (!mounted) return;
-      
+    try {
       final conversation = await ref.read(conversationProvider.notifier).createConversation(title);
+      print('DEBUG: createConversation result: $conversation');
+      
       if (conversation != null && mounted) {
-        Navigator.push(
+        print('DEBUG: Navigating to ChatScreen with ID: ${conversation.id}');
+        await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ChatScreen(conversationId: conversation.id, conversationTitle: conversation.title),
+            builder: (context) => ChatScreen(
+              conversationId: conversation.id, 
+              conversationTitle: conversation.title
+            ),
           ),
         );
+        print('DEBUG: Returned from ChatScreen');
+      } else {
+        print('DEBUG: Conversation is null or not mounted');
+      }
+    } catch (e) {
+      print('DEBUG: Error creating conversation: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -106,25 +95,7 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                           color: AppColors.error,
                           child: const Icon(Icons.delete, color: Colors.white),
                         ),
-                        confirmDismiss: (direction) async {
-                          return await showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Delete Conversation'),
-                              content: const Text('Are you sure you want to delete this chat?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
-                                  child: const Text('Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Delete', style: TextStyle(color: AppColors.error)),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                        confirmDismiss: (_) => _confirmDelete(context),
                         onDismissed: (_) {
                           ref.read(conversationProvider.notifier).deleteConversation(conversation.id);
                         },
@@ -155,7 +126,29 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                               'Started ${_formatDate(conversation.createdAt)}',
                               style: AppTypography.caption,
                             ),
-                            trailing: const Icon(Icons.chevron_right, color: AppColors.textLight),
+                            trailing: PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert, color: AppColors.textLight),
+                              onSelected: (value) async {
+                                if (value == 'delete') {
+                                  final confirm = await _confirmDelete(context);
+                                  if (confirm == true) {
+                                    ref.read(conversationProvider.notifier).deleteConversation(conversation.id);
+                                  }
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                                      SizedBox(width: 8),
+                                      Text('Delete', style: TextStyle(color: AppColors.error)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -177,6 +170,26 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
         onPressed: _createNewConversation,
         backgroundColor: AppColors.primaryPink,
         child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  Future<bool?> _confirmDelete(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Conversation'),
+        content: const Text('Are you sure you want to delete this chat?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
       ),
     );
   }

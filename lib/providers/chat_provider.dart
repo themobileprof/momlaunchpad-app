@@ -63,8 +63,12 @@ class ChatNotifier extends Notifier<ChatState> {
 
   /// Initialize chat with a specific conversation
   Future<void> initialize(String conversationId) async {
+    print('DEBUG: ChatNotifier.initialize for conversation: $conversationId');
     // If already initialized for this conversation, do nothing
-    if (state.currentConversationId == conversationId) return;
+    if (state.currentConversationId == conversationId) {
+       print('DEBUG: Already initialized for this conversation.');
+       return;
+    }
 
     // Reset state for new conversation
     state = ChatState(
@@ -77,7 +81,9 @@ class ChatNotifier extends Notifier<ChatState> {
 
     try {
       // Load existing messages
+      print('DEBUG: Loading messages for $conversationId...');
       final messages = await _conversationService.getMessages(conversationId);
+      print('DEBUG: Loaded ${messages.length} messages.');
       state = state.copyWith(
         messages: messages.reversed.toList(), // Assuming API returns newest first, or we adjust sort order
         isLoading: false,
@@ -87,6 +93,7 @@ class ChatNotifier extends Notifier<ChatState> {
       await connect(conversationId: conversationId);
       
     } catch (e) {
+      print('DEBUG: Error initializing chat: $e');
       state = state.copyWith(
         isLoading: false,
         error: 'Failed to load conversation: $e',
@@ -97,7 +104,9 @@ class ChatNotifier extends Notifier<ChatState> {
   /// Connect to WebSocket
   Future<void> connect({String? conversationId}) async {
     final id = conversationId ?? state.currentConversationId;
+    print('DEBUG: ChatNotifier.connect for ID: $id');
     await _wsService.connect(conversationId: id);
+    print('DEBUG: WebSocketService connected status: ${_wsService.isConnected}');
     state = state.copyWith(isConnected: _wsService.isConnected);
 
     // Listen to WebSocket messages
@@ -174,6 +183,8 @@ class ChatNotifier extends Notifier<ChatState> {
   void sendMessage(String content) {
     if (content.trim().isEmpty) return;
 
+    print('DEBUG: Sending message: "$content"');
+
     // Add user message to UI
     final userMessage = Message(
       id: DateTime.now().toString(),
@@ -191,6 +202,7 @@ class ChatNotifier extends Notifier<ChatState> {
 
     // Send to backend via WebSocket
     final sent = _wsService.sendMessage(content);
+    print('DEBUG: Message sent status: $sent');
     
     if (!sent) {
       state = state.copyWith(

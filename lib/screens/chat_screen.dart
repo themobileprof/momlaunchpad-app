@@ -36,11 +36,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    print('DEBUG: ChatScreen initialized for conversation: ${widget.conversationId}');
     _networkMonitor = NetworkMonitor(ref);
     _networkMonitor?.startMonitoring();
     
     // Initialize chat with specific conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('DEBUG: Calling chatProvider.initialize...');
       ref.read(chatProvider.notifier).initialize(widget.conversationId);
     });
   }
@@ -62,14 +64,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _connectWebSocket() async {
     if (_isConnected) return;
+    print('DEBUG: Manual WebSocket connect requested from ChatScreen');
     await ref.read(chatProvider.notifier).connect(conversationId: widget.conversationId);
   }
 
   void _sendMessage() async {
     final content = _messageController.text.trim();
     if (content.isEmpty) return;
+    
+    print('DEBUG: ChatScreen._sendMessage: "$content"');
 
     if (!ref.read(chatProvider).isConnected) {
+      print('DEBUG: Not connected, attempting to connect before sending...');
       await ref.read(chatProvider.notifier).connect(conversationId: widget.conversationId);
     }
 
@@ -97,6 +103,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     final chatState = ref.watch(chatProvider);
     _isConnected = chatState.isConnected;
+    
+    // print('DEBUG: ChatScreen build. Connected: $_isConnected, Messages: ${chatState.messages.length}');
 
     // Show calendar suggestion dialog when available (only once per suggestion)
     WidgetsBinding.instance.addPostFrameCallback((_) {

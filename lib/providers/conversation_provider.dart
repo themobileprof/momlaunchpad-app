@@ -53,7 +53,9 @@ class ConversationNotifier extends Notifier<ConversationState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final service = ref.read(conversationServiceProvider);
+      print('DEBUG: Calling service.createConversation...');
       final newConversation = await service.createConversation(title);
+      print('DEBUG: Service returned: ${newConversation.id}');
       
       state = state.copyWith(
         conversations: [newConversation, ...state.conversations],
@@ -61,6 +63,7 @@ class ConversationNotifier extends Notifier<ConversationState> {
       );
       return newConversation;
     } catch (e) {
+      print('DEBUG: Key Error in createConversation: $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
