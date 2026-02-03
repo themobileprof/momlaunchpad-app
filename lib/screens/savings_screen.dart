@@ -7,6 +7,7 @@ import '../theme/typography.dart';
 import '../models/savings_summary.dart';
 import '../models/savings_entry.dart';
 import '../providers/savings_provider.dart';
+import '../widgets/premium_upsell_dialog.dart';
 
 /// Savings screen with EDD, goal tracking, and entries
 class SavingsScreen extends ConsumerStatefulWidget {
@@ -65,15 +66,31 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: AppSpacing.spaceLG),
-                      ElevatedButton.icon(
-                        onPressed: () => ref.read(savingsProvider.notifier).fetchSavingsData(),
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryPink,
-                          foregroundColor: Colors.white,
+                      if (savingsState.error!.contains('premium subscription'))
+                        ElevatedButton.icon(
+                          onPressed: () {
+                             showDialog(
+                              context: context,
+                              builder: (context) => const PremiumUpsellDialog(featureName: 'Savings Tracker'),
+                            );
+                          },
+                          icon: const Icon(Icons.star),
+                          label: const Text('Upgrade'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryPurple,
+                            foregroundColor: Colors.white,
+                          ),
+                        )
+                      else
+                        ElevatedButton.icon(
+                          onPressed: () => ref.read(savingsProvider.notifier).fetchSavingsData(),
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryPink,
+                            foregroundColor: Colors.white,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 )

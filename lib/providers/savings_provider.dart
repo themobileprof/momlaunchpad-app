@@ -61,6 +61,11 @@ class SavingsNotifier extends Notifier<SavingsState> {
         isLoading: false,
         error: e.message,
       );
+    } on PremiumFeatureException catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,

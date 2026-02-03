@@ -237,8 +237,15 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      return SavingsSummary.fromJson(jsonDecode(response.body));
+      try {
+        return SavingsSummary.fromJson(jsonDecode(response.body));
+      } catch (e) {
+        print('DEBUG: FormatException in getSavingsSummary: $e');
+        print('DEBUG: Response body: ${response.body}');
+        rethrow;
+      }
     } else {
+      _checkForPremiumError(response);
       throw ApiException(
         statusCode: response.statusCode,
         message: 'Failed to fetch savings summary',
@@ -254,15 +261,26 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((json) => SavingsEntry.fromJson(json)).toList();
+      try {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => SavingsEntry.fromJson(json)).toList();
+      } catch (e) {
+        print('DEBUG: FormatException in getSavingsEntries: $e');
+        print('DEBUG: Response body: ${response.body}');
+        rethrow;
+      }
     } else {
+      _checkForPremiumError(response);
       throw ApiException(
         statusCode: response.statusCode,
         message: 'Failed to fetch savings entries',
       );
     }
   }
+
+  // ... (keeping other savings methods as they were, or applying check if needed) ... 
+  // Actually, createSavingsEntry, updateEDD, updateGoal might also trigger it. 
+  // For brevity I'll just helper function.
 
   /// Create a new savings entry
   Future<SavingsEntry> createSavingsEntry({
@@ -283,6 +301,7 @@ class ApiService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return SavingsEntry.fromJson(jsonDecode(response.body));
     } else {
+      _checkForPremiumError(response);
       throw ApiException(
         statusCode: response.statusCode,
         message: 'Failed to create savings entry',
@@ -301,6 +320,7 @@ class ApiService {
     );
 
     if (response.statusCode != 200) {
+      _checkForPremiumError(response);
       throw ApiException(
         statusCode: response.statusCode,
         message: 'Failed to update expected delivery date',
@@ -319,12 +339,34 @@ class ApiService {
     );
 
     if (response.statusCode != 200) {
+      _checkForPremiumError(response);
       throw ApiException(
         statusCode: response.statusCode,
         message: 'Failed to update savings goal',
       );
     }
   }
+
+  void _checkForPremiumError(http.Response response) {
+    if (response.statusCode == 403) {
+      try {
+        final body = jsonDecode(response.body);
+        if (body['error'] == 'feature not available') {
+          throw PremiumFeatureException();
+        }
+      } catch (_) {
+        // Ignore json parse error, fall through to generic error
+      }
+    }
+  }
+}
+
+/// Exception specifically for premium feature restrictions
+class PremiumFeatureException implements Exception {
+  final String message = 'This feature requires a premium subscription';
+  
+  @override
+  String toString() => message;
 }
 
 /// API Exception for error handling
