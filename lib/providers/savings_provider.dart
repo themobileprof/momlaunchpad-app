@@ -118,6 +118,17 @@ class SavingsNotifier extends Notifier<SavingsState> {
       rethrow;
     }
   }
+  /// Update savings currency
+  Future<void> updateCurrency(String currency) async {
+    try {
+      await _apiService.updateSavingsCurrency(currency);
+      // Refresh summary after update
+      await fetchSavingsData();
+    } on ApiException catch (e) {
+      state = state.copyWith(error: e.message);
+      rethrow;
+    }
+  }
 }
 
 /// Savings provider instance

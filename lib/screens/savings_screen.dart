@@ -8,6 +8,7 @@ import '../models/savings_summary.dart';
 import '../models/savings_entry.dart';
 import '../providers/savings_provider.dart';
 import '../widgets/premium_upsell_dialog.dart';
+import '../widgets/widgets.dart';
 
 /// Savings screen with EDD, goal tracking, and entries
 class SavingsScreen extends ConsumerStatefulWidget {
@@ -138,21 +139,30 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                               ),
                             )
                           else
-                            ...savingsState.entries.map((entry) => _buildEntryCard(entry)),
+                            ...savingsState.entries.map((entry) => _buildEntryCard(entry, summary.currency)),
                         ],
                       ),
                     ),
       floatingActionButton: summary != null
-          ? FloatingActionButton(
-              onPressed: () => _showAddEntryDialog(context),
-              child: const Icon(Icons.add),
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 80.0), // Raise above updated nav
+              child: NeumorphicButton(
+                onPressed: () => _showAddEntryDialog(context),
+                height: 56,
+                width: 56,
+                borderRadius: 28,
+                color: AppColors.primaryPink,
+                padding: EdgeInsets.zero,
+                child: const Icon(Icons.add_rounded, color: Colors.white),
+              ),
             )
           : null,
     );
   }
 
   Widget _buildSummaryCard(SavingsSummary summary) {
-    final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currencySymbol = _getCurrencySymbol(summary.currency);
+    final formatter = NumberFormat.currency(symbol: currencySymbol, decimalDigits: 2);
     
     return Card(
       elevation: 2,
@@ -237,8 +247,9 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     );
   }
 
-  Widget _buildEntryCard(SavingsEntry entry) {
-    final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+  Widget _buildEntryCard(SavingsEntry entry, String currency) {
+    final currencySymbol = _getCurrencySymbol(currency);
+    final formatter = NumberFormat.currency(symbol: currencySymbol, decimalDigits: 2);
     
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.spaceMD),
@@ -288,6 +299,10 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     final amountController = TextEditingController();
     final descriptionController = TextEditingController();
     
+    // Get current currency
+    final currency = ref.read(savingsProvider).summary?.currency ?? 'NGN';
+    final currencySymbol = _getCurrencySymbol(currency);
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -297,9 +312,9 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           children: [
             TextField(
               controller: amountController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Amount',
-                prefixText: '\$',
+                prefixText: currencySymbol,
               ),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
             ),
@@ -350,72 +365,125 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
   void _showSettingsDialog(BuildContext context) {
     final goalController = TextEditingController();
     DateTime? selectedDate;
+    String? selectedCurrency;
+    
+    // Get current values
+    final summary = ref.read(savingsProvider).summary;
+    if (summary != null) {
+      goalController.text = summary.savingsGoal.toString();
+      selectedDate = summary.expectedDeliveryDate;
+      selectedCurrency = summary.currency;
+    }
+    
+    // Helper for currency options
+    final currencies = {
+      'NGN': 'Nigerian Naira (₦)',
+      'USD': 'US Dollar (\$)',
+      'EUR': 'Euro (€)',
+      'GBP': 'British Pound (£)',
+    };
     
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Settings'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: goalController,
-              decoration: const InputDecoration(
-                labelText: 'Savings Goal',
-                prefixText: '\$',
-              ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Settings'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: goalController,
+                  decoration: InputDecoration(
+                    labelText: 'Savings Goal',
+                    prefixText: _getCurrencySymbol(selectedCurrency ?? 'NGN'),
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                ),
+                const SizedBox(height: AppSpacing.spaceMD),
+                
+                DropdownButtonFormField<String>(
+                  value: selectedCurrency,
+                  decoration: const InputDecoration(labelText: 'Currency'),
+                  items: currencies.entries.map((e) {
+                    return DropdownMenuItem(value: e.key, child: Text(e.value));
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) setState(() => selectedCurrency = value);
+                  },
+                ),
+                const SizedBox(height: AppSpacing.spaceMD),
+
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate ?? DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                    );
+                    if (date != null) {
+                      setState(() => selectedDate = date);
+                    }
+                  },
+                  icon: const Icon(Icons.calendar_today),
+                  label: Text(selectedDate != null 
+                    ? 'EDD: ${DateFormat('MMM dd, yyyy').format(selectedDate!)}'
+                    : 'Set Expected Delivery Date'
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: AppSpacing.spaceMD),
-            ElevatedButton.icon(
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
               onPressed: () async {
-                final date = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime.now().add(const Duration(days: 365)),
-                );
-                if (date != null) {
-                  selectedDate = date;
+                try {
+                  final goal = double.tryParse(goalController.text);
+                  
+                  // Update all changed fields
+                  if (goal != null && goal != summary?.savingsGoal) {
+                    await ref.read(savingsProvider.notifier).updateGoal(goal);
+                  }
+                  if (selectedDate != summary?.expectedDeliveryDate) {
+                    await ref.read(savingsProvider.notifier).updateEDD(selectedDate);
+                  }
+                  if (selectedCurrency != null && selectedCurrency != summary?.currency) {
+                    await ref.read(savingsProvider.notifier).updateCurrency(selectedCurrency!);
+                  }
+                  
+                  if (context.mounted) Navigator.pop(context);
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to update: $e')),
+                    );
+                  }
                 }
               },
-              icon: const Icon(Icons.calendar_today),
-              label: const Text('Set Expected Delivery Date'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryPink,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Save'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                final goal = double.tryParse(goalController.text);
-                if (goal != null) {
-                  await ref.read(savingsProvider.notifier).updateGoal(goal);
-                }
-                if (selectedDate != null) {
-                  await ref.read(savingsProvider.notifier).updateEDD(selectedDate);
-                }
-                if (context.mounted) Navigator.pop(context);
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to update: $e')),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryPink,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
+  }
+
+  String _getCurrencySymbol(String currencyCode) {
+    switch (currencyCode) {
+      case 'NGN': return '₦';
+      case 'USD': return '\$';
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      default: return currencyCode;
+    }
   }
 }

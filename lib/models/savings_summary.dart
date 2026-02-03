@@ -5,6 +5,7 @@ class SavingsSummary {
   final double totalSaved;
   final double progressPercentage;
   final int daysUntilDelivery;
+  final String currency;
 
   SavingsSummary({
     this.expectedDeliveryDate,
@@ -12,6 +13,7 @@ class SavingsSummary {
     required this.totalSaved,
     required this.progressPercentage,
     required this.daysUntilDelivery,
+    required this.currency,
   });
 
   factory SavingsSummary.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class SavingsSummary {
       totalSaved: (json['total_saved'] as num?)?.toDouble() ?? 0.0,
       progressPercentage: (json['progress_percentage'] as num?)?.toDouble() ?? 0.0,
       daysUntilDelivery: json['days_until_delivery'] as int? ?? 0,
+      currency: json['currency'] as String? ?? 'NGN',
     );
   }
 
@@ -34,6 +37,7 @@ class SavingsSummary {
       'total_saved': totalSaved,
       'progress_percentage': progressPercentage,
       'days_until_delivery': daysUntilDelivery,
+      'currency': currency,
     };
   }
 }

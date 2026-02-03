@@ -171,10 +171,17 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                     },
                   ),
                 ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _createNewConversation,
-        backgroundColor: AppColors.primaryPink,
-        child: const Icon(Icons.add, color: Colors.white),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80.0), // Raise above updated nav
+        child: NeumorphicButton(
+          onPressed: _createNewConversation,
+          height: 56,
+          width: 56,
+          borderRadius: 28,
+          color: AppColors.primaryPink,
+          padding: EdgeInsets.zero,
+          child: const Icon(Icons.add_rounded, color: Colors.white),
+        ),
       ),
     );
   }

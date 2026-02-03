@@ -316,7 +316,7 @@ Authorization: Bearer <token>
 {
   "title": "Doctor appointment",
   "description": "Prenatal checkup",
-  "reminder_time": "2024-01-20T14:00:00Z",
+  "scheduled_time": "2024-01-20T14:00:00Z",
   "priority": "high"
 }
 ```
@@ -328,7 +328,7 @@ Authorization: Bearer <token>
   "user_id": "uuid",
   "title": "Doctor appointment",
   "description": "Prenatal checkup",
-  "reminder_time": "2024-01-20T14:00:00Z",
+  "scheduled_time": "2024-01-20T14:00:00Z",
   "priority": "high",
   "is_completed": false,
   "created_at": "2024-01-15T10:00:00Z",
@@ -349,7 +349,7 @@ Authorization: Bearer <token>
 {
   "title": "Doctor appointment - Updated",
   "description": "Prenatal checkup with ultrasound",
-  "reminder_time": "2024-01-20T15:00:00Z",
+  "scheduled_time": "2024-01-20T15:00:00Z",
   "priority": "urgent",
   "is_completed": true
 }
@@ -394,6 +394,7 @@ Authorization: Bearer <token>
 {
   "expected_delivery_date": "2026-09-15T00:00:00Z",
   "savings_goal": 5000.00,
+  "currency": "NGN",
   "total_saved": 400.50,
   "progress_percentage": 8.01,
   "days_until_delivery": 254
@@ -501,6 +502,30 @@ Authorization: Bearer <token>
 ```json
 {
   "message": "Savings goal updated successfully"
+}
+```
+
+#### PUT /api/savings/currency
+Update savings currency (protected).
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Request:**
+```json
+{
+  "currency": "USD"
+}
+```
+
+**Note:** Supported currencies: `NGN`, `USD`.
+
+**Response:**
+```json
+{
+  "message": "Currency updated successfully"
 }
 ```
 

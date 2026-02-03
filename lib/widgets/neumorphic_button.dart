@@ -8,6 +8,8 @@ class NeumorphicButton extends StatefulWidget {
   final Color? color;
   final EdgeInsetsGeometry? padding;
   final double borderRadius;
+  final double? width;
+  final double? height;
 
   const NeumorphicButton({
     super.key,
@@ -16,6 +18,8 @@ class NeumorphicButton extends StatefulWidget {
     this.color,
     this.padding,
     this.borderRadius = 16,
+    this.width,
+    this.height,
   });
 
   @override
@@ -43,6 +47,8 @@ class _NeumorphicButtonState extends State<NeumorphicButton> {
       onPointerUp: _onPointerUp,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
+        width: widget.width,
+        height: widget.height,
         padding: widget.padding ?? const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
           color: color,

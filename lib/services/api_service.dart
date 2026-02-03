@@ -347,6 +347,25 @@ class ApiService {
     }
   }
 
+  /// Update savings currency
+  Future<void> updateSavingsCurrency(String currency) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/savings/currency'),
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        'currency': currency,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      _checkForPremiumError(response);
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: 'Failed to update savings currency',
+      );
+    }
+  }
+
   void _checkForPremiumError(http.Response response) {
     if (response.statusCode == 403) {
       try {
