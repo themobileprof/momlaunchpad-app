@@ -14,11 +14,14 @@ import 'storage_service.dart';
 class ApiService {
   final String baseUrl;
   final StorageService _storage;
+  final http.Client _http;
 
   ApiService({
     required this.baseUrl,
     required StorageService storage,
-  }) : _storage = storage;
+    http.Client? httpClient,
+  })  : _storage = storage,
+        _http = httpClient ?? http.Client();
 
   /// Get authorization header with JWT token
   Future<Map<String, String>> _getHeaders() async {
@@ -45,7 +48,7 @@ class ApiService {
     required String name,
     required String language,
   }) async {
-    final response = await http.post(
+    final response = await _http.post(
       Uri.parse('$baseUrl/api/auth/register'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
@@ -74,7 +77,7 @@ class ApiService {
     required String email,
     required String password,
   }) async {
-    final response = await http.post(
+    final response = await _http.post(
       Uri.parse('$baseUrl/api/auth/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
@@ -100,7 +103,7 @@ class ApiService {
   Future<AuthResponse> googleSignIn({
     required String idToken,
   }) async {
-    final response = await http.post(
+    final response = await _http.post(
       Uri.parse('$baseUrl/api/auth/google/token'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
@@ -123,7 +126,7 @@ class ApiService {
 
   /// Get current user info
   Future<User> getCurrentUser() async {
-    final response = await http.get(
+    final response = await _http.get(
       Uri.parse('$baseUrl/api/auth/me'),
       headers: await _getHeaders(),
     );
@@ -147,7 +150,7 @@ class ApiService {
 
   /// Get all reminders for current user
   Future<List<Reminder>> getReminders() async {
-    final response = await http.get(
+    final response = await _http.get(
       Uri.parse('$baseUrl/api/reminders'),
       headers: await _getHeaders(),
     );
@@ -169,7 +172,7 @@ class ApiService {
     required DateTime scheduledTime,
     required String priority,
   }) async {
-    final response = await http.post(
+    final response = await _http.post(
       Uri.parse('$baseUrl/api/reminders'),
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -199,7 +202,7 @@ class ApiService {
     String? priority,
     bool? isCompleted,
   }) async {
-    final response = await http.put(
+    final response = await _http.put(
       Uri.parse('$baseUrl/api/reminders/$id'),
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -222,7 +225,7 @@ class ApiService {
 
   /// Delete reminder
   Future<void> deleteReminder(String id) async {
-    final response = await http.delete(
+    final response = await _http.delete(
       Uri.parse('$baseUrl/api/reminders/$id'),
       headers: await _getHeaders(),
     );
@@ -239,7 +242,7 @@ class ApiService {
 
   /// Get savings summary with EDD, goal, and progress
   Future<SavingsSummary> getSavingsSummary() async {
-    final response = await http.get(
+    final response = await _http.get(
       Uri.parse('$baseUrl/api/savings/summary'),
       headers: await _getHeaders(),
     );
@@ -263,7 +266,7 @@ class ApiService {
 
   /// Get all savings entries for the current user
   Future<List<SavingsEntry>> getSavingsEntries() async {
-    final response = await http.get(
+    final response = await _http.get(
       Uri.parse('$baseUrl/api/savings/entries'),
       headers: await _getHeaders(),
     );
@@ -291,7 +294,7 @@ class ApiService {
     required String description,
     DateTime? entryDate,
   }) async {
-    final response = await http.post(
+    final response = await _http.post(
       Uri.parse('$baseUrl/api/savings/entries'),
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -314,7 +317,7 @@ class ApiService {
 
   /// Update expected delivery date
   Future<void> updateExpectedDeliveryDate(DateTime? edd) async {
-    final response = await http.put(
+    final response = await _http.put(
       Uri.parse('$baseUrl/api/savings/edd'),
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -333,7 +336,7 @@ class ApiService {
 
   /// Update savings goal
   Future<void> updateSavingsGoal(double goal) async {
-    final response = await http.put(
+    final response = await _http.put(
       Uri.parse('$baseUrl/api/savings/goal'),
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -352,7 +355,7 @@ class ApiService {
 
   /// Update savings currency
   Future<void> updateSavingsCurrency(String currency) async {
-    final response = await http.put(
+    final response = await _http.put(
       Uri.parse('$baseUrl/api/savings/currency'),
       headers: await _getHeaders(),
       body: jsonEncode({
