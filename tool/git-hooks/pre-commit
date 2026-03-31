@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Runs before each `git commit`. Skip with: git commit --no-verify
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+echo "pre-commit: flutter test"
+flutter test
+
+# Uncomment to also run the analyzer (may fail on infos depending on Flutter version):
+# echo "pre-commit: flutter analyze"
+# flutter analyze --no-fatal-infos
