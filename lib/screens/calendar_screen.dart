@@ -91,12 +91,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           borderRadius: 30,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           color: AppColors.blushPrimary,
-          onPressed: () => _showAddReminderDialog(initialDate: _selectedDay),
+          onPressed: () => _showReminderDialog(initialDate: _selectedDay),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.add_rounded, color: AppColors.textDark),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 'Add Reminder',
                 style: AppTypography.button.copyWith(color: AppColors.textDark),
@@ -205,7 +205,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Widget _buildReminderCard(Reminder reminder) {
-    bool isPast = reminder.scheduledTime.isBefore(DateTime.now()) && !reminder.isToday;
+    final isPast = reminder.scheduledTime.isBefore(DateTime.now()) && !reminder.isToday;
     
     return Opacity(
       opacity: isPast ? 0.6 : 1.0,
@@ -323,14 +323,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     return '$hour:$minute';
   }
 
-  void _showAddReminderDialog({DateTime? initialDate}) {
-    _showReminderDialog(initialDate: initialDate);
-  }
-
-  void _showEditReminderDialog(Reminder reminder) {
-    _showReminderDialog(reminder: reminder);
-  }
-
   void _showReminderDialog({Reminder? reminder, DateTime? initialDate}) {
     final titleController = TextEditingController(text: reminder?.title);
     final descriptionController = TextEditingController(text: reminder?.description);
@@ -394,22 +386,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       firstDate: DateTime.now().subtract(const Duration(days: 365)),
                       lastDate: DateTime.now().add(const Duration(days: 365)),
                     );
-                    if (date != null) {
-                      final time = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.fromDateTime(selectedDate),
-                      );
-                      if (time != null) {
-                        setState(() {
-                          selectedDate = DateTime(
-                            date.year,
-                            date.month,
-                            date.day,
-                            time.hour,
-                            time.minute,
-                          );
-                        });
-                      }
+                    if (date == null || !context.mounted) return;
+                    final time = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(selectedDate),
+                    );
+                    if (time != null) {
+                      setState(() {
+                        selectedDate = DateTime(
+                          date.year,
+                          date.month,
+                          date.day,
+                          time.hour,
+                          time.minute,
+                        );
+                      });
                     }
                   },
                   child: InputDecorator(
@@ -567,7 +558,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     icon: Icons.edit_rounded,
                     onPressed: () {
                       Navigator.pop(context);
-                      _showEditReminderDialog(reminder);
+                      _showReminderDialog(reminder: reminder);
                     },
                   ),
                 ),

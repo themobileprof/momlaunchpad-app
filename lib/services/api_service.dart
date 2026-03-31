@@ -1,4 +1,6 @@
 import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/auth_response.dart';
 import '../models/user.dart';
@@ -25,6 +27,13 @@ class ApiService {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     };
+  }
+
+  List<T> _mapJsonList<T>(String body, T Function(Map<String, dynamic> json) fromJson) {
+    final list = jsonDecode(body) as List<dynamic>;
+    return list
+        .map((e) => fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
   }
 
   // ============ AUTH ENDPOINTS ============
@@ -144,8 +153,7 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((json) => Reminder.fromJson(json)).toList();
+      return _mapJsonList(response.body, Reminder.fromJson);
     } else {
       throw ApiException(
         statusCode: response.statusCode,
@@ -240,8 +248,8 @@ class ApiService {
       try {
         return SavingsSummary.fromJson(jsonDecode(response.body));
       } catch (e) {
-        print('DEBUG: FormatException in getSavingsSummary: $e');
-        print('DEBUG: Response body: ${response.body}');
+        debugPrint('DEBUG: FormatException in getSavingsSummary: $e');
+        debugPrint('DEBUG: Response body: ${response.body}');
         rethrow;
       }
     } else {
@@ -262,11 +270,10 @@ class ApiService {
 
     if (response.statusCode == 200) {
       try {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => SavingsEntry.fromJson(json)).toList();
+        return _mapJsonList(response.body, SavingsEntry.fromJson);
       } catch (e) {
-        print('DEBUG: FormatException in getSavingsEntries: $e');
-        print('DEBUG: Response body: ${response.body}');
+        debugPrint('DEBUG: FormatException in getSavingsEntries: $e');
+        debugPrint('DEBUG: Response body: ${response.body}');
         rethrow;
       }
     } else {
@@ -277,10 +284,6 @@ class ApiService {
       );
     }
   }
-
-  // ... (keeping other savings methods as they were, or applying check if needed) ... 
-  // Actually, createSavingsEntry, updateEDD, updateGoal might also trigger it. 
-  // For brevity I'll just helper function.
 
   /// Create a new savings entry
   Future<SavingsEntry> createSavingsEntry({

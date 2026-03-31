@@ -22,6 +22,13 @@ class ConversationService {
     };
   }
 
+  List<T> _mapJsonList<T>(String body, T Function(Map<String, dynamic> json) fromJson) {
+    final list = jsonDecode(body) as List<dynamic>;
+    return list
+        .map((e) => fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
   Future<List<Conversation>> getConversations({int limit = 20, int offset = 0}) async {
     final response = await http.get(
       Uri.parse('$baseUrl/api/conversations?limit=$limit&offset=$offset'),
@@ -29,8 +36,7 @@ class ConversationService {
     );
 
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((json) => Conversation.fromJson(json)).toList();
+      return _mapJsonList(response.body, Conversation.fromJson);
     } else {
       throw ApiException(
         statusCode: response.statusCode,
@@ -111,8 +117,7 @@ class ConversationService {
     );
 
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((json) => Message.fromJson(json)).toList();
+      return _mapJsonList(response.body, Message.fromJson);
     } else {
       throw ApiException(
         statusCode: response.statusCode,

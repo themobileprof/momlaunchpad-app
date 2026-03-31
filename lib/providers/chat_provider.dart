@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/message.dart';
 import '../models/reminder.dart';
@@ -63,10 +64,10 @@ class ChatNotifier extends Notifier<ChatState> {
 
   /// Initialize chat with a specific conversation
   Future<void> initialize(String conversationId) async {
-    print('DEBUG: ChatNotifier.initialize for conversation: $conversationId');
+    debugPrint('DEBUG: ChatNotifier.initialize for conversation: $conversationId');
     // If already initialized for this conversation, do nothing
     if (state.currentConversationId == conversationId) {
-       print('DEBUG: Already initialized for this conversation.');
+       debugPrint('DEBUG: Already initialized for this conversation.');
        return;
     }
 
@@ -81,9 +82,9 @@ class ChatNotifier extends Notifier<ChatState> {
 
     try {
       // Load existing messages
-      print('DEBUG: Loading messages for $conversationId...');
+      debugPrint('DEBUG: Loading messages for $conversationId...');
       final messages = await _conversationService.getMessages(conversationId);
-      print('DEBUG: Loaded ${messages.length} messages.');
+      debugPrint('DEBUG: Loaded ${messages.length} messages.');
       state = state.copyWith(
         messages: messages.reversed.toList(), // Assuming API returns newest first, or we adjust sort order
         isLoading: false,
@@ -93,7 +94,7 @@ class ChatNotifier extends Notifier<ChatState> {
       await connect(conversationId: conversationId);
       
     } catch (e) {
-      print('DEBUG: Error initializing chat: $e');
+      debugPrint('DEBUG: Error initializing chat: $e');
       state = state.copyWith(
         isLoading: false,
         error: 'Failed to load conversation: $e',
@@ -104,9 +105,9 @@ class ChatNotifier extends Notifier<ChatState> {
   /// Connect to WebSocket
   Future<void> connect({String? conversationId}) async {
     final id = conversationId ?? state.currentConversationId;
-    print('DEBUG: ChatNotifier.connect for ID: $id');
+    debugPrint('DEBUG: ChatNotifier.connect for ID: $id');
     await _wsService.connect(conversationId: id);
-    print('DEBUG: WebSocketService connected status: ${_wsService.isConnected}');
+    debugPrint('DEBUG: WebSocketService connected status: ${_wsService.isConnected}');
     state = state.copyWith(isConnected: _wsService.isConnected);
 
     // Listen to WebSocket messages
@@ -116,52 +117,15 @@ class ChatNotifier extends Notifier<ChatState> {
 
   /// Handle incoming WebSocket messages
   void _handleMessage(WebSocketMessage wsMessage) {
-    print('ChatProvider received message: type=${wsMessage.type}, content=${wsMessage.content}');
-    
+    debugPrint('ChatProvider received message: type=${wsMessage.type}, content=${wsMessage.content}');
+
     switch (wsMessage.type) {
       case MessageType.message:
-        // Streaming AI response chunk
-        // Ensure there's an AI message to update
-        if (state.messages.isEmpty || state.messages.last.isUser) {
-          // Create new AI message if none exists - start fresh
-          final aiMessage = Message(
-            id: 'ai_${DateTime.now().millisecondsSinceEpoch}',
-            content: wsMessage.content ?? '',
-            isUser: false,
-            timestamp: DateTime.now(),
-            isStreaming: true,
-          );
-          state = state.copyWith(
-            messages: [...state.messages, aiMessage],
-            currentResponse: wsMessage.content ?? '', 
-          );
-        } else {
-          // Update existing AI message with new chunk
-          final updatedResponse = state.currentResponse + (wsMessage.content ?? '');
-          final updatedMessages = List<Message>.from(state.messages);
-          updatedMessages[updatedMessages.length - 1] = updatedMessages.last.copyWith(
-            content: updatedResponse,
-            isStreaming: true,
-          );
-          state = state.copyWith(
-            messages: updatedMessages,
-            currentResponse: updatedResponse,
-          );
-        }
+        _applyStreamingChunk(wsMessage.content);
         break;
 
       case MessageType.done:
-        // Response complete - finalize message
-        if (state.messages.isNotEmpty && !state.messages.last.isUser) {
-          final updatedMessages = List<Message>.from(state.messages);
-          updatedMessages[updatedMessages.length - 1] = updatedMessages.last.copyWith(
-            isStreaming: false,
-          );
-          state = state.copyWith(
-            messages: updatedMessages,
-            currentResponse: '', // Reset for next message
-          );
-        }
+        _finalizeStreamingAiMessage();
         break;
 
       case MessageType.calendar:
@@ -179,11 +143,52 @@ class ChatNotifier extends Notifier<ChatState> {
     }
   }
 
+  void _applyStreamingChunk(String? chunk) {
+    final piece = chunk ?? '';
+    if (state.messages.isEmpty || state.messages.last.isUser) {
+      final aiMessage = Message(
+        id: 'ai_${DateTime.now().millisecondsSinceEpoch}',
+        content: piece,
+        isUser: false,
+        timestamp: DateTime.now(),
+        isStreaming: true,
+      );
+      state = state.copyWith(
+        messages: [...state.messages, aiMessage],
+        currentResponse: piece,
+      );
+      return;
+    }
+
+    final updatedResponse = state.currentResponse + piece;
+    final updatedMessages = List<Message>.from(state.messages);
+    updatedMessages[updatedMessages.length - 1] = updatedMessages.last.copyWith(
+      content: updatedResponse,
+      isStreaming: true,
+    );
+    state = state.copyWith(
+      messages: updatedMessages,
+      currentResponse: updatedResponse,
+    );
+  }
+
+  void _finalizeStreamingAiMessage() {
+    if (state.messages.isEmpty || state.messages.last.isUser) return;
+    final updatedMessages = List<Message>.from(state.messages);
+    updatedMessages[updatedMessages.length - 1] = updatedMessages.last.copyWith(
+      isStreaming: false,
+    );
+    state = state.copyWith(
+      messages: updatedMessages,
+      currentResponse: '',
+    );
+  }
+
   /// Send message to backend
   void sendMessage(String content) {
     if (content.trim().isEmpty) return;
 
-    print('DEBUG: Sending message: "$content"');
+    debugPrint('DEBUG: Sending message: "$content"');
 
     // Add user message to UI
     final userMessage = Message(
@@ -202,7 +207,7 @@ class ChatNotifier extends Notifier<ChatState> {
 
     // Send to backend via WebSocket
     final sent = _wsService.sendMessage(content);
-    print('DEBUG: Message sent status: $sent');
+    debugPrint('DEBUG: Message sent status: $sent');
     
     if (!sent) {
       state = state.copyWith(

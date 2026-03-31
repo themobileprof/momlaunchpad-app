@@ -26,16 +26,16 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
   }
 
   Future<void> _createNewConversation() async {
-    print('DEBUG: _createNewConversation called');
+    debugPrint('DEBUG: _createNewConversation called');
     final title = 'Chat ${DateFormat('MMM d, h:mm a').format(DateTime.now())}';
-    print('DEBUG: Generated title: $title');
+    debugPrint('DEBUG: Generated title: $title');
     
     try {
       final conversation = await ref.read(conversationProvider.notifier).createConversation(title);
-      print('DEBUG: createConversation result: $conversation');
+      debugPrint('DEBUG: createConversation result: $conversation');
       
       if (conversation != null && mounted) {
-        print('DEBUG: Navigating to ChatScreen with ID: ${conversation.id}');
+        debugPrint('DEBUG: Navigating to ChatScreen with ID: ${conversation.id}');
         await Navigator.push(
           context,
           MaterialPageRoute(
@@ -45,12 +45,12 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
             ),
           ),
         );
-        print('DEBUG: Returned from ChatScreen');
+        debugPrint('DEBUG: Returned from ChatScreen');
       } else {
-        print('DEBUG: Conversation is null or not mounted');
+        debugPrint('DEBUG: Conversation is null or not mounted');
       }
     } catch (e) {
-      print('DEBUG: Error creating conversation: $e');
+      debugPrint('DEBUG: Error creating conversation: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
@@ -68,109 +68,7 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
         elevation: 0,
         backgroundColor: Colors.white,
       ),
-      body: state.isLoading && state.conversations.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : state.conversations.isEmpty
-              ? EmptyState(
-                  icon: Icons.chat_bubble_outline,
-                  title: 'No conversations yet',
-                  description: 'Start a new chat to track your journey.',
-                  actionLabel: 'New Chat',
-                  onAction: _createNewConversation,
-                )
-              :  RefreshIndicator(
-                  onRefresh: () => ref.read(conversationProvider.notifier).loadConversations(),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.only(
-                      top: AppSpacing.spaceMD,
-                      left: AppSpacing.spaceMD,
-                      right: AppSpacing.spaceMD,
-                      bottom: 120, // Space for floating navbar
-                    ),
-                    itemCount: state.conversations.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.spaceSM),
-                    itemBuilder: (context, index) {
-                      final conversation = state.conversations[index];
-                      return Dismissible(
-                        key: Key(conversation.id),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: AppSpacing.spaceMD),
-                          color: AppColors.error,
-                          child: const Icon(Icons.delete, color: Colors.white),
-                        ),
-                        confirmDismiss: (_) => _confirmDelete(context),
-                        onDismissed: (_) {
-                          ref.read(conversationProvider.notifier).deleteConversation(conversation.id);
-                        },
-                        child: Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
-                            side: BorderSide(color: AppColors.textLight.withOpacity(0.1)),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.spaceMD,
-                              vertical: AppSpacing.spaceSM,
-                            ),
-                            leading: Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryPink.withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.chat_bubble_rounded, color: AppColors.primaryPink, size: 20),
-                            ),
-                            title: Text(
-                              conversation.title.isNotEmpty ? conversation.title : 'Untitled Chat',
-                              style: AppTypography.bodyText.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                            subtitle: Text(
-                              'Started ${_formatDate(conversation.createdAt)}',
-                              style: AppTypography.caption,
-                            ),
-                            trailing: PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert, color: AppColors.textLight),
-                              onSelected: (value) async {
-                                if (value == 'delete') {
-                                  final confirm = await _confirmDelete(context);
-                                  if (confirm == true) {
-                                    ref.read(conversationProvider.notifier).deleteConversation(conversation.id);
-                                  }
-                                }
-                              },
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'delete',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.delete_outline, color: AppColors.error, size: 20),
-                                      SizedBox(width: 8),
-                                      Text('Delete', style: TextStyle(color: AppColors.error)),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ChatScreen(
-                                    conversationId: conversation.id,
-                                    conversationTitle: conversation.title,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+      body: _buildBody(state),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 80.0), // Raise above updated nav
         child: NeumorphicButton(
@@ -182,6 +80,114 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
           padding: EdgeInsets.zero,
           child: const Icon(Icons.add_rounded, color: Colors.white),
         ),
+      ),
+    );
+  }
+
+  Widget _buildBody(ConversationState state) {
+    if (state.isLoading && state.conversations.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (state.conversations.isEmpty) {
+      return EmptyState(
+        icon: Icons.chat_bubble_outline,
+        title: 'No conversations yet',
+        description: 'Start a new chat to track your journey.',
+        actionLabel: 'New Chat',
+        onAction: _createNewConversation,
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: () => ref.read(conversationProvider.notifier).loadConversations(),
+      child: ListView.separated(
+        padding: const EdgeInsets.only(
+          top: AppSpacing.spaceMD,
+          left: AppSpacing.spaceMD,
+          right: AppSpacing.spaceMD,
+          bottom: 120, // Space for floating navbar
+        ),
+        itemCount: state.conversations.length,
+        separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.spaceSM),
+        itemBuilder: (context, index) {
+          final conversation = state.conversations[index];
+          return Dismissible(
+            key: Key(conversation.id),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: AppSpacing.spaceMD),
+              color: AppColors.error,
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+            confirmDismiss: (_) => _confirmDelete(context),
+            onDismissed: (_) {
+              ref.read(conversationProvider.notifier).deleteConversation(conversation.id);
+            },
+            child: Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
+                side: BorderSide(color: AppColors.textLight.withOpacity(0.1)),
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.spaceMD,
+                  vertical: AppSpacing.spaceSM,
+                ),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryPink.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.chat_bubble_rounded, color: AppColors.primaryPink, size: 20),
+                ),
+                title: Text(
+                  conversation.title.isNotEmpty ? conversation.title : 'Untitled Chat',
+                  style: AppTypography.bodyText.copyWith(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  'Started ${_formatDate(conversation.createdAt)}',
+                  style: AppTypography.caption,
+                ),
+                trailing: PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, color: AppColors.textLight),
+                  onSelected: (value) async {
+                    if (value == 'delete') {
+                      final confirm = await _confirmDelete(context);
+                      if (confirm == true) {
+                        ref.read(conversationProvider.notifier).deleteConversation(conversation.id);
+                      }
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                          SizedBox(width: 8),
+                          Text('Delete', style: TextStyle(color: AppColors.error)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatScreen(
+                        conversationId: conversation.id,
+                        conversationTitle: conversation.title,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        },
       ),
     );
   }

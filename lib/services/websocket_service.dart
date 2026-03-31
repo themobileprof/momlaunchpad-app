@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/message.dart';
 import 'storage_service.dart';
@@ -17,6 +19,7 @@ class WebSocketService {
   bool _isConnecting = false; // Prevent duplicate connection attempts
   int _reconnectAttempts = 0;
   static const int _maxReconnectAttempts = 5;
+  static const int _reconnectDelaySecondsPerAttempt = 3;
   DateTime? _lastConnectionAttempt;
 
   // Rate limiting (10 messages per minute)
@@ -39,7 +42,7 @@ class WebSocketService {
   Future<void> connect({String? conversationId}) async {
     // Prevent duplicate connection attempts
     if (_isConnecting || _isConnected) {
-      print('Connection already in progress or connected');
+      debugPrint('Connection already in progress or connected');
       return;
     }
 
@@ -47,7 +50,7 @@ class WebSocketService {
     if (_lastConnectionAttempt != null) {
       final timeSinceLastAttempt = DateTime.now().difference(_lastConnectionAttempt!);
       if (timeSinceLastAttempt < const Duration(seconds: 5)) {
-        print('Too soon to reconnect. Wait ${5 - timeSinceLastAttempt.inSeconds} more seconds');
+        debugPrint('Too soon to reconnect. Wait ${5 - timeSinceLastAttempt.inSeconds} more seconds');
         return;
       }
     }
@@ -70,7 +73,7 @@ class WebSocketService {
       
       final uri = baseUri.replace(queryParameters: queryParams);
       
-      print('Connecting to WebSocket: $uri');
+      debugPrint('Connecting to WebSocket: $uri');
       _channel = WebSocketChannel.connect(uri);
       _isConnected = true;
       _isConnecting = false;
@@ -84,9 +87,9 @@ class WebSocketService {
         cancelOnError: false,
       );
 
-      print('WebSocket connected');
+      debugPrint('WebSocket connected');
     } catch (e) {
-      print('WebSocket connection error: $e');
+      debugPrint('WebSocket connection error: $e');
       _isConnected = false;
       _isConnecting = false;
       _attemptReconnect();
@@ -94,29 +97,29 @@ class WebSocketService {
   }
 
   /// Handle incoming WebSocket messages
-  void _handleIncomingMessage(dynamic data) {
+  void _handleIncomingMessage(Object? data) {
     try {
-      print('Received raw WebSocket data: $data');
+      debugPrint('Received raw WebSocket data: $data');
       final json = jsonDecode(data as String) as Map<String, dynamic>;
-      print('Parsed JSON: $json');
+      debugPrint('Parsed JSON: $json');
       final message = WebSocketMessage.fromJson(json);
-      print('WebSocket message type: ${message.type}, content: ${message.content}');
+      debugPrint('WebSocket message type: ${message.type}, content: ${message.content}');
       _messageController?.add(message);
     } catch (e) {
-      print('Error parsing WebSocket message: $e');
+      debugPrint('Error parsing WebSocket message: $e');
     }
   }
 
   /// Handle WebSocket errors
-  void _handleError(dynamic error) {
-    print('WebSocket error: $error');
+  void _handleError(Object? error) {
+    debugPrint('WebSocket error: $error');
     _isConnected = false;
     _attemptReconnect();
   }
 
   /// Handle WebSocket disconnection
   void _handleDisconnect() {
-    print('WebSocket disconnected');
+    debugPrint('WebSocket disconnected');
     _isConnected = false;
     
     if (_shouldReconnect) {
@@ -127,7 +130,7 @@ class WebSocketService {
   /// Attempt to reconnect with exponential backoff
   void _attemptReconnect() {
     if (_reconnectAttempts >= _maxReconnectAttempts) {
-      print('Max reconnect attempts reached');
+      debugPrint('Max reconnect attempts reached');
       _messageController?.add(WebSocketMessage(
         type: MessageType.error,
         message: 'Connection lost. Please check your internet and try again.',
@@ -136,9 +139,9 @@ class WebSocketService {
     }
 
     _reconnectAttempts++;
-    final delay = Duration(seconds: _reconnectAttempts * 3); // 3, 6, 9, 12, 15 seconds
+    final delay = Duration(seconds: _reconnectAttempts * _reconnectDelaySecondsPerAttempt);
     
-    print('Reconnecting in ${delay.inSeconds} seconds... (attempt $_reconnectAttempts/$_maxReconnectAttempts)');
+    debugPrint('Reconnecting in ${delay.inSeconds} seconds... (attempt $_reconnectAttempts/$_maxReconnectAttempts)');
     
     Timer(delay, () {
       if (_shouldReconnect) {
@@ -151,12 +154,12 @@ class WebSocketService {
   /// Returns false if rate limited
   bool sendMessage(String content) {
     if (!_isConnected) {
-      print('Cannot send message: WebSocket not connected');
+      debugPrint('Cannot send message: WebSocket not connected');
       return false;
     }
 
     if (!canSendMessage()) {
-      print('Rate limit exceeded');
+      debugPrint('Rate limit exceeded');
       _messageController?.add(WebSocketMessage(
         type: MessageType.error,
         message: 'You\'re sending messages too quickly. Please wait a moment.',
@@ -166,14 +169,14 @@ class WebSocketService {
 
     try {
       final message = jsonEncode({'content': content});
-      print('Sending message to WebSocket: $message');
+      debugPrint('Sending message to WebSocket: $message');
       _channel!.sink.add(message);
       _messageCount++;
       _lastMessageTime = DateTime.now();
-      print('Message sent successfully');
+      debugPrint('Message sent successfully');
       return true;
     } catch (e) {
-      print('Error sending message: $e');
+      debugPrint('Error sending message: $e');
       return false;
     }
   }

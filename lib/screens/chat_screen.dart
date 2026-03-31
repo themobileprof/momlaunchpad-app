@@ -8,6 +8,7 @@ import '../providers/service_providers.dart';
 import '../services/network_monitor.dart';
 import '../widgets/widgets.dart';
 import '../models/reminder.dart';
+import '../models/message.dart';
 import '../models/conversation_group.dart';
 
 /// Chat screen - Primary text-based chat feature
@@ -29,20 +30,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _inputFocusNode = FocusNode();
-  bool _isConnected = false;
   NetworkMonitor? _networkMonitor;
   String? _lastShownSuggestionId; // Track which suggestion was shown
 
   @override
   void initState() {
     super.initState();
-    print('DEBUG: ChatScreen initialized for conversation: ${widget.conversationId}');
+    debugPrint('DEBUG: ChatScreen initialized for conversation: ${widget.conversationId}');
     _networkMonitor = NetworkMonitor(ref);
     _networkMonitor?.startMonitoring();
     
     // Initialize chat with specific conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print('DEBUG: Calling chatProvider.initialize...');
+      debugPrint('DEBUG: Calling chatProvider.initialize...');
       ref.read(chatProvider.notifier).initialize(widget.conversationId);
     });
   }
@@ -62,9 +62,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.dispose();
   }
 
-  void _connectWebSocket() async {
-    if (_isConnected) return;
-    print('DEBUG: Manual WebSocket connect requested from ChatScreen');
+  Future<void> _connectWebSocket() async {
+    if (ref.read(chatProvider).isConnected) return;
+    debugPrint('DEBUG: Manual WebSocket connect requested from ChatScreen');
     await ref.read(chatProvider.notifier).connect(conversationId: widget.conversationId);
   }
 
@@ -72,10 +72,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final content = _messageController.text.trim();
     if (content.isEmpty) return;
     
-    print('DEBUG: ChatScreen._sendMessage: "$content"');
+    debugPrint('DEBUG: ChatScreen._sendMessage: "$content"');
 
     if (!ref.read(chatProvider).isConnected) {
-      print('DEBUG: Not connected, attempting to connect before sending...');
+      debugPrint('DEBUG: Not connected, attempting to connect before sending...');
       await ref.read(chatProvider.notifier).connect(conversationId: widget.conversationId);
     }
 
@@ -102,9 +102,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final chatState = ref.watch(chatProvider);
-    _isConnected = chatState.isConnected;
-    
-    // print('DEBUG: ChatScreen build. Connected: $_isConnected, Messages: ${chatState.messages.length}');
 
     // Show calendar suggestion dialog when available (only once per suggestion)
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -451,10 +448,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   // Helper methods for conversation grouping
 
-  int _calculateListItemCount(List messages) {
+  int _calculateListItemCount(List<Message> messages) {
     if (messages.isEmpty) return 0;
-    
-    final groups = groupMessagesByConversation(messages.cast());
+
+    final groups = groupMessagesByConversation(messages);
     int count = 0;
     
     for (final group in groups) {
@@ -465,8 +462,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return count;
   }
 
-  Widget _buildGroupedMessage(BuildContext context, List messages, int flatIndex) {
-    final groups = groupMessagesByConversation(messages.cast());
+  Widget _buildGroupedMessage(BuildContext context, List<Message> messages, int flatIndex) {
+    final groups = groupMessagesByConversation(messages);
     
     int currentIndex = 0;
     

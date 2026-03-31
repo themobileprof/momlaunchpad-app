@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user.dart';
@@ -39,6 +40,11 @@ class AuthNotifier extends Notifier<AuthState> {
   late final ApiService _apiService;
   late final StorageService _storageService;
 
+  static bool _looksLikeConnectionFailure(Object e) {
+    final s = e.toString();
+    return s.contains('Failed host lookup') || s.contains('Connection refused');
+  }
+
   @override
   AuthState build() {
     _apiService = ref.read(apiServiceProvider);
@@ -61,7 +67,7 @@ class AuthNotifier extends Notifier<AuthState> {
         state = AuthState(isLoggedIn: false);
       }
     } catch (e) {
-      print('Login check error: $e');
+      debugPrint('Login check error: $e');
       state = AuthState(isLoggedIn: false);
     }
   }
@@ -93,18 +99,17 @@ class AuthNotifier extends Notifier<AuthState> {
         isLoading: false,
         error: e.message,
       );
-      print('Registration API error: ${e.message}');
+      debugPrint('Registration API error: ${e.message}');
       rethrow;
     } catch (e) {
-      final errorMsg = e.toString().contains('Failed host lookup') || 
-                       e.toString().contains('Connection refused')
+      final errorMsg = _looksLikeConnectionFailure(e)
           ? 'Unable to connect to server. Please check your internet connection.'
           : 'Registration failed. Please try again.';
       state = state.copyWith(
         isLoading: false,
         error: errorMsg,
       );
-      print('Registration error: $e');
+      debugPrint('Registration error: $e');
       rethrow;
     }
   }
@@ -121,11 +126,11 @@ class AuthNotifier extends Notifier<AuthState> {
         email: email,
         password: password,
       );
-      
-      print('🔍 Login response - User name: ${authResponse.user.name}');
-      print('🔍 Login response - User email: ${authResponse.user.email}');
-      print('🔍 Login response - User ID: ${authResponse.user.id}');
-      
+
+      debugPrint('Login response - User name: ${authResponse.user.name}');
+      debugPrint('Login response - User email: ${authResponse.user.email}');
+      debugPrint('Login response - User ID: ${authResponse.user.id}');
+
       state = AuthState(
         user: authResponse.user,
         isLoggedIn: true,
@@ -136,18 +141,17 @@ class AuthNotifier extends Notifier<AuthState> {
         isLoading: false,
         error: e.message,
       );
-      print('Login API error: ${e.message}');
+      debugPrint('Login API error: ${e.message}');
       rethrow;
     } catch (e) {
-      final errorMsg = e.toString().contains('Failed host lookup') || 
-                       e.toString().contains('Connection refused')
+      final errorMsg = _looksLikeConnectionFailure(e)
           ? 'Unable to connect to server. Please check your internet connection.'
           : 'Login failed. Please check your credentials.';
       state = state.copyWith(
         isLoading: false,
         error: errorMsg,
       );
-      print('Login error: $e');
+      debugPrint('Login error: $e');
       rethrow;
     }
   }
@@ -198,18 +202,17 @@ class AuthNotifier extends Notifier<AuthState> {
         isLoading: false,
         error: e.message,
       );
-      print('Google Sign-In API error: ${e.message}');
+      debugPrint('Google Sign-In API error: ${e.message}');
       rethrow;
     } catch (e) {
-      final errorMsg = e.toString().contains('Failed host lookup') || 
-                       e.toString().contains('Connection refused')
+      final errorMsg = _looksLikeConnectionFailure(e)
           ? 'Unable to connect to server. Please check your internet connection.'
           : 'Google sign-in failed. Please try again.';
       state = state.copyWith(
         isLoading: false,
         error: errorMsg,
       );
-      print('Google Sign-In error: $e');
+      debugPrint('Google Sign-In error: $e');
       rethrow;
     }
   }
@@ -226,7 +229,7 @@ class AuthNotifier extends Notifier<AuthState> {
       final user = await _apiService.getCurrentUser();
       state = state.copyWith(user: user);
     } catch (e) {
-      print('Error refreshing user: $e');
+      debugPrint('Error refreshing user: $e');
     }
   }
 }

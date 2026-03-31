@@ -4,6 +4,7 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../providers/auth_provider.dart';
+import '../models/user.dart';
 import '../widgets/widgets.dart';
 import 'symptom_stats_screen.dart';
 
@@ -143,7 +144,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileCard(dynamic user) {
+  Widget _buildProfileCard(User? user) {
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.spaceLG),
       child: Row(

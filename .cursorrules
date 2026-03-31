@@ -1,0 +1,43 @@
+# MomLaunchpad (Flutter / Dart) — project rules
+
+Stack: Flutter, Riverpod, `http`, WebSockets, `lib/` layout (screens, widgets, providers, services, models, theme, config).
+
+**Quick refactor audit (run from repo root):** `bash tool/refactor_check.sh` — runs `flutter analyze`, lists the largest `lib/` Dart files, and prints `dynamic` usages outside `lib/models/` for manual review.
+
+---
+
+## Project code review standards (always apply)
+
+After any implementation or code changes, review and simplify the modified code for:
+
+### Structure and size
+
+- **Long or multi-purpose units** → split *procedural* logic (parsing, branching, I/O, state updates) into smaller, single-responsibility methods or private helpers. Do **not** use a raw line count: long `build` trees are normal in Flutter—extract **named subwidgets** or private `Widget _foo(...)` helpers when it improves structure or reuse, not to hit an arbitrary length.
+- **Deep nesting or complex conditionals** → simplify with early returns, guard clauses, or extract named methods/widgets.
+- **Duplicated logic used more than twice** → extract to a shared utility under `lib/utils/`, a service method, or a Riverpod provider/notifier helper—match existing patterns in this codebase.
+
+### Types (Dart equivalent of “no `any`”)
+
+- **Loose typing** → avoid `dynamic` except at JSON boundaries; parse into typed models under `lib/models/`. Do not let untyped `Map<String, dynamic>` or ambiguous values flow into UI or business logic without parsing.
+- **Widgets with many constructor parameters** → if more than **three** related parameters, group them into a small immutable configuration or data class (e.g. `FooScreenArgs`, `BarViewData`) instead of a long parameter list.
+
+### Async, errors, and I/O
+
+- **Async operations and API calls** → handle failures with `try`/`catch` or `.catchError`, and surface errors consistently with how the app already does (snackbars, `AsyncValue` / provider error states, etc.). Do not swallow errors silently.
+- **After `await` when using `BuildContext` or `State`** → check `context.mounted` / `mounted` before using context or calling `setState` where the widget may be disposed.
+
+### Naming and consistency
+
+- **Unclear names** → align with this repo: `snake_case` Dart files, `lowerCamelCase` members, `UpperCamelCase` types; match naming in neighboring `lib/services/`, `lib/providers/`, and `lib/widgets/`.
+
+### Performance (Flutter)
+
+- **Unnecessary rebuilds** → use `const` widgets where possible; narrow Riverpod watches with `select` or scoped `Consumer` when only a slice of state is needed.
+- **Heavy work in `build`** → move expensive work out of `build`; use `ListView.builder` / slivers for long lists.
+
+### Change discipline
+
+- **Preserve exact functionality** unless the task explicitly changes behavior. When refactoring, show a clear **before/after** diff (or a concise summary of what moved where).
+- **Prefer readability and maintainability** over clever one-liners.
+
+If these standards conflict with an explicit user instruction, follow the user and note the tradeoff briefly.

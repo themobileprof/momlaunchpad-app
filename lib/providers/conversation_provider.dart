@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/conversation.dart';
 import 'service_providers.dart';
@@ -53,9 +54,9 @@ class ConversationNotifier extends Notifier<ConversationState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final service = ref.read(conversationServiceProvider);
-      print('DEBUG: Calling service.createConversation...');
+      debugPrint('DEBUG: Calling service.createConversation...');
       final newConversation = await service.createConversation(title);
-      print('DEBUG: Service returned: ${newConversation.id}');
+      debugPrint('DEBUG: Service returned: ${newConversation.id}');
       
       state = state.copyWith(
         conversations: [newConversation, ...state.conversations],
@@ -63,7 +64,7 @@ class ConversationNotifier extends Notifier<ConversationState> {
       );
       return newConversation;
     } catch (e) {
-      print('DEBUG: Key Error in createConversation: $e');
+      debugPrint('DEBUG: createConversation failed: $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -82,7 +83,7 @@ class ConversationNotifier extends Notifier<ConversationState> {
       );
     } catch (e) {
       // Handle error (maybe show toast via side effect, but for state just keep it simple)
-      print('Failed to delete conversation: $e');
+      debugPrint('Failed to delete conversation: $e');
     }
   }
 }

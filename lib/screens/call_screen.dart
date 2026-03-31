@@ -9,10 +9,8 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../providers/chat_provider.dart';
-import '../providers/auth_provider.dart';
 import '../providers/conversation_provider.dart';
 import '../widgets/widgets.dart';
-import 'dart:convert'; // For jsonDecode if used in local handlers
 
 /// Call screen - Voice-first interface with Phone Call aesthetic
 class CallScreen extends ConsumerStatefulWidget {
@@ -34,8 +32,7 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
   // Text-to-speech
   final FlutterTts _flutterTts = FlutterTts();
   bool _isSpeaking = false;
-  String _lastAIResponse = ''; 
-  bool _wasInterrupted = false;
+  String _lastAIResponse = '';
 
   // Call state
   bool _isCallActive = false;
@@ -43,8 +40,6 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
   bool _isSpeakerOn = true; // Default to speaker for voice assistance
   Timer? _callTimer;
   int _callDurationSeconds = 0;
-  String? _currentConversationId;
-  String _callStatus = 'Ready';
 
   // UI Animations
   late AnimationController _pulseController;
@@ -80,10 +75,8 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
     _speechToText.stop();
     _flutterTts.stop();
     
-    if (_isCallActive) {
-      if (mounted) {
-         ref.read(chatProvider.notifier).disconnect();
-      }
+    if (_isCallActive && mounted) {
+      ref.read(chatProvider.notifier).disconnect();
     }
   }
 
@@ -93,50 +86,26 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
     try {
       _speechEnabled = await _speechToText.initialize(
         onError: (error) {
-           // Handle errors (simplified for brevity)
-           if (error.errorMsg == 'error_no_match' && _isCallActive && !_isMuted && !_isSpeaking) {
-             _startListening(); 
-           } else {
-             if (mounted) setState(() => _isListening = false);
-           }
+          if (error.errorMsg == 'error_no_match' && _isCallActive && !_isMuted && !_isSpeaking) {
+            _startListening();
+          } else if (mounted) {
+            setState(() => _isListening = false);
+          }
         },
         onStatus: (status) {
-          if (status == 'done' || status == 'notListening') {
-             if (mounted) setState(() => _isListening = false);
-             // Auto-restart logic
-             if (_isCallActive && !_isMuted && !_isSpeaking) {
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  if (mounted && _isCallActive && !_isMuted && !_isSpeaking && !_isListening) {
-                    _startListening();
-                  }
-                });
-             }
+          if (status != 'done' && status != 'notListening') return;
+          if (mounted) setState(() => _isListening = false);
+          if (_isCallActive && !_isMuted && !_isSpeaking) {
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (mounted && _isCallActive && !_isMuted && !_isSpeaking && !_isListening) {
+                _startListening();
+              }
+            });
           }
         },
       );
     } catch (e) {
       debugPrint('Speech init failed: $e');
-    }
-  }
-
-  void _handleServerMessage(dynamic data) {
-    try {
-      final json = jsonDecode(data);
-      print('DEBUG: Parsing server message: ${json['type']}');
-      
-      if (json['type'] == 'message' || json['type'] == 'chunk') {
-        final content = json['content'] as String;
-        setState(() {
-           _lastAIResponse = content; // In real app, append for stream
-           _callStatus = 'AI Speaking...';
-        });
-        _speak(content);
-      } else if (json['type'] == 'done') {
-        print('DEBUG: AI finished generating response');
-        setState(() => _callStatus = 'Listening...');
-      }
-    } catch (e) {
-      print('DEBUG: Error handling server message: $e');
     }
   }
 
@@ -146,26 +115,30 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
     
     _flutterTts.setStartHandler(() {
       if (_isListening) _speechToText.stop();
-      if (mounted) setState(() { _isSpeaking = true; _isListening = false; _callStatus = 'AI Speaking...'; }); // Updated status
+      if (mounted) {
+        setState(() {
+          _isSpeaking = true;
+          _isListening = false;
+        });
+      }
     });
 
     _flutterTts.setCompletionHandler(() {
       if (mounted) setState(() => _isSpeaking = false);
       if (_isCallActive && !_isMuted) {
         Future.delayed(const Duration(milliseconds: 500), _startListening);
-        if (mounted) setState(() => _callStatus = 'Listening...'); // Updated status
       }
     });
 
     _flutterTts.setErrorHandler((msg) {
       if (mounted) setState(() => _isSpeaking = false);
-      print('DEBUG: TTS Error: $msg'); // Added debug print
+      debugPrint('DEBUG: TTS Error: $msg');
     });
   }
 
   Future<void> _speak(String text) async {
     if (text.isNotEmpty) {
-      print('DEBUG: TTS speaking: "$text"'); // Added debug print
+      debugPrint('DEBUG: TTS speaking: "$text"');
       await _flutterTts.speak(text);
     }
   }
@@ -173,47 +146,39 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
   // --- Call Logic ---
 
   Future<void> _startCall() async {
-    print('DEBUG: _startCall initiated');
-    setState(() => _callStatus = 'Initializing...');
-    
+    debugPrint('DEBUG: _startCall initiated');
+
     final hasPermission = await Permission.microphone.request().isGranted;
     if (!hasPermission) {
-      print('DEBUG: Microphone permission denied');
+      debugPrint('DEBUG: Microphone permission denied');
       return;
     }
 
     setState(() => _isCallActive = true);
-    
+
     // 1. Create Conversation
     try {
-      print('DEBUG: Creating conversation for voice call...');
+      debugPrint('DEBUG: Creating conversation for voice call...');
       final title = 'Voice Call ${DateFormat('MMM d, h:mm a').format(DateTime.now())}';
       final conversation = await ref.read(conversationProvider.notifier).createConversation(title);
-      
+
       if (conversation == null) {
-        print('DEBUG: Failed to create conversation object');
+        debugPrint('DEBUG: Failed to create conversation object');
         throw Exception('Failed to create conversation');
       }
-      print('DEBUG: Conversation created with ID: ${conversation.id}');
-
-      print('DEBUG: Conversation created with ID: ${conversation.id}');
-
-      setState(() {
-        _currentConversationId = conversation.id;
-        _callStatus = 'Connecting...';
-      });
+      debugPrint('DEBUG: Conversation created with ID: ${conversation.id}');
 
       // 2. Connect WebSocket via Provider
-      print('DEBUG: Connecting via ChatProvider...');
+      debugPrint('DEBUG: Connecting via ChatProvider...');
       await ref.read(chatProvider.notifier).connect(conversationId: conversation.id);
-      print('DEBUG: ChatProvider connected');
-        
+      debugPrint('DEBUG: ChatProvider connected');
+
       // 3. Start Timer & Listening
       _startTimer();
       _speak("Hello, I am Mom Launchpad AI. How can I help you today?");
-      // _startListening() will be triggered by _flutterTts.setCompletionHandler 
+      // _startListening() will be triggered by _flutterTts.setCompletionHandler
     } catch (e) {
-      print('DEBUG: Failed to start call: $e');
+      debugPrint('DEBUG: Failed to start call: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to start call: $e')));
         _endCall();
@@ -222,7 +187,7 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
   }
 
   void _endCall() {
-    print('DEBUG: _endCall initiated');
+    debugPrint('DEBUG: _endCall initiated');
     _cleanupCall();
     setState(() {
       _isCallActive = false;
@@ -230,7 +195,6 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
       _isSpeaking = false;
       _callDurationSeconds = 0;
       _lastAIResponse = '';
-      _currentConversationId = null;
     });
   }
 
@@ -246,6 +210,12 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
+  String _callActivityLabel() {
+    if (_isSpeaking) return 'Speaking...';
+    if (_isListening) return 'Listening...';
+    return '...';
+  }
+
   Future<void> _startListening() async {
     if (!_speechEnabled || _isMuted || !_isCallActive || _isSpeaking) return;
     
@@ -253,24 +223,26 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
     await _speechToText.listen(
       onResult: (result) {
         setState(() => _currentUtterance = result.recognizedWords);
-        
+
         if (result.finalResult && result.recognizedWords.isNotEmpty) {
           _sendMessage(result.recognizedWords);
         }
-        
+
         // VAD logic (timers) would go here similar to previous implementation
         _silenceTimer?.cancel();
         if (!result.finalResult && result.recognizedWords.isNotEmpty) {
-           _silenceTimer = Timer(const Duration(seconds: 2), () {
-             if (_isListening) {
-               _speechToText.stop();
-               if (_currentUtterance.isNotEmpty) _sendMessage(_currentUtterance);
-             }
-           });
+          _silenceTimer = Timer(const Duration(seconds: 2), () {
+            if (_isListening) {
+              _speechToText.stop();
+              if (_currentUtterance.isNotEmpty) _sendMessage(_currentUtterance);
+            }
+          });
         }
       },
-      listenMode: ListenMode.dictation,
-      partialResults: true,
+      listenOptions: SpeechListenOptions(
+        listenMode: ListenMode.dictation,
+        partialResults: true,
+      ),
       listenFor: const Duration(minutes: 5),
       pauseFor: const Duration(seconds: 5),
     );
@@ -381,7 +353,7 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
               image: DecorationImage(
                 image: const AssetImage('assets/images/ai_avatar_placeholder.png'), // Need to ensure asset exists or use icon
                 fit: BoxFit.cover,
-                onError: (_, __) {}, // Fallback handled by child
+                onError: (Object? error, StackTrace? stackTrace) {},
               ),
               boxShadow: [
                 if (_isSpeaking)
@@ -408,8 +380,8 @@ class _CallScreenState extends ConsumerState<CallScreen> with TickerProviderStat
         // Status Text (Listening/Speaking)
         const SizedBox(height: 16),
         Text(
-          _isSpeaking ? 'Speaking...' : (_isListening ? 'Listening...' : '...'),
-           style: const TextStyle(color: AppColors.primaryPink, fontWeight: FontWeight.w600),
+          _callActivityLabel(),
+          style: const TextStyle(color: AppColors.primaryPink, fontWeight: FontWeight.w600),
         ),
 
         // Live Transcript Overlay (Subtle)

@@ -1,7 +1,10 @@
 import 'dart:async';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
-import '../providers/chat_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../providers/chat_provider.dart';
 
 /// Network monitor service
 /// Detects network changes and triggers WebSocket reconnection
@@ -23,7 +26,7 @@ class NetworkMonitor {
 
       // Network restored after being disconnected
       if (isConnected && !_wasConnected) {
-        print('Network restored, scheduling reconnect...');
+        debugPrint('Network restored, scheduling reconnect...');
         _scheduleReconnect();
       }
 
@@ -40,7 +43,7 @@ class NetworkMonitor {
     if (_lastReconnectAttempt != null) {
       final timeSinceLastAttempt = DateTime.now().difference(_lastReconnectAttempt!);
       if (timeSinceLastAttempt < const Duration(seconds: 10)) {
-        print('Skipping reconnect - too soon (${timeSinceLastAttempt.inSeconds}s ago)');
+        debugPrint('Skipping reconnect - too soon (${timeSinceLastAttempt.inSeconds}s ago)');
         return;
       }
     }
@@ -52,13 +55,13 @@ class NetworkMonitor {
   }
 
   /// Reconnect chat WebSocket
-  void _reconnectChat() async {
+  Future<void> _reconnectChat() async {
     _lastReconnectAttempt = DateTime.now();
     try {
       final chatNotifier = _ref.read(chatProvider.notifier);
       await chatNotifier.connect();
     } catch (e) {
-      print('Failed to reconnect after network restore: $e');
+      debugPrint('Failed to reconnect after network restore: $e');
     }
   }
 
