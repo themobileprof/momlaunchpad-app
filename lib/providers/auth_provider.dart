@@ -212,6 +212,12 @@ class AuthNotifier extends Notifier<AuthState> {
 
   /// Logout user
   Future<void> logout() async {
+    try {
+      await _googleSignIn.signOut();
+    } catch (e) {
+      debugPrint('Google sign-out error: $e');
+    }
+
     await _storageService.clearAll();
     state = AuthState(isLoggedIn: false);
   }

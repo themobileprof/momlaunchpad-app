@@ -7,7 +7,6 @@ import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../models/user.dart';
 import '../widgets/widgets.dart';
-import 'symptom_stats_screen.dart';
 
 /// Settings screen - User preferences and account management
 class SettingsScreen extends ConsumerWidget {
@@ -44,38 +43,6 @@ class SettingsScreen extends ConsumerWidget {
               small: true,
             ),
             onTap: () => _showComingSoon(context, 'Live calls'),
-          ),
-
-          const SizedBox(height: AppSpacing.spaceLG),
-
-          // Settings sections
-          _buildSectionHeader('Health'),
-          AppListTileCard(
-            leadingIcon: Icons.person_outline_rounded,
-            iconColor: AppColors.primaryPurple,
-            title: 'Your profile',
-            subtitle: 'Edit pregnancy details in the Profile tab',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Open the Profile tab from the bottom bar'),
-                ),
-              );
-            },
-          ),
-          AppListTileCard(
-            leadingIcon: Icons.health_and_safety_rounded,
-            iconColor: AppColors.primaryPink,
-            title: 'Health Tracker',
-            subtitle: 'Symptoms, vitals, and stats',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SymptomStatsScreen(),
-                ),
-              );
-            },
           ),
 
           const SizedBox(height: AppSpacing.spaceLG),
@@ -310,6 +277,9 @@ class SettingsScreen extends ConsumerWidget {
 
     if (confirmed == true) {
       await ref.read(authProvider.notifier).logout();
+      if (context.mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     }
   }
 }

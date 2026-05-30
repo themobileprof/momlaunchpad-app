@@ -10,6 +10,8 @@ import 'screens/onboarding_screen.dart';
 import 'screens/home_screen.dart';
 import 'config/app_config.dart';
 
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppConfig.initialize();
@@ -28,7 +30,16 @@ class MomLaunchpadApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themePreference = ref.watch(themePreferenceProvider);
 
+    ref.listen(authProvider, (previous, next) {
+      if (previous?.isLoggedIn == true && !next.isLoggedIn) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+        });
+      }
+    });
+
     return MaterialApp(
+      navigatorKey: rootNavigatorKey,
       title: 'MomLaunchpad',
       theme: applyGoogleFonts(buildAppLightTheme()),
       darkTheme: applyGoogleFonts(buildAppDarkTheme()),
