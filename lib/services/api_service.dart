@@ -7,6 +7,7 @@ import '../models/user.dart';
 import '../models/user_profile.dart';
 import '../models/reminder.dart';
 import '../models/doctor_visit.dart';
+import '../models/vital_reading.dart';
 import '../models/savings_summary.dart';
 import '../models/savings_entry.dart';
 import 'storage_service.dart';
@@ -411,6 +412,57 @@ class ApiService {
       throw ApiException(
         statusCode: response.statusCode,
         message: 'Failed to delete visit record',
+      );
+    }
+  }
+
+  // ============ VITAL READINGS ENDPOINTS ============
+
+  Future<List<VitalReading>> getVitalReadings({int limit = 30}) async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/vitals?limit=$limit'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final list = data['readings'] as List<dynamic>? ?? [];
+      return list
+          .map((e) => VitalReading.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: 'Failed to fetch vital readings',
+    );
+  }
+
+  Future<VitalReading> createVitalReading(VitalReadingPayload payload) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/vitals'),
+      headers: await _getHeaders(),
+      body: jsonEncode(payload.toJson()),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return VitalReading.fromJson(jsonDecode(response.body));
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to save vital reading'),
+    );
+  }
+
+  Future<void> deleteVitalReading(String id) async {
+    final response = await _http.delete(
+      Uri.parse('$baseUrl/api/vitals/$id'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: 'Failed to delete vital reading',
       );
     }
   }

@@ -65,8 +65,8 @@ class MoreMenuSheet extends StatelessWidget {
               ),
               _MoreMenuItem(
                 icon: Icons.health_and_safety_outlined,
-                title: 'Symptom tracker',
-                subtitle: 'History and stats',
+                title: 'Health tracker',
+                subtitle: 'Symptoms, vitals, and stats',
                 onTap: () => _open(context, const SymptomStatsScreen()),
               ),
               _MoreMenuItem(

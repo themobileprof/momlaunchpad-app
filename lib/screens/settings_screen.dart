@@ -68,8 +68,8 @@ class SettingsScreen extends ConsumerWidget {
           AppListTileCard(
             leadingIcon: Icons.health_and_safety_rounded,
             iconColor: AppColors.primaryPink,
-            title: 'Symptom Tracker',
-            subtitle: 'View your symptom history & stats',
+            title: 'Health Tracker',
+            subtitle: 'Symptoms, vitals, and stats',
             onTap: () {
               Navigator.push(
                 context,
