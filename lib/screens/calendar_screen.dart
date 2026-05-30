@@ -5,6 +5,7 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../providers/reminders_provider.dart';
+import '../providers/home_navigation_provider.dart';
 import '../widgets/widgets.dart';
 import '../models/reminder.dart';
 
@@ -19,6 +20,7 @@ class CalendarScreen extends ConsumerStatefulWidget {
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   late DateTime _focusedDay;
   late DateTime _selectedDay;
+  String? _handledFocusReminderId;
 
   @override
   void initState() {
@@ -26,6 +28,27 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     _focusedDay = DateTime.now();
     _selectedDay = DateTime.now();
     Future.microtask(() => ref.read(remindersProvider.notifier).fetchReminders());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final pending = ref.read(homeNavigationProvider);
+      if (pending != null) _applyNavigationFocus(pending);
+    });
+  }
+
+  void _applyNavigationFocus(CalendarNavigationFocus focus) {
+    if (_handledFocusReminderId == focus.reminder.id) return;
+    _handledFocusReminderId = focus.reminder.id;
+
+    final date = focus.reminder.scheduledTime.toLocal();
+    setState(() {
+      _focusedDay = date;
+      _selectedDay = date;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _showReminderDetailsSheet(focus.reminder);
+      ref.read(homeNavigationProvider.notifier).clear();
+    });
   }
 
   List<Reminder> _getRemindersForDay(DateTime day, List<Reminder> allReminders) {
@@ -42,8 +65,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final remindersState = ref.watch(remindersProvider);
     final remindersForSelectedDay = _getRemindersForDay(_selectedDay, remindersState.reminders);
 
+    ref.listen(homeNavigationProvider, (previous, next) {
+      if (next != null) _applyNavigationFocus(next);
+    });
+
     return Scaffold(
-      backgroundColor: AppColors.creamBackground,
+      backgroundColor: context.appCanvas,
       appBar: AppBar(
         title: Text('Calendar', style: AppTypography.headingLarge),
         backgroundColor: Colors.transparent,
@@ -109,61 +136,189 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Widget _buildCalendar(List<Reminder> allReminders) {
+    final primary = context.appPrimary;
+    final surface = context.appSurface;
+    final ink = context.appInk;
+    final inkMuted = context.appInkMuted;
+
     return Container(
       margin: const EdgeInsets.all(AppSpacing.spaceMD),
       padding: const EdgeInsets.only(bottom: AppSpacing.spaceMD),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: surface,
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowDark.withOpacity(0.05),
+            color: AppColors.shadowTintFor(context.appBrightness),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: TableCalendar<Reminder>(
-        firstDay: DateTime.now().subtract(const Duration(days: 365)),
-        lastDay: DateTime.now().add(const Duration(days: 365)),
-        focusedDay: _focusedDay,
-        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-        calendarFormat: CalendarFormat.month,
-        availableCalendarFormats: const {CalendarFormat.month: 'Month'},
-        headerStyle: HeaderStyle(
-          titleCentered: true,
-          titleTextStyle: AppTypography.headingMedium,
-          leftChevronIcon: Icon(Icons.chevron_left_rounded, color: AppColors.textDark),
-          rightChevronIcon: Icon(Icons.chevron_right_rounded, color: AppColors.textDark),
+      child: Column(
+        children: [
+          TableCalendar<Reminder>(
+            firstDay: DateTime.now().subtract(const Duration(days: 365)),
+            lastDay: DateTime.now().add(const Duration(days: 365)),
+            focusedDay: _focusedDay,
+            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+            calendarFormat: CalendarFormat.month,
+            availableCalendarFormats: const {CalendarFormat.month: 'Month'},
+            headerStyle: HeaderStyle(
+              titleCentered: true,
+              titleTextStyle: AppTypography.headingMedium.copyWith(color: ink),
+              leftChevronIcon: Icon(Icons.chevron_left_rounded, color: ink),
+              rightChevronIcon: Icon(Icons.chevron_right_rounded, color: ink),
+            ),
+            calendarStyle: CalendarStyle(
+              outsideDaysVisible: false,
+              weekendTextStyle: TextStyle(color: inkMuted),
+              defaultTextStyle: TextStyle(color: ink, fontWeight: FontWeight.w500),
+              selectedDecoration: BoxDecoration(
+                color: primary,
+                shape: BoxShape.circle,
+              ),
+              selectedTextStyle: TextStyle(
+                color: context.appOnPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+              todayDecoration: BoxDecoration(
+                color: primary.withValues(alpha: 0.18),
+                shape: BoxShape.circle,
+                border: Border.all(color: primary, width: 1.5),
+              ),
+              todayTextStyle: TextStyle(
+                color: ink,
+                fontWeight: FontWeight.w700,
+              ),
+              markerDecoration: BoxDecoration(
+                color: primary,
+                shape: BoxShape.circle,
+              ),
+              markersMaxCount: 3,
+              markerSize: 6,
+              markerMargin: const EdgeInsets.symmetric(horizontal: 1),
+              cellMargin: const EdgeInsets.all(6),
+            ),
+            calendarBuilders: CalendarBuilders(
+              defaultBuilder: (context, day, focusedDay) =>
+                  _buildDayCell(day, allReminders, primary, ink, inkMuted),
+              todayBuilder: (context, day, focusedDay) =>
+                  _buildDayCell(day, allReminders, primary, ink, inkMuted, isToday: true),
+              selectedBuilder: (context, day, focusedDay) =>
+                  _buildDayCell(day, allReminders, primary, ink, inkMuted, isSelected: true),
+              markerBuilder: (context, day, events) {
+                if (events.isEmpty) return const SizedBox.shrink();
+
+                return Positioned(
+                  bottom: 2,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(
+                      events.length.clamp(1, 3),
+                      (index) => Container(
+                        width: 6,
+                        height: 6,
+                        margin: const EdgeInsets.symmetric(horizontal: 1),
+                        decoration: BoxDecoration(
+                          color: isSameDay(_selectedDay, day)
+                              ? context.appOnPrimary
+                              : primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            eventLoader: (day) => _getRemindersForDay(day, allReminders),
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                _selectedDay = selectedDay;
+                _focusedDay = focusedDay;
+              });
+            },
+            onPageChanged: (focusedDay) {
+              setState(() => _focusedDay = focusedDay);
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.spaceLG,
+              0,
+              AppSpacing.spaceLG,
+              AppSpacing.spaceSM,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: primary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.spaceSM),
+                Text(
+                  'Has appointment',
+                  style: AppTypography.caption.copyWith(color: inkMuted),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget? _buildDayCell(
+    DateTime day,
+    List<Reminder> allReminders,
+    Color primary,
+    Color ink,
+    Color inkMuted, {
+    bool isToday = false,
+    bool isSelected = false,
+  }) {
+    final events = _getRemindersForDay(day, allReminders);
+    if (events.isEmpty && !isToday && !isSelected) return null;
+
+    final hasEvents = events.isNotEmpty;
+    Color? background;
+    Border? border;
+    Color textColor = ink;
+
+    if (isSelected) {
+      background = primary;
+      textColor = context.appOnPrimary;
+    } else if (isToday) {
+      background = primary.withValues(alpha: 0.18);
+      border = Border.all(color: primary, width: 1.5);
+    } else if (hasEvents) {
+      background = primary.withValues(alpha: 0.1);
+      border = Border.all(color: primary.withValues(alpha: 0.35));
+    }
+
+    if (background == null && border == null) return null;
+
+    return Container(
+      margin: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: background,
+        shape: BoxShape.circle,
+        border: border,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '${day.day}',
+        style: TextStyle(
+          color: textColor,
+          fontWeight: isSelected || isToday || hasEvents
+              ? FontWeight.w700
+              : FontWeight.w500,
         ),
-        calendarStyle: CalendarStyle(
-          outsideDaysVisible: false,
-          weekendTextStyle: TextStyle(color: AppColors.textMedium),
-          defaultTextStyle: TextStyle(color: AppColors.textDark),
-          selectedDecoration: const BoxDecoration(
-            color: AppColors.blushPrimary,
-            shape: BoxShape.circle,
-          ),
-          todayDecoration: BoxDecoration(
-            color: AppColors.blushPrimary.withOpacity(0.3),
-            shape: BoxShape.circle,
-          ),
-          markerDecoration: const BoxDecoration(
-            color: AppColors.lavenderSecondary,
-            shape: BoxShape.circle,
-          ),
-          markersMaxCount: 1,
-        ),
-        eventLoader: (day) => _getRemindersForDay(day, allReminders),
-        onDaySelected: (selectedDay, focusedDay) {
-          setState(() {
-            _selectedDay = selectedDay;
-            _focusedDay = focusedDay;
-          });
-        },
-        onPageChanged: (focusedDay) {
-          _focusedDay = focusedDay;
-        },
       ),
     );
   }

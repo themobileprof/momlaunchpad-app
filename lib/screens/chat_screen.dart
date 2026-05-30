@@ -4,7 +4,8 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../providers/chat_provider.dart';
-import '../providers/service_providers.dart';
+import '../providers/reminders_provider.dart';
+import '../providers/home_navigation_provider.dart';
 import '../services/network_monitor.dart';
 import '../widgets/widgets.dart';
 import '../models/reminder.dart';
@@ -87,25 +88,51 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _messageController.clear();
     _inputFocusNode.requestFocus();
 
-    // Scroll to bottom
-    _scrollToBottom();
+    // Scroll to bottom after send; ongoing scroll handled by provider listener.
+    _scheduleScrollToBottom();
   }
 
-  void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
+  void _scheduleScrollToBottom({bool animated = true}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      final target = position.maxScrollExtent;
+      if (animated) {
+        position.animateTo(
+          target,
+          duration: const Duration(milliseconds: 250),
           curve: Curves.easeOut,
         );
+      } else {
+        position.jumpTo(target);
       }
     });
+  }
+
+  void _navigateToCalendarReminder(Reminder reminder) {
+    ref.read(homeNavigationProvider.notifier).focusReminder(reminder);
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   @override
   Widget build(BuildContext context) {
     final chatState = ref.watch(chatProvider);
+
+    ref.listen(chatProvider, (previous, next) {
+      if (previous == null) return;
+
+      final prevLast =
+          previous.messages.isNotEmpty ? previous.messages.last : null;
+      final nextLast = next.messages.isNotEmpty ? next.messages.last : null;
+      final shouldScroll = next.messages.length != previous.messages.length ||
+          prevLast?.content != nextLast?.content ||
+          prevLast?.isStreaming != nextLast?.isStreaming ||
+          (previous.isLoading && !next.isLoading);
+
+      if (shouldScroll) {
+        _scheduleScrollToBottom(animated: nextLast?.isStreaming != true);
+      }
+    });
 
     // Show calendar suggestion dialog when available (only once per suggestion)
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -464,13 +491,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Future<void> _createReminder(CalendarSuggestion suggestion) async {
     try {
-      final apiService = ref.read(apiServiceProvider);
-      await apiService.createReminder(
-        title: suggestion.title,
-        description: suggestion.description,
-        scheduledTime: suggestion.suggestedTime,
-        priority: 'medium',
-      );
+      final reminder = await ref.read(remindersProvider.notifier).addReminder(
+            title: suggestion.title,
+            description: suggestion.description,
+            scheduledTime: suggestion.suggestedTime,
+            priority: 'medium',
+          );
 
       ref.read(chatProvider.notifier).clearCalendarSuggestion();
       if (mounted) Navigator.pop(context);
@@ -484,15 +510,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             action: SnackBarAction(
               label: 'View',
               textColor: Colors.white,
-              onPressed: () {
-                // Show hint to switch to Calendar tab
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Switch to Calendar tab to view your reminders'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              },
+              onPressed: () => _navigateToCalendarReminder(reminder),
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),

@@ -5,6 +5,7 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../widgets/widgets.dart';
 import '../widgets/more_menu_sheet.dart';
+import '../providers/home_navigation_provider.dart';
 import 'conversation_list_screen.dart';
 import 'calendar_screen.dart';
 import 'profile_screen.dart';
@@ -72,6 +73,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(homeNavigationProvider, (previous, next) {
+      if (next == null) return;
+      if (_currentIndex != calendarTabIndex) {
+        _onNavTap(calendarTabIndex);
+      }
+    });
+
     return Scaffold(
       backgroundColor: context.appCanvas,
       extendBody: true,

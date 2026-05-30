@@ -96,7 +96,7 @@ class RemindersNotifier extends Notifier<RemindersState> {
   }
 
   /// Add new reminder
-  Future<void> addReminder({
+  Future<Reminder> addReminder({
     required String title,
     String? description,
     required DateTime scheduledTime,
@@ -113,6 +113,7 @@ class RemindersNotifier extends Notifier<RemindersState> {
       state = state.copyWith(
         reminders: [...state.reminders, reminder],
       );
+      return reminder;
     } on ApiException catch (e) {
       state = state.copyWith(error: e.message);
       rethrow;

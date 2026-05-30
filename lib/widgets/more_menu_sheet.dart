@@ -6,6 +6,7 @@ import '../widgets/glass_container.dart';
 import '../screens/savings_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/symptom_stats_screen.dart';
+import '../screens/doctor_visits_screen.dart';
 
 /// Bottom sheet listing secondary destinations (Savings, Settings, etc.).
 class MoreMenuSheet extends StatelessWidget {
@@ -67,6 +68,12 @@ class MoreMenuSheet extends StatelessWidget {
                 title: 'Symptom tracker',
                 subtitle: 'History and stats',
                 onTap: () => _open(context, const SymptomStatsScreen()),
+              ),
+              _MoreMenuItem(
+                icon: Icons.medical_information_outlined,
+                title: 'Visit records',
+                subtitle: 'Doctor visits, vitals, and medications',
+                onTap: () => _open(context, const DoctorVisitsScreen()),
               ),
               _MoreMenuItem(
                 icon: Icons.settings_outlined,

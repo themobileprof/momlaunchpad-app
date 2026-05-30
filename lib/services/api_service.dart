@@ -6,6 +6,7 @@ import '../models/auth_response.dart';
 import '../models/user.dart';
 import '../models/user_profile.dart';
 import '../models/reminder.dart';
+import '../models/doctor_visit.dart';
 import '../models/savings_summary.dart';
 import '../models/savings_entry.dart';
 import 'storage_service.dart';
@@ -324,6 +325,92 @@ class ApiService {
       throw ApiException(
         statusCode: response.statusCode,
         message: 'Failed to delete reminder',
+      );
+    }
+  }
+
+  // ============ DOCTOR VISIT ENDPOINTS ============
+
+  /// Get all visit records for the current user
+  Future<List<DoctorVisit>> getDoctorVisits() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/doctor-visits'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      return _mapJsonList(response.body, DoctorVisit.fromJson);
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: 'Failed to fetch visit records',
+    );
+  }
+
+  /// Get a single visit record
+  Future<DoctorVisit> getDoctorVisit(String id) async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/doctor-visits/$id'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      return DoctorVisit.fromJson(jsonDecode(response.body));
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: 'Failed to fetch visit record',
+    );
+  }
+
+  /// Create a visit record
+  Future<DoctorVisit> createDoctorVisit(DoctorVisitPayload payload) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/doctor-visits'),
+      headers: await _getHeaders(),
+      body: jsonEncode(payload.toJson()),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return DoctorVisit.fromJson(jsonDecode(response.body));
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to create visit record'),
+    );
+  }
+
+  /// Update a visit record
+  Future<DoctorVisit> updateDoctorVisit({
+    required String id,
+    required DoctorVisitPayload payload,
+  }) async {
+    final response = await _http.put(
+      Uri.parse('$baseUrl/api/doctor-visits/$id'),
+      headers: await _getHeaders(),
+      body: jsonEncode(payload.toJson()),
+    );
+
+    if (response.statusCode == 200) {
+      return DoctorVisit.fromJson(jsonDecode(response.body));
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to update visit record'),
+    );
+  }
+
+  /// Delete a visit record
+  Future<void> deleteDoctorVisit(String id) async {
+    final response = await _http.delete(
+      Uri.parse('$baseUrl/api/doctor-visits/$id'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: 'Failed to delete visit record',
       );
     }
   }
