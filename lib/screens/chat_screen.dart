@@ -222,18 +222,77 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
+  static const _starterPrompts = [
+    'I\'ve been feeling nauseous in the mornings — is that normal?',
+    'What foods should I avoid during pregnancy?',
+    'I\'m having mild cramping — when should I worry?',
+  ];
+
+  void _prefillStarterPrompt(String prompt) {
+    _messageController.text = prompt;
+    _inputFocusNode.requestFocus();
+  }
+
+  Widget _buildEmptyChatState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.spaceXL),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.primaryPurple.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.chat_bubble_outline_rounded,
+                size: 40,
+                color: AppColors.primaryPurple.withOpacity(0.6),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.spaceLG),
+            Text(
+              'What\'s on your mind?',
+              style: AppTypography.headingMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.spaceSM),
+            Text(
+              'Ask about symptoms, nutrition, or anything pregnancy-related.',
+              style: AppTypography.caption.copyWith(color: AppColors.textLight),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.spaceLG),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: AppSpacing.spaceSM,
+              runSpacing: AppSpacing.spaceSM,
+              children: _starterPrompts.map((prompt) {
+                return ActionChip(
+                  label: Text(
+                    prompt,
+                    style: AppTypography.caption,
+                  ),
+                  onPressed: () => _prefillStarterPrompt(prompt),
+                  backgroundColor: AppColors.white,
+                  side: BorderSide(
+                    color: AppColors.primaryPurple.withOpacity(0.2),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMessagesList(ChatState chatState) {
     if (chatState.messages.isEmpty) {
-      return EmptyState(
-        icon: Icons.chat_bubble_outline_rounded,
-        title: 'No messages yet',
-        description: 'Start the conversation!',
-        actionLabel: 'Say Hello',
-        onAction: () {
-          _messageController.text = "Hello!";
-          _inputFocusNode.requestFocus();
-        },
-      );
+      return _buildEmptyChatState();
     }
 
     return ListView.builder(

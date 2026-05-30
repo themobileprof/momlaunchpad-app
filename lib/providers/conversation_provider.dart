@@ -82,14 +82,30 @@ class ConversationNotifier extends Notifier<ConversationState> {
       state = state.copyWith(
         conversations: state.conversations
             .map(
-              (c) => c.id == id
-                  ? c.copyWith(title: title)
-                  : c,
+              (c) => c.id == id ? c.copyWith(title: title) : c,
             )
             .toList(),
       );
     } catch (e) {
       debugPrint('Failed to rename conversation: $e');
+    }
+  }
+
+  Future<void> setConversationPinned(String id, bool isStarred) async {
+    try {
+      final service = ref.read(conversationServiceProvider);
+      await service.updateConversation(id, isStarred: isStarred);
+
+      state = state.copyWith(
+        conversations: state.conversations
+            .map(
+              (c) => c.id == id ? c.copyWith(isStarred: isStarred) : c,
+            )
+            .toList(),
+      );
+    } catch (e) {
+      debugPrint('Failed to update pin state: $e');
+      rethrow;
     }
   }
 

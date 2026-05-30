@@ -56,6 +56,7 @@ enum MessageType {
   message, // AI response chunk
   done, // Response complete
   calendar, // Calendar suggestion
+  titleUpdated, // AI-generated conversation title
   error, // Error message
 }
 
@@ -76,7 +77,7 @@ class WebSocketMessage {
   factory WebSocketMessage.fromJson(Map<String, dynamic> json) {
     final typeString = json['type'] as String;
     final type = MessageType.values.firstWhere(
-      (e) => e.name == typeString,
+      (e) => e.name == typeString || (typeString == 'title_updated' && e == MessageType.titleUpdated),
       orElse: () => MessageType.error,
     );
 

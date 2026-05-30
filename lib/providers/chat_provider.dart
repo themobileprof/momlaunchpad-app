@@ -5,7 +5,6 @@ import '../models/message.dart';
 import '../models/reminder.dart';
 import '../services/websocket_service.dart';
 import '../services/conversation_service.dart';
-import '../utils/conversation_list_utils.dart';
 import 'service_providers.dart';
 import 'conversation_provider.dart';
 
@@ -132,6 +131,10 @@ class ChatNotifier extends Notifier<ChatState> {
         _finalizeStreamingAiMessage();
         break;
 
+      case MessageType.titleUpdated:
+        _applyTitleUpdate(wsMessage.content);
+        break;
+
       case MessageType.calendar:
         // Calendar suggestion from AI
         if (wsMessage.data != null) {
@@ -188,6 +191,18 @@ class ChatNotifier extends Notifier<ChatState> {
     );
   }
 
+  void _applyTitleUpdate(String? title) {
+    final conversationId = state.currentConversationId;
+    if (conversationId == null || title == null || title.trim().isEmpty) return;
+
+    final newTitle = title.trim();
+    state = state.copyWith(conversationTitle: newTitle);
+    ref.read(conversationProvider.notifier).renameConversation(
+          conversationId,
+          newTitle,
+        );
+  }
+
   /// Send message to backend
   void sendMessage(String content) {
     if (content.trim().isEmpty) return;
@@ -217,38 +232,6 @@ class ChatNotifier extends Notifier<ChatState> {
       state = state.copyWith(
         error: 'Could not send message. Please try again.',
       );
-      return;
-    }
-
-    _maybeAutoTitleConversation(content);
-  }
-
-  Future<void> _maybeAutoTitleConversation(String content) async {
-    final conversationId = state.currentConversationId;
-    final currentTitle = state.conversationTitle;
-    if (conversationId == null || currentTitle == null) return;
-    if (!isGenericConversationTitle(currentTitle)) return;
-
-    final userMessages =
-        state.messages.where((message) => message.isUser).length;
-    if (userMessages != 1) return;
-
-    final newTitle = titleFromFirstMessage(content);
-    if (newTitle == currentTitle) return;
-
-    state = state.copyWith(conversationTitle: newTitle);
-
-    try {
-      await _conversationService.updateConversation(
-        conversationId,
-        title: newTitle,
-      );
-      await ref.read(conversationProvider.notifier).renameConversation(
-            conversationId,
-            newTitle,
-          );
-    } catch (e) {
-      debugPrint('Failed to auto-title conversation: $e');
     }
   }
 

@@ -127,6 +127,7 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                 child: _ConversationTile(
                   conversation: conversation,
                   onTap: () => _openChat(conversation),
+                  onTogglePin: () => _togglePin(conversation),
                   onDelete: () => _deleteConversation(conversation),
                 ),
               ),
@@ -135,6 +136,21 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _togglePin(Conversation conversation) async {
+    try {
+      await ref.read(conversationProvider.notifier).setConversationPinned(
+            conversation.id,
+            !conversation.isStarred,
+          );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not update pin')),
+        );
+      }
+    }
   }
 
   Future<void> _deleteConversation(Conversation conversation) async {
@@ -296,11 +312,13 @@ class _SectionHeader extends StatelessWidget {
 class _ConversationTile extends StatelessWidget {
   final Conversation conversation;
   final VoidCallback onTap;
+  final VoidCallback onTogglePin;
   final VoidCallback onDelete;
 
   const _ConversationTile({
     required this.conversation,
     required this.onTap,
+    required this.onTogglePin,
     required this.onDelete,
   });
 
@@ -378,9 +396,42 @@ class _ConversationTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.inkLight,
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert_rounded, color: AppColors.inkLight),
+                  onSelected: (value) {
+                    if (value == 'pin') onTogglePin();
+                    if (value == 'delete') onDelete();
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'pin',
+                      child: Row(
+                        children: [
+                          Icon(
+                            conversation.isStarred
+                                ? Icons.push_pin_outlined
+                                : Icons.push_pin_rounded,
+                            size: 20,
+                            color: AppColors.plum,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            conversation.isStarred ? 'Unpin' : 'Pin chat',
+                          ),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                          SizedBox(width: 8),
+                          Text('Delete', style: TextStyle(color: AppColors.error)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
