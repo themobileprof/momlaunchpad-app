@@ -1,4 +1,8 @@
 // Barrel file for all widgets
+export 'app_background.dart';
+export 'auth_screen_widgets.dart';
+export 'gradient_button.dart';
+export 'google_sign_in_button.dart';
 export 'app_button.dart';
 export 'app_card.dart';
 export 'app_states.dart';

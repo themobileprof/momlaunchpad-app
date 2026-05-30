@@ -62,11 +62,10 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
     final state = ref.watch(conversationProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text('Conversations', style: AppTypography.headingMedium),
-        elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.canvas,
       ),
       body: _buildBody(state),
       floatingActionButton: Padding(
@@ -76,7 +75,7 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
           height: 56,
           width: 56,
           borderRadius: 28,
-          color: AppColors.primaryPink,
+          color: AppColors.plum,
           padding: EdgeInsets.zero,
           child: const Icon(Icons.add_rounded, color: Colors.white),
         ),
@@ -137,10 +136,14 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryPink.withOpacity(0.1),
+                    color: AppColors.roseSoft,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.chat_bubble_rounded, color: AppColors.primaryPink, size: 20),
+                  child: const Icon(
+                    Icons.chat_bubble_rounded,
+                    color: AppColors.rose,
+                    size: 20,
+                  ),
                 ),
                 title: Text(
                   conversation.title.isNotEmpty ? conversation.title : 'Untitled Chat',

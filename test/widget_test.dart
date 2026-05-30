@@ -19,6 +19,6 @@ void main() {
     await tester.pump();
 
     expect(find.byType(MomLaunchpadApp), findsOneWidget);
-    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Welcome back'), findsOneWidget);
   });
 }

@@ -99,8 +99,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.creamBackground,
-      extendBody: true, // Allow body to extend behind navbar
+      backgroundColor: AppColors.canvas,
+      extendBody: true,
       body: PageView(
         controller: _pageController,
         onPageChanged: _onPageChanged,
@@ -168,10 +168,20 @@ class _NavBarItem extends StatelessWidget {
           vertical: AppSpacing.spaceSM,
         ),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.blushPrimary.withOpacity(0.2)
-              : Colors.transparent,
+          gradient: isSelected
+              ? AppColors.brandGradient
+              : null,
+          color: isSelected ? null : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.rose.withValues(alpha: 0.28),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -181,17 +191,17 @@ class _NavBarItem extends StatelessWidget {
               child: Icon(
                 isSelected ? activeIcon : icon,
                 key: ValueKey(isSelected),
-                color: isSelected ? AppColors.textDark : AppColors.textMedium,
-                size: 24,
+                color: isSelected ? AppColors.white : AppColors.inkMuted,
+                size: 22,
               ),
             ),
             const SizedBox(height: 4),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected ? AppColors.textDark : AppColors.textMedium,
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? AppColors.white : AppColors.inkMuted,
               ),
               child: Text(label),
             ),

@@ -39,18 +39,30 @@ class ChatBubble extends StatelessWidget {
                 vertical: AppSpacing.spaceSM + 4,
               ),
               decoration: BoxDecoration(
-                color: isUser ? AppColors.primaryPink : AppColors.white,
+                gradient: isUser ? AppColors.brandGradient : null,
+                color: isUser ? null : AppColors.surface,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(20),
                   topRight: const Radius.circular(20),
                   bottomLeft: Radius.circular(isUser ? 20 : 4),
                   bottomRight: Radius.circular(isUser ? 4 : 20),
                 ),
-                boxShadow: isUser
+                border: isUser
                     ? null
+                    : Border.all(
+                        color: AppColors.plum.withValues(alpha: 0.08),
+                      ),
+                boxShadow: isUser
+                    ? [
+                        BoxShadow(
+                          color: AppColors.rose.withValues(alpha: 0.22),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
                     : [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: AppColors.shadowTint,
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),

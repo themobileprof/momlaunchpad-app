@@ -201,13 +201,13 @@ class AppTypographyExtension extends ThemeExtension<AppTypographyExtension> {
     required this.button,
   });
 
-  static const standard = AppTypographyExtension(
-    headingLarge: AppTypography.headingLarge,
-    headingMedium: AppTypography.headingMedium,
-    bodyText: AppTypography.bodyText,
-    caption: AppTypography.caption,
-    button: AppTypography.button,
-  );
+  static AppTypographyExtension get standard => AppTypographyExtension(
+        headingLarge: AppTypography.headingLarge,
+        headingMedium: AppTypography.headingMedium,
+        bodyText: AppTypography.bodyText,
+        caption: AppTypography.caption,
+        button: AppTypography.button,
+      );
 
   @override
   ThemeExtension<AppTypographyExtension> copyWith({

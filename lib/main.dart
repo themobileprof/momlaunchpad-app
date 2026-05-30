@@ -25,7 +25,7 @@ class MomLaunchpadApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'MomLaunchpad',
-      theme: buildAppTheme(),
+      theme: applyGoogleFonts(buildAppTheme()),
       debugShowCheckedModeBanner: false,
       home: const AppInitializer(),
     );

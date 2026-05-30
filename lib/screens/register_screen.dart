@@ -4,9 +4,13 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/app_background.dart';
+import '../widgets/auth_screen_widgets.dart';
+import '../widgets/glass_container.dart';
+import '../widgets/gradient_button.dart';
 import '../widgets/google_sign_in_button.dart';
 
-/// Registration screen
+/// Registration screen — email/password + Google Sign-In
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
@@ -41,19 +45,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             name: _nameController.text.trim(),
             email: _emailController.text.trim(),
             password: _passwordController.text,
-            language: 'en', // Default to English
+            language: 'en',
           );
-      
-      // Registration successful - pop back to root for AppInitializer to handle
+
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(ref.read(authProvider).error ?? 'Registration failed'),
-            backgroundColor: AppColors.error,
+            content: Text(
+              ref.read(authProvider).error ?? 'Registration failed',
+            ),
           ),
         );
       }
@@ -64,24 +68,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     setState(() => _googleSignInInProgress = true);
     try {
       await ref.read(authProvider.notifier).signInWithGoogle();
-
-      // Sign-in successful - pop back to root for AppInitializer to handle
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(ref.read(authProvider).error ?? 'Google sign-in failed'),
-            backgroundColor: AppColors.error,
+            content: Text(
+              ref.read(authProvider).error ?? 'Google sign-in failed',
+            ),
           ),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _googleSignInInProgress = false);
-      }
+      if (mounted) setState(() => _googleSignInInProgress = false);
     }
   }
 
@@ -92,219 +93,183 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final googleRegisterLoading = authState.isLoading && _googleSignInInProgress;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.spaceLG),
+      body: AppBackground(
+        child: SafeArea(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Logo
-              Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.asset(
-                    'assets/images/logo.png',
-                    width: 100,
-                    height: 100,
-                    fit: BoxFit.cover,
-                  ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  color: AppColors.plum,
+                  onPressed: () => Navigator.pop(context),
                 ),
               ),
-              
-              const SizedBox(height: AppSpacing.spaceLG),
-              
-              // Title
-              Text(
-                'Create Account',
-                style: AppTypography.headingLarge,
-                textAlign: TextAlign.center,
-              ),
-              
-              const SizedBox(height: AppSpacing.spaceSM),
-              
-              Text(
-                'Join your pregnancy journey',
-                style: AppTypography.caption,
-                textAlign: TextAlign.center,
-              ),
-              
-              const SizedBox(height: AppSpacing.spaceXL),
-              
-              // Registration Form
-              Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    // Name Field
-                    TextFormField(
-                      controller: _nameController,
-                      textCapitalization: TextCapitalization.words,
-                      decoration: const InputDecoration(
-                        labelText: 'Full Name',
-                        hintText: 'Jane Doe',
-                        prefixIcon: Icon(Icons.person_outlined),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.spaceLG,
+                    0,
+                    AppSpacing.spaceLG,
+                    AppSpacing.spaceLG,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const AuthLogoHeader(
+                        title: 'Join MomLaunchpad',
+                        subtitle: 'Start your journey with support that grows with you.',
+                        logoSize: 80,
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your name';
-                        }
-                        if (value.length < 2) {
-                          return 'Name must be at least 2 characters';
-                        }
-                        return null;
-                      },
-                    ),
-                    
-                    const SizedBox(height: AppSpacing.spaceMD),
-                    
-                    // Email Field
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        hintText: 'your@email.com',
-                        prefixIcon: Icon(Icons.email_outlined),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
-                        }
-                        if (!value.contains('@') || !value.contains('.')) {
-                          return 'Please enter a valid email';
-                        }
-                        return null;
-                      },
-                    ),
-                    
-                    const SizedBox(height: AppSpacing.spaceMD),
-                    
-                    // Password Field
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: !_isPasswordVisible,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        hintText: '••••••••',
-                        prefixIcon: const Icon(Icons.lock_outlined),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _isPasswordVisible
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _isPasswordVisible = !_isPasswordVisible;
-                            });
-                          },
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a password';
-                        }
-                        if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
-                        }
-                        return null;
-                      },
-                    ),
-                    
-                    const SizedBox(height: AppSpacing.spaceMD),
-                    
-                    // Confirm Password Field
-                    TextFormField(
-                      controller: _confirmPasswordController,
-                      obscureText: !_isConfirmPasswordVisible,
-                      decoration: InputDecoration(
-                        labelText: 'Confirm Password',
-                        hintText: '••••••••',
-                        prefixIcon: const Icon(Icons.lock_outlined),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _isConfirmPasswordVisible
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                            });
-                          },
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please confirm your password';
-                        }
-                        if (value != _passwordController.text) {
-                          return 'Passwords do not match';
-                        }
-                        return null;
-                      },
-                    ),
-                    
-                    const SizedBox(height: AppSpacing.spaceXL),
-                    
-                    // Register Button
-                    ElevatedButton(
-                      onPressed: emailRegisterLoading ? null : _handleRegister,
-                      child: emailRegisterLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(Colors.white),
+                      const SizedBox(height: AppSpacing.spaceXL),
+                      GlassContainer(
+                        blur: 18,
+                        opacity: 0.92,
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.radiusLarge),
+                        padding: const EdgeInsets.all(AppSpacing.spaceLG),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                'Create with email',
+                                style: AppTypography.label.copyWith(
+                                  color: AppColors.plum,
+                                ),
                               ),
-                            )
-                          : const Text('Create Account'),
-                    ),
-                    
-                    const SizedBox(height: AppSpacing.spaceMD),
-                    
-                    // Divider with "OR"
-                    Row(
-                      children: [
-                        const Expanded(child: Divider()),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceMD),
-                          child: Text(
-                            'OR',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.textLight,
-                            ),
+                              const SizedBox(height: AppSpacing.spaceMD),
+                              TextFormField(
+                                controller: _nameController,
+                                textCapitalization: TextCapitalization.words,
+                                decoration: const InputDecoration(
+                                  labelText: 'Full name',
+                                  hintText: 'Jane Doe',
+                                  prefixIcon: Icon(Icons.person_outline_rounded),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your name';
+                                  }
+                                  if (value.length < 2) {
+                                    return 'Name must be at least 2 characters';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: AppSpacing.spaceMD),
+                              TextFormField(
+                                controller: _emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                decoration: const InputDecoration(
+                                  labelText: 'Email',
+                                  hintText: 'you@example.com',
+                                  prefixIcon: Icon(Icons.mail_outline_rounded),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your email';
+                                  }
+                                  if (!value.contains('@') || !value.contains('.')) {
+                                    return 'Please enter a valid email';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: AppSpacing.spaceMD),
+                              TextFormField(
+                                controller: _passwordController,
+                                obscureText: !_isPasswordVisible,
+                                decoration: InputDecoration(
+                                  labelText: 'Password',
+                                  hintText: '••••••••',
+                                  prefixIcon:
+                                      const Icon(Icons.lock_outline_rounded),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _isPasswordVisible
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
+                                    ),
+                                    onPressed: () => setState(
+                                      () => _isPasswordVisible =
+                                          !_isPasswordVisible,
+                                    ),
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter a password';
+                                  }
+                                  if (value.length < 6) {
+                                    return 'Password must be at least 6 characters';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: AppSpacing.spaceMD),
+                              TextFormField(
+                                controller: _confirmPasswordController,
+                                obscureText: !_isConfirmPasswordVisible,
+                                decoration: InputDecoration(
+                                  labelText: 'Confirm password',
+                                  hintText: '••••••••',
+                                  prefixIcon:
+                                      const Icon(Icons.lock_outline_rounded),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _isConfirmPasswordVisible
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
+                                    ),
+                                    onPressed: () => setState(
+                                      () => _isConfirmPasswordVisible =
+                                          !_isConfirmPasswordVisible,
+                                    ),
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please confirm your password';
+                                  }
+                                  if (value != _passwordController.text) {
+                                    return 'Passwords do not match';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: AppSpacing.spaceXL),
+                              GradientButton(
+                                label: 'Create account',
+                                onPressed:
+                                    emailRegisterLoading ? null : _handleRegister,
+                                isLoading: emailRegisterLoading,
+                              ),
+                              const SizedBox(height: AppSpacing.spaceLG),
+                              const AuthOrDivider(),
+                              const SizedBox(height: AppSpacing.spaceLG),
+                              GoogleSignInButton(
+                                onPressed: _handleGoogleSignIn,
+                                isLoading: googleRegisterLoading,
+                              ),
+                            ],
                           ),
                         ),
-                        const Expanded(child: Divider()),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: AppSpacing.spaceMD),
-                    
-                    GoogleSignInButton(
-                      onPressed: _handleGoogleSignIn,
-                      isLoading: googleRegisterLoading,
-                    ),
-                    
-                    const SizedBox(height: AppSpacing.spaceMD),
-                    
-                    // Login Link
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Already have an account? Login'),
-                    ),
-                  ],
+                      ),
+                      const SizedBox(height: AppSpacing.spaceMD),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          'Already have an account? Sign in',
+                          style: AppTypography.bodyTextMedium.copyWith(
+                            color: AppColors.rose,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

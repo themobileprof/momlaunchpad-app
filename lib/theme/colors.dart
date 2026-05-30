@@ -1,54 +1,91 @@
 import 'package:flutter/material.dart';
 
-/// App color palette
-/// Serene, feminine modern interface with soft pastel warm tones
+/// Brand palette aligned with the MomLaunchpad logo — vibrant rose + deep plum.
 class AppColors {
-  // Primary Colors (Pastels)
-  static const Color creamBackground = Color(0xFFFDFBF7); // Warm, soft beige/white background
-  static const Color blushPrimary = Color(0xFFFFD6D6); // Soft pink - Main accent
-  static const Color peachAccent = Color(0xFFFFCBA4); // Warm peach
-  static const Color mintSuccess = Color(0xFFB8E0D2); // Soft mint
-  static const Color lavenderSecondary = Color(0xFFE6E6FA); // Soft lavender
+  // Brand (logo)
+  static const Color rose = Color(0xFFE91E8C);
+  static const Color roseLight = Color(0xFFFF4DA6);
+  static const Color roseSoft = Color(0xFFFFE4F2);
+  static const Color plum = Color(0xFF5B2D8B);
+  static const Color plumDark = Color(0xFF3D1F5C);
+  static const Color orchid = Color(0xFF9333EA);
+  static const Color orchidSoft = Color(0xFFF3E8FF);
 
-  // Text Colors
-  static const Color textDark = Color(0xFF4A4A4A); // Softer dark gray
-  static const Color textMedium = Color(0xFF7D7D7D); // Medium gray
-  static const Color textLight = Color(0xFFA1A1A1); // Light gray
-  
-  // Semantic Colors (Softened)
-  static const Color success = Color(0xFFB8E0D2); // Mint green
-  static const Color warning = Color(0xFFFFE0B2); // Soft orange/peach
-  static const Color error = Color(0xFFFFB3B3); // Soft red/pink
-  static const Color info = Color(0xFFB3E5FC); // Soft blue
+  // Surfaces
+  static const Color canvas = Color(0xFFFDF8FC);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceMuted = Color(0xFFF8F0FA);
 
-  // Priority Colors (Pastel)
-  static const Color priorityUrgent = Color(0xFFFFB3B3); // Soft red
-  static const Color priorityHigh = Color(0xFFFFD180); // Soft orange
-  static const Color priorityMedium = Color(0xFFE1BEE7); // Soft purple
-  static const Color priorityLow = Color(0xFFEEEEEE); // Light gray
+  // Text
+  static const Color ink = Color(0xFF2A1538);
+  static const Color inkMuted = Color(0xFF6E5A7A);
+  static const Color inkLight = Color(0xFF9B8AA8);
 
-  // Glass & Shadows
-  static Color glassWhite = Colors.white.withOpacity(0.7);
-  static Color glassBorder = Colors.white.withOpacity(0.5);
+  // Semantic
+  static const Color success = Color(0xFF059669);
+  static const Color successSoft = Color(0xFFD1FAE5);
+  static const Color warning = Color(0xFFD97706);
+  static const Color warningSoft = Color(0xFFFEF3C7);
+  static const Color error = Color(0xFFDC2626);
+  static const Color errorSoft = Color(0xFFFEE2E2);
+  static const Color info = Color(0xFF2563EB);
+  static const Color infoSoft = Color(0xFFDBEAFE);
+
+  // Priority
+  static const Color priorityUrgent = Color(0xFFEF4444);
+  static const Color priorityHigh = Color(0xFFF97316);
+  static const Color priorityMedium = Color(0xFF9333EA);
+  static const Color priorityLow = Color(0xFFE5E7EB);
+
+  // Glass
+  static Color glassWhite = Colors.white.withValues(alpha: 0.82);
+  static Color glassBorder = Colors.white.withValues(alpha: 0.65);
+  static final Color shadowTint = plum.withValues(alpha: 0.12);
+  static final Color shadowDark = plum.withValues(alpha: 0.18);
   static final Color shadowLight = Colors.white;
-  static final Color shadowDark = Color(0xFFD1CDC7);
 
   // Gradients
-  static const LinearGradient blushGradient = LinearGradient(
-    colors: [Color(0xFFFFD6D6), Color(0xFFFFE4E1)],
+  static const LinearGradient brandGradient = LinearGradient(
+    colors: [roseLight, rose, plum],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  static const LinearGradient peachGradient = LinearGradient(
-    colors: [Color(0xFFFFCBA4), Color(0xFFFFDAB9)],
+  static const LinearGradient brandGradientVertical = LinearGradient(
+    colors: [rose, plum],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+
+  static const LinearGradient softGlow = LinearGradient(
+    colors: [Color(0xFFFFF0F7), Color(0xFFF5EEFF), canvas],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  // Legacy mappings (to prevent immediate breakages, mapped to new palette)
-  static const Color primaryPink = blushPrimary;
-  static const Color primaryPurple = lavenderSecondary;
-  static const Color backgroundLight = creamBackground;
-  static const Color white = Colors.white;
+  static const RadialGradient heroOrbPink = RadialGradient(
+    colors: [Color(0x40FF4DA6), Color(0x00FF4DA6)],
+    radius: 0.85,
+  );
+
+  static const RadialGradient heroOrbPurple = RadialGradient(
+    colors: [Color(0x359333EA), Color(0x009333EA)],
+    radius: 0.85,
+  );
+
+  // Legacy aliases (keep screens compiling during migration)
+  static const Color creamBackground = canvas;
+  static const Color blushPrimary = roseSoft;
+  static const Color peachAccent = Color(0xFFFFB088);
+  static const Color mintSuccess = successSoft;
+  static const Color lavenderSecondary = orchidSoft;
+  static const Color textDark = ink;
+  static const Color textMedium = inkMuted;
+  static const Color textLight = inkLight;
+  static const Color primaryPink = rose;
+  static const Color primaryPurple = plum;
+  static const Color backgroundLight = canvas;
+  static const Color white = surface;
+  static const LinearGradient blushGradient = brandGradient;
+  static const LinearGradient peachGradient = softGlow;
 }

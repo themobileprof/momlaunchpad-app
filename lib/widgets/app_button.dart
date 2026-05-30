@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
+import 'gradient_button.dart';
 
 /// Button variants for consistent styling
 enum AppButtonVariant { primary, secondary, outline, ghost, danger }
@@ -32,6 +33,19 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (variant == AppButtonVariant.primary) {
+      return SizedBox(
+        width: isFullWidth ? double.infinity : null,
+        child: GradientButton(
+          label: label,
+          onPressed: onPressed,
+          isLoading: isLoading,
+          icon: icon,
+          height: _height,
+        ),
+      );
+    }
+
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
       height: _height,
@@ -42,9 +56,9 @@ class AppButton extends StatelessWidget {
   double get _height {
     switch (size) {
       case AppButtonSize.small:
-        return 40;
+        return 44;
       case AppButtonSize.medium:
-        return 52;
+        return 54;
       case AppButtonSize.large:
         return 60;
     }
@@ -53,11 +67,20 @@ class AppButton extends StatelessWidget {
   EdgeInsets get _padding {
     switch (size) {
       case AppButtonSize.small:
-        return const EdgeInsets.symmetric(horizontal: AppSpacing.spaceMD, vertical: AppSpacing.spaceSM);
+        return const EdgeInsets.symmetric(
+          horizontal: AppSpacing.spaceMD,
+          vertical: AppSpacing.spaceSM,
+        );
       case AppButtonSize.medium:
-        return const EdgeInsets.symmetric(horizontal: AppSpacing.spaceLG, vertical: AppSpacing.spaceMD);
+        return const EdgeInsets.symmetric(
+          horizontal: AppSpacing.spaceLG,
+          vertical: AppSpacing.spaceMD,
+        );
       case AppButtonSize.large:
-        return const EdgeInsets.symmetric(horizontal: AppSpacing.spaceXL, vertical: AppSpacing.spaceMD);
+        return const EdgeInsets.symmetric(
+          horizontal: AppSpacing.spaceXL,
+          vertical: AppSpacing.spaceMD,
+        );
     }
   }
 
@@ -99,24 +122,12 @@ class AppButton extends StatelessWidget {
 
     switch (variant) {
       case AppButtonVariant.primary:
-        return ElevatedButton(
-          onPressed: isLoading ? null : onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryPink,
-            foregroundColor: AppColors.white,
-            padding: _padding,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
-            ),
-            elevation: 0,
-          ),
-          child: child,
-        );
+        return const SizedBox.shrink();
       case AppButtonVariant.secondary:
         return ElevatedButton(
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryPurple,
+            backgroundColor: AppColors.plum,
             foregroundColor: AppColors.white,
             padding: _padding,
             shape: RoundedRectangleBorder(
@@ -130,9 +141,9 @@ class AppButton extends StatelessWidget {
         return OutlinedButton(
           onPressed: isLoading ? null : onPressed,
           style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.primaryPurple,
+            foregroundColor: AppColors.plum,
             padding: _padding,
-            side: const BorderSide(color: AppColors.primaryPurple, width: 1.5),
+            side: const BorderSide(color: AppColors.plum, width: 1.5),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
             ),
@@ -143,7 +154,7 @@ class AppButton extends StatelessWidget {
         return TextButton(
           onPressed: isLoading ? null : onPressed,
           style: TextButton.styleFrom(
-            foregroundColor: AppColors.primaryPurple,
+            foregroundColor: AppColors.plum,
             padding: _padding,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
@@ -176,7 +187,7 @@ class AppButton extends StatelessWidget {
         return AppColors.white;
       case AppButtonVariant.outline:
       case AppButtonVariant.ghost:
-        return AppColors.primaryPurple;
+        return AppColors.plum;
     }
   }
 }
@@ -206,18 +217,18 @@ class AppIconButton extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: backgroundColor ?? AppColors.white,
+        color: backgroundColor ?? AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: AppColors.shadowTint,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: IconButton(
-        icon: Icon(icon, color: color ?? AppColors.textDark),
+        icon: Icon(icon, color: color ?? AppColors.ink),
         onPressed: onPressed,
         iconSize: size * 0.5,
       ),
