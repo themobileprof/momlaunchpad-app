@@ -4,6 +4,7 @@ import '../models/user_profile.dart';
 import '../services/api_service.dart';
 import 'auth_provider.dart';
 import 'service_providers.dart';
+import 'welcome_provider.dart';
 
 class ProfileState {
   final UserProfile? profile;
@@ -79,6 +80,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
     final profile = await _apiService.updateProfile(payload);
     state = ProfileState(profile: profile, isLoading: false);
     await ref.read(authProvider.notifier).refreshUser();
+    ref.invalidate(welcomeMessageProvider);
     return profile;
   }
 
@@ -99,6 +101,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
 
     state = ProfileState(profile: profile, isLoading: false);
     await ref.read(authProvider.notifier).refreshUser();
+    ref.invalidate(welcomeMessageProvider);
     return profile;
   }
 }
