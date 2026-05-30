@@ -27,4 +27,4 @@ final homeNavigationProvider =
 );
 
 /// Calendar tab index in [HomeScreen].
-const calendarTabIndex = 1;
+const calendarTabIndex = 2;

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/auth_response.dart';
 import '../models/user.dart';
 import '../models/user_profile.dart';
+import '../models/welcome_message.dart';
 import '../models/reminder.dart';
 import '../models/doctor_visit.dart';
 import '../models/vital_reading.dart';
@@ -235,6 +236,25 @@ class ApiService {
             ? 'Failed to complete onboarding'
             : 'Failed to update profile',
       ),
+    );
+  }
+
+  /// Fetch today's personalized welcome message (cached server-side per day).
+  Future<WelcomeMessage> getWelcomeMessage() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/users/me/welcome'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      return WelcomeMessage.fromJson(
+        Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+      );
+    }
+
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to load welcome message'),
     );
   }
 

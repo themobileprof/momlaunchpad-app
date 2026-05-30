@@ -7,6 +7,7 @@ import '../widgets/widgets.dart';
 import '../widgets/more_menu_sheet.dart';
 import '../providers/home_navigation_provider.dart';
 import 'conversation_list_screen.dart';
+import 'home_dashboard_screen.dart';
 import 'calendar_screen.dart';
 import 'profile_screen.dart';
 
@@ -23,6 +24,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   late PageController _pageController;
 
   static const List<_NavItem> _primaryTabs = [
+    _NavItem(
+      icon: Icons.home_outlined,
+      activeIcon: Icons.home_rounded,
+      label: 'Home',
+      screen: HomeDashboardScreen(),
+    ),
     _NavItem(
       icon: Icons.chat_bubble_outline_rounded,
       activeIcon: Icons.chat_bubble_rounded,
