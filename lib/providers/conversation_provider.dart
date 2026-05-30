@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/conversation.dart';
+import '../utils/conversation_list_utils.dart';
 import 'service_providers.dart';
 
 class ConversationState {
@@ -50,26 +51,45 @@ class ConversationNotifier extends Notifier<ConversationState> {
     }
   }
 
-  Future<Conversation?> createConversation(String title) async {
+  Future<Conversation?> createConversation([String? title]) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final service = ref.read(conversationServiceProvider);
-      debugPrint('DEBUG: Calling service.createConversation...');
-      final newConversation = await service.createConversation(title);
-      debugPrint('DEBUG: Service returned: ${newConversation.id}');
-      
+      final newConversation = await service.createConversation(
+        title ?? defaultConversationTitle,
+      );
+
       state = state.copyWith(
         conversations: [newConversation, ...state.conversations],
         isLoading: false,
       );
       return newConversation;
     } catch (e) {
-      debugPrint('DEBUG: createConversation failed: $e');
+      debugPrint('Failed to create conversation: $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
       );
       return null;
+    }
+  }
+
+  Future<void> renameConversation(String id, String title) async {
+    try {
+      final service = ref.read(conversationServiceProvider);
+      await service.updateConversation(id, title: title);
+
+      state = state.copyWith(
+        conversations: state.conversations
+            .map(
+              (c) => c.id == id
+                  ? c.copyWith(title: title)
+                  : c,
+            )
+            .toList(),
+      );
+    } catch (e) {
+      debugPrint('Failed to rename conversation: $e');
     }
   }
 

@@ -5,7 +5,9 @@ import '../models/message.dart';
 import '../models/reminder.dart';
 import '../services/websocket_service.dart';
 import '../services/conversation_service.dart';
+import '../utils/conversation_list_utils.dart';
 import 'service_providers.dart';
+import 'conversation_provider.dart';
 
 /// Chat state
 class ChatState {
@@ -15,6 +17,7 @@ class ChatState {
   final String currentResponse; // For streaming responses
   final CalendarSuggestion? pendingSuggestion;
   final String? currentConversationId;
+  final String? conversationTitle;
   final bool isLoading;
 
   ChatState({
@@ -24,6 +27,7 @@ class ChatState {
     this.currentResponse = '',
     this.pendingSuggestion,
     this.currentConversationId,
+    this.conversationTitle,
     this.isLoading = false,
   });
 
@@ -35,6 +39,7 @@ class ChatState {
     CalendarSuggestion? pendingSuggestion,
     bool clearSuggestion = false,
     String? currentConversationId,
+    String? conversationTitle,
     bool? isLoading,
   }) {
     return ChatState(
@@ -44,6 +49,7 @@ class ChatState {
       currentResponse: currentResponse ?? this.currentResponse,
       pendingSuggestion: clearSuggestion ? null : (pendingSuggestion ?? this.pendingSuggestion),
       currentConversationId: currentConversationId ?? this.currentConversationId,
+      conversationTitle: conversationTitle ?? this.conversationTitle,
       isLoading: isLoading ?? this.isLoading,
     );
   }
@@ -63,17 +69,15 @@ class ChatNotifier extends Notifier<ChatState> {
   }
 
   /// Initialize chat with a specific conversation
-  Future<void> initialize(String conversationId) async {
-    debugPrint('DEBUG: ChatNotifier.initialize for conversation: $conversationId');
-    // If already initialized for this conversation, do nothing
-    if (state.currentConversationId == conversationId) {
-       debugPrint('DEBUG: Already initialized for this conversation.');
-       return;
+  Future<void> initialize(String conversationId, {String? title}) async {
+    if (state.currentConversationId == conversationId &&
+        state.conversationTitle == title) {
+      return;
     }
 
-    // Reset state for new conversation
     state = ChatState(
       currentConversationId: conversationId,
+      conversationTitle: title,
       isLoading: true,
     );
     
@@ -213,6 +217,38 @@ class ChatNotifier extends Notifier<ChatState> {
       state = state.copyWith(
         error: 'Could not send message. Please try again.',
       );
+      return;
+    }
+
+    _maybeAutoTitleConversation(content);
+  }
+
+  Future<void> _maybeAutoTitleConversation(String content) async {
+    final conversationId = state.currentConversationId;
+    final currentTitle = state.conversationTitle;
+    if (conversationId == null || currentTitle == null) return;
+    if (!isGenericConversationTitle(currentTitle)) return;
+
+    final userMessages =
+        state.messages.where((message) => message.isUser).length;
+    if (userMessages != 1) return;
+
+    final newTitle = titleFromFirstMessage(content);
+    if (newTitle == currentTitle) return;
+
+    state = state.copyWith(conversationTitle: newTitle);
+
+    try {
+      await _conversationService.updateConversation(
+        conversationId,
+        title: newTitle,
+      );
+      await ref.read(conversationProvider.notifier).renameConversation(
+            conversationId,
+            newTitle,
+          );
+    } catch (e) {
+      debugPrint('Failed to auto-title conversation: $e');
     }
   }
 

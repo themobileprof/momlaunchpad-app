@@ -10,6 +10,7 @@ import '../widgets/widgets.dart';
 import '../models/reminder.dart';
 import '../models/message.dart';
 import '../models/conversation_group.dart';
+import '../utils/conversation_list_utils.dart';
 
 /// Chat screen - Primary text-based chat feature
 class ChatScreen extends ConsumerStatefulWidget {
@@ -43,7 +44,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // Initialize chat with specific conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('DEBUG: Calling chatProvider.initialize...');
-      ref.read(chatProvider.notifier).initialize(widget.conversationId);
+      ref.read(chatProvider.notifier).initialize(
+            widget.conversationId,
+            title: widget.conversationTitle,
+          );
     });
   }
 
@@ -138,7 +142,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            widget.conversationTitle ?? 'Chat', 
+            conversationDisplayTitle(
+              chatState.conversationTitle ??
+                  widget.conversationTitle ??
+                  defaultConversationTitle,
+            ),
             style: AppTypography.headingMedium,
             overflow: TextOverflow.ellipsis,
           ),
