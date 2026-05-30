@@ -6,6 +6,7 @@ import '../models/vital_reading.dart';
 import '../providers/symptom_provider.dart';
 import '../providers/vitals_provider.dart';
 import '../services/api_service.dart';
+import '../utils/symptom_resolve.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../widgets/log_vitals_sheet.dart';
@@ -155,8 +156,11 @@ class _SymptomsTab extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             recentAsync.when(
-              data: (symptoms) =>
-                  _SymptomsTabContent.buildRecentSymptoms(symptoms),
+              data: (symptoms) => _SymptomsTabContent.buildRecentSymptoms(
+                symptoms,
+                context: context,
+                ref: ref,
+              ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stack) =>
                   _SymptomsTabContent.buildError(context, ref, error.toString()),
@@ -656,7 +660,11 @@ class _SymptomsTabContent {
     );
   }
 
-  static Widget buildRecentSymptoms(List<Symptom> symptoms) {
+  static Widget buildRecentSymptoms(
+    List<Symptom> symptoms, {
+    required BuildContext context,
+    required WidgetRef ref,
+  }) {
     if (symptoms.isEmpty) {
       return Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -689,46 +697,71 @@ class _SymptomsTabContent {
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ListTile(
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: severityColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                _getSymptomIcon(symptom.symptomType),
-                color: severityColor,
-                size: 20,
-              ),
-            ),
-            title: Text(
-              symptom.symptomTypeName,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: Text(
-              symptom.description,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: symptom.isResolved
-                ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
-                : Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
                       color: severityColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      shape: BoxShape.circle,
                     ),
-                    child: Text(
-                      symptom.severity.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: severityColor,
+                    child: Icon(
+                      _getSymptomIcon(symptom.symptomType),
+                      color: severityColor,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    symptom.symptomTypeName,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    symptom.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: symptom.isResolved
+                      ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+                      : Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: severityColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            symptom.severity.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: severityColor,
+                            ),
+                          ),
+                        ),
+                ),
+                if (!symptom.isResolved)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () =>
+                          markSymptomResolved(context, ref, symptom.id),
+                      icon: const Icon(Icons.check_circle_outline, size: 16),
+                      label: const Text('Mark resolved'),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
                       ),
                     ),
                   ),
+              ],
+            ),
           ),
         );
       }).toList(),

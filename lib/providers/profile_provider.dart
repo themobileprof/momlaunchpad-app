@@ -80,7 +80,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
     final profile = await _apiService.updateProfile(payload);
     state = ProfileState(profile: profile, isLoading: false);
     await ref.read(authProvider.notifier).refreshUser();
-    ref.invalidate(welcomeMessageProvider);
+    await ref.read(welcomeProvider.notifier).refreshWelcome();
     return profile;
   }
 
@@ -101,7 +101,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
 
     state = ProfileState(profile: profile, isLoading: false);
     await ref.read(authProvider.notifier).refreshUser();
-    ref.invalidate(welcomeMessageProvider);
+    await ref.read(welcomeProvider.notifier).refreshWelcome();
     return profile;
   }
 }

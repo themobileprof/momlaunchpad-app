@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/symptom.dart';
 import '../providers/symptom_provider.dart';
+import '../utils/symptom_resolve.dart';
 import '../theme/colors.dart';
 import 'package:intl/intl.dart';
 
@@ -387,27 +388,6 @@ class _SymptomHistoryScreenState extends ConsumerState<SymptomHistoryScreen> {
   }
 
   Future<void> _resolveSymptom(String symptomId) async {
-    try {
-      await ref.read(resolveSymptomProvider(symptomId).future);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Symptom marked as resolved'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        // Refresh the list
-        ref.invalidate(symptomHistoryProvider);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to resolve symptom: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+    await markSymptomResolved(context, ref, symptomId);
   }
 }

@@ -1,30 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/profile_provider.dart';
+import '../providers/symptom_provider.dart';
 import '../providers/welcome_provider.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../widgets/widgets.dart';
+import '../widgets/ongoing_symptom_prompt.dart';
 import 'calendar_screen.dart';
 import 'conversation_list_screen.dart';
 import 'symptom_stats_screen.dart';
 
 /// Home dashboard with a daily personalized welcome message.
-class HomeDashboardScreen extends ConsumerWidget {
+class HomeDashboardScreen extends ConsumerStatefulWidget {
   const HomeDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final welcomeAsync = ref.watch(welcomeMessageProvider);
+  ConsumerState<HomeDashboardScreen> createState() =>
+      _HomeDashboardScreenState();
+}
+
+class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
+  Object? _lastProfileRefreshKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final welcomeState = ref.watch(welcomeProvider);
     final profile = ref.watch(profileProvider).profile;
+
+    ref.listen(profileProvider, (previous, next) {
+      final profile = next.profile;
+      if (profile == null) return;
+      final key = Object.hash(
+        profile.name,
+        profile.pregnancyWeek,
+        profile.primaryConcern,
+        profile.expectedDeliveryDate?.millisecondsSinceEpoch,
+      );
+      if (_lastProfileRefreshKey != null && _lastProfileRefreshKey != key) {
+        ref.read(welcomeProvider.notifier).refreshWelcome();
+      }
+      _lastProfileRefreshKey = key;
+    });
 
     return Scaffold(
       backgroundColor: context.appCanvas,
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.invalidate(welcomeMessageProvider);
-          await ref.read(welcomeMessageProvider.future);
+          ref.invalidate(recentSymptomsProvider);
+          ref.invalidate(symptomStatsProvider);
+          await ref.read(welcomeProvider.notifier).refreshWelcome();
         },
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -56,15 +82,10 @@ class HomeDashboardScreen extends ConsumerWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceMD),
-                child: welcomeAsync.when(
-                  data: (welcome) => _WelcomeCard(message: welcome.message),
-                  loading: () => const _WelcomeLoadingCard(),
-                  error: (error, _) => _WelcomeErrorCard(
-                    onRetry: () => ref.invalidate(welcomeMessageProvider),
-                  ),
-                ),
+                child: _buildWelcomeSection(welcomeState),
               ),
             ),
+            const SliverToBoxAdapter(child: OngoingSymptomPrompt()),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -118,6 +139,21 @@ class HomeDashboardScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildWelcomeSection(WelcomeState welcomeState) {
+    if (welcomeState.isLoading && welcomeState.message == null) {
+      return const _WelcomeLoadingCard();
+    }
+    if (welcomeState.error != null && welcomeState.message == null) {
+      return _WelcomeErrorCard(
+        onRetry: () => ref.read(welcomeProvider.notifier).refreshWelcome(),
+      );
+    }
+    if (welcomeState.message != null) {
+      return _WelcomeCard(message: welcomeState.message!.message);
+    }
+    return const _WelcomeLoadingCard();
   }
 
   void _open(BuildContext context, Widget screen) {
