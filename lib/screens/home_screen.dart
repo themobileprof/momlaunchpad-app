@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../widgets/widgets.dart'; // Import this to get GlassContainer
-import 'call_screen.dart';
 import 'conversation_list_screen.dart';
 import 'calendar_screen.dart';
 import 'savings_screen.dart';
@@ -39,12 +38,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // Define navigation items for cleaner code
   static const List<_NavItem> _navItems = [
-    _NavItem(
-      icon: Icons.phone_in_talk_outlined,
-      activeIcon: Icons.phone_in_talk_rounded,
-      label: 'Call',
-      screen: CallScreen(),
-    ),
     _NavItem(
       icon: Icons.chat_bubble_outline_rounded,
       activeIcon: Icons.chat_bubble_rounded,

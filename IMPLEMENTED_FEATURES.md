@@ -137,45 +137,6 @@ if (isSymptomReport(message)) {
 
 ---
 
-### 7. In-App Voice Calls (STT/TTS) ✅
-**Status:** Newly Implemented
-
-**Features:**
-- Speech-to-Text using native device STT (Google/Apple)
-- Voice Activity Detection (auto-send after 2 seconds of silence)
-- Text-to-Speech with sentence-level buffering
-- Real-time transcript overlay
-- Mute/unmute controls
-- Seamless WebSocket integration (reuses chat infrastructure)
-
-**Files:**
-- `lib/screens/call_screen.dart` - Complete voice call implementation
-- `pubspec.yaml` - Added speech_to_text ^6.6.2 and flutter_tts ^4.0.2
-
-**Flow:**
-1. User taps call button → Connects WebSocket
-2. STT starts listening automatically
-3. User speaks naturally
-4. After 2 seconds of silence → Auto-sends text via WebSocket
-5. Backend streams AI response chunks
-6. Sentence-level TTS speaks complete sentences as they arrive
-7. Automatically resumes listening after AI finishes speaking
-
-**Optimizations:**
-- **VAD (Voice Activity Detection)**: Auto-detects when user stops speaking (2-second threshold)
-- **Sentence-Level TTS**: Buffers chunks until sentence end (., !, ?) for natural speech
-- **Automatic Turn-Taking**: Stops listening when AI speaks, resumes after completion
-- **Visual Feedback**: Pulsing animation when listening, status text updates
-
-**Latency:**
-- STT: 500-1000ms (on-device)
-- WebSocket send: 50-200ms
-- Backend AI: 1-3s (streaming)
-- TTS: Starts immediately (sentence-level)
-- **Total perceived latency: 2-4 seconds** (acceptable for Q&A)
-
----
-
 ### 8. Savings Tracker ✅
 **Status:** Previously Implemented
 
@@ -216,19 +177,12 @@ The backend handles:
 
 ---
 
-### 2. Twilio Voice Calls
-**Reason:** Backend-only feature (users call a phone number)
-
-The backend provides:
-- Twilio phone number for calling
-- Speech-to-text
-- Text-to-speech responses
+### 2. Premium live calls
+**Reason:** Backend-managed premium feature; mobile UI not shipped yet
 
 **Frontend impact:**
-- Current "Call" screen is a placeholder for future in-app voice
-- No integration needed (users call via regular phone app)
-
-**Note:** The call_screen.dart has TODOs for future in-app voice recording, which is separate from Twilio voice calls.
+- Settings shows **Live calls — Coming soon for Premium members**
+- Text chat remains the primary conversational channel
 
 ---
 
@@ -285,10 +239,6 @@ dependencies:
   http: ^1.2.2
   flutter_secure_storage: ^10.0.0
   google_sign_in: ^6.2.2
-  
-  # Voice features (newly added)
-  speech_to_text: ^6.6.2
-  flutter_tts: ^4.0.2
 ```
 
 ---
@@ -303,18 +253,12 @@ dependencies:
 - ✅ Calendar suggestion dialog
 - ✅ Error message display
 - ✅ Google Sign-In flow
-- ✅ Voice call with STT/TTS
-- ✅ Voice Activity Detection (2-second silence)
-- ✅ Sentence-level TTS playback
 - ⏳ Savings tracker CRUD operations
 - ⏳ Calendar reminder CRUD operations
 
 ### Unit Tests Needed
 - [ ] WebSocket service (mocked)
 - [ ] Chat provider state management
-- [ ] STT/TTS integration (mocked)
-- [ ] Voice Activity Detection logic
-- [ ] Sentence-level TTS buffering
 - [ ] Network monitor reconnection logic
 - [ ] Rate limit tracking
 - [ ] Chat utilities (isSmallTalk, isSymptomReport)
@@ -328,9 +272,6 @@ dependencies:
 - ✅ Rate limiting (client-side)
 - ✅ Error handling and reconnection
 - ✅ Network monitoring
-- ✅ Voice calls with STT/TTS
-- ✅ Voice Activity Detection
-- ✅ Sentence-level TTS
 - ✅ Calendar suggestions
 - ✅ Google OAuth
 - ✅ Modern UI design
@@ -352,14 +293,7 @@ dependencies:
 
 4. **Subscription UI**
    - Show current plan in settings
-   - Voice Enhancements**
-   - Multi-language TTS (ES, FR)
-   - Adjustable speech rate in settings
-   - Background noise filtering
-   - Wakeword detection ("Hey MomLaunchpad"
-   - STT conversion (client-side)
-   - Send text via WebSocket
-   - TTS for responses (client-side)
+   - Enable Premium live calls when backend is ready
 
 ---
 
@@ -372,8 +306,7 @@ dependencies:
 | Google Sign-In | ✅ Complete | ✅ Complete | ID token exchange |
 | Calendar Suggestions | ✅ Complete | ✅ Complete | Dialog with confirmation |
 | Subscription System | ✅ Complete | ❌ No UI | Backend manages plans |
-| Twilio Voice | ✅ Complete | ❌ Not applicable | Users call phone number |
-| In-App Voice (STT/TTS) | ❌ Not backend feature | ✅ Complete | Client-side only |
+| Premium live calls | ✅ Backend | ⏳ Coming soon | Settings indicator only |
 | PII Protection | ✅ Complete | ❌ Backend-only | No frontend action needed |
 | Circuit Breaker | ✅ Complete | ❌ Backend-only | Frontend receives fallbacks |
 | Session Reset (1hr) | ✅ Complete | ❌ Backend-only | No frontend tracking |
@@ -391,12 +324,11 @@ dependencies:
 - Calendar suggestion workflow
 - Google OAuth authentication
 - Savings tracker
-- **In-app voice calls (STT/TTS with VAD)**
 - Calendar/reminders management
 
 **Intentionally Skipped (Backend-Only):**
 - Subscription management UI
-- Twilio voice integration (uses phone app)
+- Premium live calls (mobile UI coming soon)
 - PII detection (backend handles)
 - Circuit breaker states (transparent to frontend)
 - Session lifecycle (backend manages)

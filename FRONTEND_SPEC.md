@@ -10,7 +10,7 @@ Repo: momlaunchpad-mobile
 The mobile app is the core product.
 It provides:
 
-Conversational pregnancy support (text + voice)
+Conversational pregnancy support (text chat; live calls planned for Premium)
 
 Background logging via chat
 
@@ -67,7 +67,7 @@ Capabilities
 
 Text input → text output
 
-Voice input → text → AI → text → voice output
+Text chat via WebSocket → AI → streamed text response
 
 WebSocket streaming for low latency
 
@@ -79,7 +79,7 @@ User speaks/types
 → Text sent to backend via WebSocket
 → Streaming response received
 → UI updates incrementally
-→ Optional TTS playback
+→ Optional live calls (Premium, coming soon)
 
 UX Rules
 
@@ -163,7 +163,7 @@ All AI calls via backend only
 
 Chat response start < 1.5s
 
-Voice roundtrip < 3s
+Chat first response < 3s (streaming)
 
 App cold start < 2s
 

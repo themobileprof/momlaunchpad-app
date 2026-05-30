@@ -47,37 +47,16 @@ if !hasAccess {
 
 ---
 
-## 2. Twilio Voice Integration ✅
+## 2. Premium live calls ✅
 
 ### Implementation
-- **Premium feature:** Phone call access to AI assistant
-- **Speech-to-text:** Twilio transcribes user speech
-- **Text-to-speech:** AWS Polly voices for responses
-- **Session management:** Per-call conversation state
-- **Multilingual:** Auto-detects user language preference
+- **Premium feature:** Phone access to the AI assistant (backend-managed)
+- **Same chat engine** as WebSocket text chat
+- **Multilingual:** Uses the user's language preference
 
-### Technology
-- Twilio Voice API
-- AWS Polly via Twilio
-- TwiML response generation
-- Webhook-based architecture
-
-### Files
-- `pkg/twilio/voice.go` - TwiML builder, webhook validation (TDD: 100%)
-- `internal/api/voice.go` - Voice webhook handlers
-- `VOICE.md` - Complete setup documentation
-
-### Endpoints
-- `POST /api/voice/incoming` - Initial call webhook
-- `POST /api/voice/gather` - Speech recognition callback
-- `POST /api/voice/status` - Call status updates
-
-### Supported Languages
-- English (Polly.Joanna)
-- Spanish (Polly.Lupe)
-- French (Polly.Celine)
-- Portuguese (Polly.Vitoria)
-- German (Polly.Vicki)
+### Mobile app
+- Live calls are **not implemented in the Flutter app yet**
+- Settings shows **Coming soon for Premium members**
 
 ---
 

@@ -903,42 +903,9 @@ Choose based on your team's preference. The `ChatProvider` example can be adapte
 
 ---
 
-### Q: How do I implement audio chat (voice recording)?
+### Q: Will the app support live calls?
 
-**A:** The backend is **text-only**. Audio support is "indirect" - you must:
-
-1. **Record audio** on mobile (flutter_sound, record)
-2. **Convert to text** using client-side STT:
-   - Google Cloud Speech-to-Text
-   - AWS Transcribe
-   - Device native STT (speech_to_text package)
-3. **Send text** to WebSocket (same as typed messages)
-4. **Receive text** response from AI
-5. **Convert to speech** using TTS:
-   - flutter_tts package
-   - Google Cloud TTS
-   - Device native TTS
-
-**Backend does NOT provide:**
-- ❌ STT endpoint
-- ❌ TTS endpoint
-- ❌ Audio file uploads
-
-**Example flow:**
-```dart
-// 1. Record audio
-final audioFile = await recorder.stop();
-
-// 2. Send to STT service (client-side)
-final text = await googleSpeech.recognize(audioFile);
-
-// 3. Send text to backend via WebSocket
-chatProvider.sendMessage(text);
-
-// 4. Receive text response
-// 5. Convert to speech (client-side)
-await flutterTts.speak(response);
-```
+**A:** Live calls are planned as a **Premium** feature. The mobile app currently uses **text-only chat over WebSocket**. When live calls ship, they will be backend-managed; the app will surface access in Settings (no in-app speech pipeline in the current MVP).
 
 ---
 

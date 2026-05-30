@@ -33,6 +33,22 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: AppSpacing.spaceLG),
 
+          _buildSectionHeader('Premium'),
+          AppListTileCard(
+            leadingIcon: Icons.phone_in_talk_rounded,
+            iconColor: AppColors.primaryPurple,
+            title: 'Live calls',
+            subtitle: 'Coming soon for Premium members',
+            trailing: const AppBadge(
+              label: 'Soon',
+              variant: AppBadgeVariant.secondary,
+              small: true,
+            ),
+            onTap: () => _showComingSoon(context, 'Live calls'),
+          ),
+
+          const SizedBox(height: AppSpacing.spaceLG),
+
           // Settings sections
           _buildSectionHeader('Health'),
           AppListTileCard(

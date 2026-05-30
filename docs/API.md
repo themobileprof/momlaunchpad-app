@@ -609,71 +609,9 @@ Messages are sent as JSON objects with different types:
 
 ---
 
-### Voice (Twilio Webhooks)
+### Live calls (Premium — backend)
 
-#### POST /api/voice/incoming
-Twilio webhook for incoming voice calls (premium feature).
-
-**Description:** Handles incoming phone calls from premium users. Identifies user by phone number, plays greeting in their preferred language, and begins conversation.
-
-**Request:** Form data from Twilio
-- `CallSid`: Unique call identifier
-- `From`: Caller's phone number
-- `To`: Called number (your Twilio number)
-- `CallStatus`: Current call status
-
-**Response:** TwiML XML
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say voice="Polly.Joanna" language="en-US">Welcome to MomLaunchpad...</Say>
-  <Gather action="/api/voice/gather" input="speech" language="en-US" timeout="5">
-    <Say>How can I help you today?</Say>
-  </Gather>
-</Response>
-```
-
-#### POST /api/voice/gather
-Twilio webhook for speech recognition results.
-
-**Description:** Receives transcribed user speech, processes through chat engine, and returns AI response as TwiML.
-
-**Request:** Form data from Twilio
-- `CallSid`: Unique call identifier
-- `SpeechResult`: Transcribed user speech
-- `Confidence`: Transcription confidence score
-
-**Response:** TwiML with AI response
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say voice="Polly.Joanna" language="en-US">Your baby will start kicking around week 18...</Say>
-  <Gather action="/api/voice/gather" input="speech" language="en-US" timeout="5">
-    <Say>Do you have another question?</Say>
-  </Gather>
-  <Say>Thank you for calling MomLaunchpad. Take care!</Say>
-  <Hangup/>
-</Response>
-```
-
-#### POST /api/voice/status
-Twilio webhook for call status updates.
-
-**Description:** Receives call status updates and cleans up sessions when calls end.
-
-**Request:** Form data from Twilio
-- `CallSid`: Unique call identifier
-- `CallStatus`: New status (completed, failed, etc.)
-
-**Response:** Plain text "OK"
-
-**Voice Feature Notes:**
-- Available only to premium users
-- Automatically uses user's preferred language
-- Supports AWS Polly voices (Joanna, Lupe, Celine, Vitoria, Vicki)
-- Session management with automatic cleanup
-- Integrates with same chat engine as WebSocket
-- See [VOICE.md](VOICE.md) for detailed setup instructions
+Premium members will access live phone support through backend-managed voice endpoints. The mobile app does not implement live calls yet; Settings shows a **Coming soon** indicator.
 
 ---
 
@@ -1762,8 +1700,7 @@ All endpoints may return error responses:
 - All chat messages are persisted to database
 - Facts are extracted with confidence scores (0.0-1.0)
 - Calendar suggestions require explicit user confirmation to create reminders
-- Voice calls are a premium feature requiring Twilio configuration
-- Voice responses use AWS Polly voices for natural speech
+- Live calls are a premium feature (backend-managed; not yet in the mobile app)
 - Subscription quotas are tracked per feature per period (daily/weekly/monthly)
 - Symptoms are automatically extracted from chat conversations when users report health concerns
 - Symptom extraction uses pattern matching for 18+ common pregnancy symptoms
