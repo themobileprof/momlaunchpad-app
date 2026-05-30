@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_profile.dart';
 import '../providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
+import '../services/api_service.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -54,8 +55,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.dispose();
   }
 
-  void _applyProfile(UserProfile profile) {
-    if (_initialized) return;
+  void _applyProfile(UserProfile profile, {bool force = false}) {
+    if (_initialized && !force) return;
     _initialized = true;
     _nameController.text = profile.name;
     _language = profile.language;
@@ -84,7 +85,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     setState(() => _isSaving = true);
     try {
-      await ref.read(profileProvider.notifier).updateProfile(
+      final saved = await ref.read(profileProvider.notifier).updateProfile(
             ProfileSavePayload(
               name: _nameController.text.trim(),
               language: _language,
@@ -102,14 +103,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           );
 
       if (mounted) {
+        setState(() => _applyProfile(saved, force: true));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile updated')),
         );
       }
-    } catch (_) {
+    } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to save profile')),
+          SnackBar(content: Text(e.message)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save profile: $e')),
         );
       }
     } finally {

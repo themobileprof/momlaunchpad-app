@@ -33,7 +33,7 @@ class UserProfile {
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
       expectedDeliveryDate: _parseDate(json['expected_delivery_date']),
       pregnancyStartDate: _parseDate(json['pregnancy_start_date']),
-      pregnancyWeek: json['pregnancy_week'] as int?,
+      pregnancyWeek: _parseInt(json['pregnancy_week']),
       isFirstPregnancy: json['is_first_pregnancy'] as bool?,
       primaryConcern: json['primary_concern']?.toString(),
       dietPreference: json['diet_preference']?.toString(),
@@ -45,6 +45,13 @@ class UserProfile {
   static DateTime? _parseDate(Object? value) {
     if (value == null) return null;
     return DateTime.parse(value.toString());
+  }
+
+  static int? _parseInt(Object? value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString());
   }
 
   static Map<String, String> _parseFactMap(Object? raw) {

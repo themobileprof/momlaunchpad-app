@@ -41,7 +41,11 @@ class ProfileNotifier extends Notifier<ProfileState> {
 
     ref.listen(authProvider, (previous, next) {
       if (next.isLoggedIn && next.user != null) {
-        loadProfile();
+        final userChanged = previous?.user?.id != next.user?.id;
+        final loggedIn = previous?.isLoggedIn != true;
+        if (loggedIn || userChanged || previous == null) {
+          loadProfile();
+        }
       } else if (!next.isLoggedIn) {
         state = const ProfileState();
       }
