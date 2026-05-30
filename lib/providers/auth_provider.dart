@@ -116,11 +116,13 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  /// Login user
+  /// Login with email and password
   Future<void> login({
     required String email,
     required String password,
   }) async {
+    if (state.isLoading) return;
+
     state = state.copyWith(isLoading: true, error: null);
     
     try {
@@ -154,8 +156,10 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  /// Google Sign-In
+  /// Google Sign-In (separate from email/password; same account if email matches)
   Future<void> signInWithGoogle() async {
+    if (state.isLoading) return;
+
     state = state.copyWith(isLoading: true, error: null);
 
     try {

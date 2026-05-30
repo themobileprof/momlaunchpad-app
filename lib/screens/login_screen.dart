@@ -4,6 +4,7 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/google_sign_in_button.dart';
 import 'register_screen.dart';
 
 /// Login screen
@@ -19,6 +20,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _googleSignInInProgress = false;
 
   @override
   void dispose() {
@@ -49,6 +51,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleGoogleSignIn() async {
+    setState(() => _googleSignInInProgress = true);
     try {
       await ref.read(authProvider.notifier).signInWithGoogle();
       // Navigation handled by AppInitializer
@@ -61,12 +64,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         );
       }
+    } finally {
+      if (mounted) {
+        setState(() => _googleSignInInProgress = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final emailLoginLoading = authState.isLoading && !_googleSignInInProgress;
+    final googleLoginLoading = authState.isLoading && _googleSignInInProgress;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
@@ -173,8 +182,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     
                     // Login Button
                     ElevatedButton(
-                      onPressed: authState.isLoading ? null : _handleLogin,
-                      child: authState.isLoading
+                      onPressed: emailLoginLoading ? null : _handleLogin,
+                      child: emailLoginLoading
                           ? const SizedBox(
                               height: 20,
                               width: 20,
@@ -207,53 +216,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     
                     const SizedBox(height: AppSpacing.spaceMD),
                     
-                    // Google Sign-In Button
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: ElevatedButton(
-                        onPressed: authState.isLoading ? null : _handleGoogleSignIn,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF1F1F1F),
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: Colors.grey[200]!,
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.login,
-                              size: 24,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Continue with Google',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.15,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    GoogleSignInButton(
+                      onPressed: _handleGoogleSignIn,
+                      isLoading: googleLoginLoading,
                     ),
                     
                     const SizedBox(height: AppSpacing.spaceMD),

@@ -2,6 +2,8 @@
 
 Stack: Flutter, Riverpod, `http`, WebSockets, `lib/` layout (screens, widgets, providers, services, models, theme, config).
 
+**Authentication:** Login and register support **two independent paths** — (1) email + password via `/api/auth/login` and `/api/auth/register`, and (2) Google Sign-In via `/api/auth/google/token`. Keep both working; use separate loading UI per method on auth screens; backend links OAuth to an existing user when the email matches.
+
 **Quick refactor audit (run from repo root):** `bash tool/refactor_check.sh` — runs `flutter analyze`, lists the largest `lib/` Dart files, and prints `dynamic` usages outside `lib/models/` for manual review.
 
 ---
