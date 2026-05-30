@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import '../services/websocket_service.dart';
@@ -26,4 +27,12 @@ final webSocketServiceProvider = Provider<WebSocketService>((ref) {
 final conversationServiceProvider = Provider<ConversationService>((ref) {
   final storage = ref.watch(storageServiceProvider);
   return ConversationService(baseUrl: AppConfig.baseUrl, storage: storage);
+});
+
+/// Google Sign-In client (singleton; serverClientId required for ID tokens on Android)
+final googleSignInProvider = Provider<GoogleSignIn>((ref) {
+  return GoogleSignIn(
+    scopes: const ['email', 'profile'],
+    serverClientId: AppConfig.googleWebClientId,
+  );
 });

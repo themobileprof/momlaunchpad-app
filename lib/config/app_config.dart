@@ -22,4 +22,9 @@ class AppConfig {
   
   // WebSocket endpoint
   static String get chatWsUrl => '$wsUrl/ws/chat';
+
+  /// OAuth 2.0 Web client ID (must match backend token verification).
+  static String get googleWebClientId =>
+      dotenv.env['GOOGLE_WEB_CLIENT_ID'] ??
+      '334708442168-hpfd6etf2qurl5vd2i3oihno28cfpllv.apps.googleusercontent.com';
 }

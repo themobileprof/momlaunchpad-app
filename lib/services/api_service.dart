@@ -39,6 +39,16 @@ class ApiService {
         .toList();
   }
 
+  String _errorMessageFromBody(http.Response response, String fallback) {
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map && decoded['error'] != null) {
+        return decoded['error'].toString();
+      }
+    } catch (_) {}
+    return fallback;
+  }
+
   // ============ AUTH ENDPOINTS ============
 
   /// Register new user
@@ -67,7 +77,7 @@ class ApiService {
     } else {
       throw ApiException(
         statusCode: response.statusCode,
-        message: jsonDecode(response.body)['error'] ?? 'Registration failed',
+        message: _errorMessageFromBody(response, 'Registration failed'),
       );
     }
   }
@@ -94,7 +104,7 @@ class ApiService {
     } else {
       throw ApiException(
         statusCode: response.statusCode,
-        message: jsonDecode(response.body)['error'] ?? 'Login failed',
+        message: _errorMessageFromBody(response, 'Login failed'),
       );
     }
   }
@@ -119,7 +129,7 @@ class ApiService {
     } else {
       throw ApiException(
         statusCode: response.statusCode,
-        message: jsonDecode(response.body)['error'] ?? 'Google sign-in failed',
+        message: _errorMessageFromBody(response, 'Google sign-in failed'),
       );
     }
   }

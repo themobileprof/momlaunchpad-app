@@ -39,6 +39,7 @@ class AuthState {
 class AuthNotifier extends Notifier<AuthState> {
   late final ApiService _apiService;
   late final StorageService _storageService;
+  late final GoogleSignIn _googleSignIn;
 
   static bool _looksLikeConnectionFailure(Object e) {
     final s = e.toString();
@@ -49,6 +50,7 @@ class AuthNotifier extends Notifier<AuthState> {
   AuthState build() {
     _apiService = ref.read(apiServiceProvider);
     _storageService = ref.read(storageServiceProvider);
+    _googleSignIn = ref.read(googleSignInProvider);
     // Check login status asynchronously after initialization
     Future.microtask(() => _checkLoginStatus());
     return AuthState();
@@ -127,10 +129,6 @@ class AuthNotifier extends Notifier<AuthState> {
         password: password,
       );
 
-      debugPrint('Login response - User name: ${authResponse.user.name}');
-      debugPrint('Login response - User email: ${authResponse.user.email}');
-      debugPrint('Login response - User ID: ${authResponse.user.id}');
-
       state = AuthState(
         user: authResponse.user,
         isLoggedIn: true,
@@ -159,20 +157,13 @@ class AuthNotifier extends Notifier<AuthState> {
   /// Google Sign-In
   Future<void> signInWithGoogle() async {
     state = state.copyWith(isLoading: true, error: null);
-    
-    try {
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        scopes: ['email', 'profile'],
-      );
 
-      // Sign out first to ensure account picker shows
-      await googleSignIn.signOut();
-      
-      // Trigger Google Sign-In flow
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      
+    try {
+      await _googleSignIn.signOut();
+
+      final googleUser = await _googleSignIn.signIn();
+
       if (googleUser == null) {
-        // User cancelled the sign-in
         state = state.copyWith(
           isLoading: false,
           error: 'Sign-in cancelled',
@@ -180,18 +171,16 @@ class AuthNotifier extends Notifier<AuthState> {
         return;
       }
 
-      // Get authentication details
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      
+      final googleAuth = await googleUser.authentication;
+
       if (googleAuth.idToken == null) {
         throw Exception('Failed to get ID token from Google');
       }
 
-      // Send ID token to backend
       final authResponse = await _apiService.googleSignIn(
         idToken: googleAuth.idToken!,
       );
-      
+
       state = AuthState(
         user: authResponse.user,
         isLoggedIn: true,

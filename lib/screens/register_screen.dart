@@ -61,7 +61,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Future<void> _handleGoogleSignIn() async {
     try {
       await ref.read(authProvider.notifier).signInWithGoogle();
-      
+
       // Sign-in successful - pop back to root for AppInitializer to handle
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
