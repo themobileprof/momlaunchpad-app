@@ -67,9 +67,10 @@ class ProfileNotifier extends Notifier<ProfileState> {
       state = ProfileState(profile: profile, isLoading: false);
     } catch (e) {
       debugPrint('Profile load error: $e');
+      final message = e is ApiException ? e.message : 'Failed to load profile';
       state = ProfileState(
         isLoading: false,
-        error: 'Failed to load profile',
+        error: message,
       );
     }
   }

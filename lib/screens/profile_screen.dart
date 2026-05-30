@@ -141,7 +141,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
       body: profileState.isLoading && profile == null
           ? const LoadingState(message: 'Loading profile...')
-          : Form(
+          : profileState.error != null && profile == null
+              ? ErrorState(
+                  title: 'Could not load profile',
+                  description: profileState.error,
+                  onRetry: () =>
+                      ref.read(profileProvider.notifier).loadProfile(),
+                )
+              : Form(
               key: _formKey,
               child: ListView(
                 padding: const EdgeInsets.only(
