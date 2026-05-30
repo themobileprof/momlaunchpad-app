@@ -228,22 +228,30 @@ class _SymptomHistoryScreenState extends ConsumerState<SymptomHistoryScreen> {
             const SizedBox(height: 12),
 
             // Footer
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              alignment: WrapAlignment.spaceBetween,
               children: [
-                Icon(
-                  Icons.calendar_today,
-                  size: 14,
-                  color: Colors.grey[600],
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      size: 14,
+                      color: Colors.grey[600],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      dateFormat.format(symptom.reportedAt),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  dateFormat.format(symptom.reportedAt),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const Spacer(),
                 if (symptom.isResolved)
                   const Chip(
                     label: Text(
@@ -256,13 +264,35 @@ class _SymptomHistoryScreenState extends ConsumerState<SymptomHistoryScreen> {
                     visualDensity: VisualDensity.compact,
                   )
                 else
-                  TextButton.icon(
+                  TextButton(
                     onPressed: () => _resolveSymptom(symptom.id),
-                    icon: const Icon(Icons.check_circle_outline, size: 16),
-                    label: const Text('Mark Resolved'),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       visualDensity: VisualDensity.compact,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_circle_outline,
+                          size: 14,
+                          color: Colors.green[700],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Resolve',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green[700],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
               ],
