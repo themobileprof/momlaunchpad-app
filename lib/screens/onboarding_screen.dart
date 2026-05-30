@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
+import 'package:intl/intl.dart';
+import '../utils/pregnancy_timing.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -330,6 +332,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             onChanged: (value) {
               setState(() => _pregnancyWeek = value.round());
             },
+          ),
+          const SizedBox(height: AppSpacing.spaceSM),
+          Center(
+            child: Text(
+              'Estimated due date: ${DateFormat.yMMMd().format(PregnancyTiming.eddFromWeek(_pregnancyWeek))}',
+              style: AppTypography.bodyTextMedium.copyWith(
+                color: AppColors.primaryPurple,
+              ),
+            ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

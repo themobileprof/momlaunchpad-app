@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_profile.dart';
 import '../providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
+import '../utils/pregnancy_timing.dart';
 import '../services/api_service.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
@@ -24,6 +25,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   int _pregnancyWeek = 20;
   DateTime? _dueDate;
+  bool _dueDateManuallySet = false;
   bool? _isFirstPregnancy;
   String _language = 'en';
   String? _dietPreference;
@@ -61,23 +63,57 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _nameController.text = profile.name;
     _language = profile.language;
     _pregnancyWeek = profile.pregnancyWeek ?? 20;
-    _dueDate = profile.expectedDeliveryDate;
+    final storedDueDate = profile.expectedDeliveryDate;
+    if (storedDueDate != null &&
+        !PregnancyTiming.eddMatchesWeek(storedDueDate, _pregnancyWeek)) {
+      _dueDate = storedDueDate;
+      _dueDateManuallySet = true;
+    } else {
+      _dueDate = PregnancyTiming.eddFromWeek(_pregnancyWeek);
+      _dueDateManuallySet = false;
+    }
     _isFirstPregnancy = profile.isFirstPregnancy;
     _concernController.text = profile.primaryConcern ?? '';
     _dietPreference = profile.dietPreference ?? profile.diet ?? '';
   }
 
+  void _onPregnancyWeekChanged(int week) {
+    setState(() {
+      _pregnancyWeek = week;
+      _dueDateManuallySet = false;
+      _dueDate = PregnancyTiming.eddFromWeek(week);
+    });
+  }
+
   Future<void> _pickDueDate() async {
-    final initial = _dueDate ?? DateTime.now().add(const Duration(days: 140));
+    final today = DateTime.now();
+    final firstDate = PregnancyTiming.eddFromWeek(42, today);
+    final lastDate = PregnancyTiming.eddFromWeek(4, today);
+    var initialDate = _dueDate ?? PregnancyTiming.eddFromWeek(_pregnancyWeek, today);
+    if (initialDate.isBefore(firstDate)) initialDate = firstDate;
+    if (initialDate.isAfter(lastDate)) initialDate = lastDate;
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: initial,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 280)),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      helpText: 'Expected due date',
     );
-    if (picked != null) {
-      setState(() => _dueDate = picked);
+    if (picked != null && mounted) {
+      setState(() {
+        _dueDate = picked;
+        _dueDateManuallySet = true;
+        _pregnancyWeek = PregnancyTiming.weekFromEdd(picked);
+      });
     }
+  }
+
+  void _useWeekBasedDueDate() {
+    setState(() {
+      _dueDateManuallySet = false;
+      _dueDate = PregnancyTiming.eddFromWeek(_pregnancyWeek);
+    });
   }
 
   Future<void> _save() async {
@@ -89,8 +125,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ProfileSavePayload(
               name: _nameController.text.trim(),
               language: _language,
-              pregnancyWeek: _pregnancyWeek,
-              expectedDeliveryDate: _dueDate,
+              pregnancyWeek: _dueDateManuallySet ? null : _pregnancyWeek,
+              expectedDeliveryDate:
+                  _dueDateManuallySet ? _dueDate : null,
               isFirstPregnancy: _isFirstPregnancy,
               primaryConcern: _concernController.text.trim().isEmpty
                   ? null
@@ -217,21 +254,43 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           divisions: 38,
                           activeColor: AppColors.primaryPink,
                           onChanged: (value) {
-                            setState(() => _pregnancyWeek = value.round());
+                            _onPregnancyWeekChanged(value.round());
                           },
                         ),
                         ListTile(
                           contentPadding: EdgeInsets.zero,
                           title: const Text('Expected due date'),
-                          subtitle: Text(
-                            _dueDate == null
-                                ? 'Tap to set (optional)'
-                                : MaterialLocalizations.of(context)
-                                    .formatMediumDate(_dueDate!),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _dueDate == null
+                                    ? 'Tap to set a custom date'
+                                    : MaterialLocalizations.of(context)
+                                        .formatMediumDate(_dueDate!),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _dueDateManuallySet
+                                    ? 'Custom date · week adjusted to match'
+                                    : 'Calculated from pregnancy week',
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.textLight,
+                                ),
+                              ),
+                            ],
                           ),
                           trailing: const Icon(Icons.calendar_today_outlined),
                           onTap: _pickDueDate,
                         ),
+                        if (_dueDateManuallySet)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton(
+                              onPressed: _useWeekBasedDueDate,
+                              child: const Text('Recalculate from week'),
+                            ),
+                          ),
                         const Divider(),
                         Text(
                           'First pregnancy?',
