@@ -98,7 +98,7 @@ class RecentSymptomsWidget extends ConsumerWidget {
                   ),
                 ),
                 Text(
-                  symptom.description,
+                  symptom.displayText,
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[600],

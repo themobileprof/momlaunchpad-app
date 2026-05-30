@@ -10,6 +10,7 @@ import '../utils/symptom_resolve.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../widgets/log_vitals_sheet.dart';
+import '../widgets/symptom_source_chat_link.dart';
 import 'symptom_history_screen.dart';
 
 /// Health tracker with Symptoms and Vitals on separate tabs.
@@ -722,7 +723,7 @@ class _SymptomsTabContent {
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
-                    symptom.description,
+                    symptom.displayText,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -747,6 +748,7 @@ class _SymptomsTabContent {
                           ),
                         ),
                 ),
+                SymptomSourceChatLink(symptom: symptom),
                 if (!symptom.isResolved)
                   Align(
                     alignment: Alignment.centerRight,

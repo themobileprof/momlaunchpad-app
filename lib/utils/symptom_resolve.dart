@@ -9,7 +9,11 @@ Future<bool> markSymptomResolved(
   String symptomId,
 ) async {
   try {
-    await ref.read(resolveSymptomProvider(symptomId).future);
+    final service = ref.read(symptomServiceProvider);
+    await service.resolveSymptom(symptomId);
+    ref.invalidate(symptomHistoryProvider);
+    ref.invalidate(recentSymptomsProvider);
+    ref.invalidate(symptomStatsProvider);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -19,11 +23,13 @@ Future<bool> markSymptomResolved(
       );
     }
     return true;
-  } catch (_) {
+  } catch (e) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to mark symptom as resolved'),
+        SnackBar(
+          content: Text(
+            e is Exception ? e.toString().replaceFirst('Exception: ', '') : 'Failed to mark symptom as resolved',
+          ),
           backgroundColor: Colors.red,
         ),
       );

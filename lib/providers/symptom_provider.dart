@@ -32,18 +32,6 @@ final symptomStatsProvider = FutureProvider.autoDispose<SymptomStats>((ref) asyn
   return service.getStats();
 });
 
-/// Provider for resolving symptoms
-final resolveSymptomProvider =
-    FutureProvider.autoDispose.family<void, String>((ref, symptomId) async {
-  final service = ref.watch(symptomServiceProvider);
-  await service.resolveSymptom(symptomId);
-  
-  // Invalidate related providers to refresh data
-  ref.invalidate(symptomHistoryProvider);
-  ref.invalidate(recentSymptomsProvider);
-  ref.invalidate(symptomStatsProvider);
-});
-
 /// Parameters for symptom history query
 class SymptomHistoryParams {
   final int limit;

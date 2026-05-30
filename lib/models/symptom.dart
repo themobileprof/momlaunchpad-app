@@ -10,6 +10,9 @@ class Symptom {
   final bool isResolved;
   final DateTime reportedAt;
   final DateTime? resolvedAt;
+  final String? summary;
+  final String? conversationId;
+  final String? messageId;
 
   Symptom({
     required this.id,
@@ -22,15 +25,26 @@ class Symptom {
     required this.isResolved,
     required this.reportedAt,
     this.resolvedAt,
+    this.summary,
+    this.conversationId,
+    this.messageId,
   });
+
+  bool get hasSourceChat =>
+      conversationId != null && conversationId!.trim().isNotEmpty;
+
+  /// One-sentence display text for health tracker UI.
+  String get displayText => (summary != null && summary!.trim().isNotEmpty)
+      ? summary!.trim()
+      : description;
 
   factory Symptom.fromJson(Map<String, dynamic> json) {
     return Symptom(
       id: json['id'] as String,
       symptomType: json['symptom_type'] as String,
       description: json['description'] as String,
-      severity: json['severity'] as String,
-      frequency: json['frequency'] as String,
+      severity: json['severity'] as String? ?? 'unknown',
+      frequency: json['frequency'] as String? ?? 'unknown',
       onsetTime: json['onset_time'] as String?,
       associatedSymptoms: (json['associated_symptoms'] as List<dynamic>?)
               ?.map((e) => e as String)
@@ -41,6 +55,9 @@ class Symptom {
       resolvedAt: json['resolved_at'] != null
           ? DateTime.parse(json['resolved_at'] as String)
           : null,
+      summary: json['summary'] as String?,
+      conversationId: json['conversation_id'] as String?,
+      messageId: json['message_id'] as String?,
     );
   }
 
@@ -56,6 +73,9 @@ class Symptom {
       'is_resolved': isResolved,
       'reported_at': reportedAt.toIso8601String(),
       'resolved_at': resolvedAt?.toIso8601String(),
+      'summary': summary,
+      'conversation_id': conversationId,
+      'message_id': messageId,
     };
   }
 
@@ -70,6 +90,9 @@ class Symptom {
     bool? isResolved,
     DateTime? reportedAt,
     DateTime? resolvedAt,
+    String? summary,
+    String? conversationId,
+    String? messageId,
   }) {
     return Symptom(
       id: id ?? this.id,
@@ -82,6 +105,9 @@ class Symptom {
       isResolved: isResolved ?? this.isResolved,
       reportedAt: reportedAt ?? this.reportedAt,
       resolvedAt: resolvedAt ?? this.resolvedAt,
+      summary: summary ?? this.summary,
+      conversationId: conversationId ?? this.conversationId,
+      messageId: messageId ?? this.messageId,
     );
   }
 

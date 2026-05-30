@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/symptom.dart';
 import '../providers/symptom_provider.dart';
 import '../utils/symptom_resolve.dart';
+import '../widgets/symptom_source_chat_link.dart';
 import '../theme/colors.dart';
 import 'package:intl/intl.dart';
 
@@ -175,11 +176,15 @@ class _SymptomHistoryScreenState extends ConsumerState<SymptomHistoryScreen> {
 
             // Description
             Text(
-              symptom.description,
+              symptom.displayText,
               style: const TextStyle(
                 fontSize: 15,
                 height: 1.4,
               ),
+            ),
+            SymptomSourceChatLink(
+              symptom: symptom,
+              padding: const EdgeInsets.only(top: 4),
             ),
             const SizedBox(height: 12),
 

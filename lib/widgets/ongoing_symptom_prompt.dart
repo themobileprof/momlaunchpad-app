@@ -7,9 +7,10 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../utils/symptom_resolve.dart';
+import '../screens/symptom_stats_screen.dart';
 import 'app_button.dart';
 import 'glass_container.dart';
-import '../screens/symptom_stats_screen.dart';
+import 'symptom_source_chat_link.dart';
 
 /// Surfaces the most recent ongoing symptom and offers a quick resolve action.
 class OngoingSymptomPrompt extends ConsumerStatefulWidget {
@@ -74,13 +75,17 @@ class _OngoingSymptomPromptState extends ConsumerState<OngoingSymptomPrompt> {
                 ),
                 const SizedBox(height: AppSpacing.spaceXS),
                 Text(
-                  ongoing.description,
-                  maxLines: 2,
+                  ongoing.displayText,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.bodyText.copyWith(
                     color: Colors.grey[700],
                     height: 1.4,
                   ),
+                ),
+                SymptomSourceChatLink(
+                  symptom: ongoing,
+                  padding: const EdgeInsets.only(top: AppSpacing.spaceXS),
                 ),
                 const SizedBox(height: AppSpacing.spaceXS),
                 Text(
@@ -137,7 +142,7 @@ class _OngoingSymptomPromptState extends ConsumerState<OngoingSymptomPrompt> {
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, _stack) => const SizedBox.shrink(),
+      error: (error, stackTrace) => const SizedBox.shrink(),
     );
   }
 
