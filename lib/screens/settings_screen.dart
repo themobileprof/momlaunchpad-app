@@ -4,7 +4,9 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../providers/auth_provider.dart';
+import '../providers/profile_provider.dart';
 import '../models/user.dart';
+import '../models/user_profile.dart';
 import '../widgets/widgets.dart';
 import 'symptom_stats_screen.dart';
 
@@ -15,6 +17,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
+    final profile = ref.watch(profileProvider).profile;
 
     return Scaffold(
       appBar: AppBar(
@@ -29,7 +32,7 @@ class SettingsScreen extends ConsumerWidget {
         ),
         children: [
           // User profile card
-          _buildProfileCard(user),
+          _buildProfileCard(user, profile),
 
           const SizedBox(height: AppSpacing.spaceLG),
 
@@ -160,7 +163,10 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileCard(User? user) {
+  Widget _buildProfileCard(User? user, UserProfile? profile) {
+    final pregnancyLabel = profile?.pregnancySummary;
+    final concern = profile?.primaryConcern;
+
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.spaceLG),
       child: Row(
@@ -183,6 +189,23 @@ class SettingsScreen extends ConsumerWidget {
                   user?.email ?? 'No email',
                   style: AppTypography.caption,
                 ),
+                if (pregnancyLabel != null && pregnancyLabel != 'Not set') ...[
+                  const SizedBox(height: 8),
+                  AppBadge(
+                    label: pregnancyLabel,
+                    variant: AppBadgeVariant.primary,
+                    small: true,
+                  ),
+                ],
+                if (concern != null && concern.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Focus: $concern',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.textLight,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 AppBadge(
                   label: 'Free Plan',

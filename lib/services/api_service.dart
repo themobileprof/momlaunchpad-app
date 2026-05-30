@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/auth_response.dart';
 import '../models/user.dart';
+import '../models/user_profile.dart';
 import '../models/reminder.dart';
 import '../models/savings_summary.dart';
 import '../models/savings_entry.dart';
@@ -154,6 +155,60 @@ class ApiService {
         message: 'Failed to get user info',
       );
     }
+  }
+
+  // ============ PROFILE / ONBOARDING ============
+
+  /// Load profile and personalization facts for the current user.
+  Future<UserProfile> getUserProfile() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/users/me/profile'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      return UserProfile.fromJson(
+        Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+      );
+    }
+
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to load profile'),
+    );
+  }
+
+  /// Save first-time onboarding answers.
+  Future<UserProfile> completeOnboarding({
+    required String name,
+    required String language,
+    required int pregnancyWeek,
+    required bool isFirstPregnancy,
+    String? primaryConcern,
+  }) async {
+    final response = await _http.put(
+      Uri.parse('$baseUrl/api/users/me/onboarding'),
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        'name': name,
+        'language': language,
+        'pregnancy_week': pregnancyWeek,
+        'is_first_pregnancy': isFirstPregnancy,
+        if (primaryConcern != null && primaryConcern.isNotEmpty)
+          'primary_concern': primaryConcern,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return UserProfile.fromJson(
+        Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+      );
+    }
+
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to complete onboarding'),
+    );
   }
 
   // ============ REMINDER ENDPOINTS ============
