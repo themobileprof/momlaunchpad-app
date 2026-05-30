@@ -19,9 +19,7 @@ class SettingsScreen extends ConsumerWidget {
     final themePreference = ref.watch(themePreferenceProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Settings', style: AppTypography.headingMedium),
-      ),
+      appBar: const MomAppBar(pageTitle: 'Settings'),
       body: ListView(
         padding: const EdgeInsets.only(
           top: AppSpacing.spaceMD,

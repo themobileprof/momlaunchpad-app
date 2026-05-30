@@ -44,11 +44,7 @@ class _DoctorVisitsScreenState extends ConsumerState<DoctorVisitsScreen> {
 
     return Scaffold(
       backgroundColor: context.appCanvas,
-      appBar: AppBar(
-        title: Text('Visit records', style: AppTypography.headingMedium),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: const MomAppBar(pageTitle: 'Visit records'),
       body: _buildBody(state, dateFormat),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 80),

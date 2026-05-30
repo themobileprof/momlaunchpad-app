@@ -11,6 +11,7 @@ import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../widgets/log_vitals_sheet.dart';
 import '../widgets/symptom_source_chat_link.dart';
+import '../widgets/widgets.dart';
 import 'symptom_history_screen.dart';
 
 /// Health tracker with Symptoms and Vitals on separate tabs.
@@ -51,8 +52,8 @@ class _SymptomStatsScreenState extends ConsumerState<SymptomStatsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Health Tracker'),
+      appBar: MomAppBar(
+        pageTitle: 'Health Tracker',
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

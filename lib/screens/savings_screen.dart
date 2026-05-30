@@ -32,8 +32,8 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     final summary = savingsState.summary;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Savings', style: AppTypography.headingMedium),
+      appBar: MomAppBar(
+        pageTitle: 'Savings',
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),

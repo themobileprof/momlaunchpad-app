@@ -163,38 +163,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   PreferredSizeWidget _buildAppBar(ChatState chatState) {
-    return AppBar(
-      titleSpacing: AppSpacing.spaceMD,
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return MomAppBar(
+      pageTitle: conversationDisplayTitle(
+        chatState.conversationTitle ??
+            widget.conversationTitle ??
+            defaultConversationTitle,
+      ),
+      subtitle: Row(
         children: [
-          Text(
-            conversationDisplayTitle(
-              chatState.conversationTitle ??
-                  widget.conversationTitle ??
-                  defaultConversationTitle,
-            ),
-            style: AppTypography.headingMedium,
-            overflow: TextOverflow.ellipsis,
+          StatusDot(
+            isActive: chatState.isConnected,
+            size: 6,
+            pulse: chatState.isConnected,
           ),
-          Row(
-            children: [
-              StatusDot(
-                isActive: chatState.isConnected,
-                size: 6,
-                pulse: chatState.isConnected,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                chatState.isConnected ? 'Connected' : 'Disconnected',
-                style: AppTypography.caption.copyWith(
-                  fontSize: 12,
-                  color: chatState.isConnected
-                      ? AppColors.success
-                      : AppColors.textLight,
-                ),
-              ),
-            ],
+          const SizedBox(width: 6),
+          Text(
+            chatState.isConnected ? 'Connected' : 'Disconnected',
+            style: AppTypography.caption.copyWith(
+              fontSize: 12,
+              color: chatState.isConnected
+                  ? AppColors.success
+                  : AppColors.textLight,
+            ),
           ),
         ],
       ),

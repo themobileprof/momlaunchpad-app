@@ -71,12 +71,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     return Scaffold(
       backgroundColor: context.appCanvas,
-      appBar: AppBar(
-        title: Text('Calendar', style: AppTypography.headingLarge),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: false,
-      ),
+      appBar: const MomAppBar(pageTitle: 'Calendar'),
       body: Column(
         children: [
           _buildCalendar(remindersState.reminders),

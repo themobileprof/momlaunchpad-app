@@ -173,9 +173,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Your profile', style: AppTypography.headingMedium),
-      ),
+      appBar: const MomAppBar(pageTitle: 'Your profile'),
       body: profileState.isLoading && profile == null
           ? const LoadingState(message: 'Loading profile...')
           : profileState.error != null && profile == null

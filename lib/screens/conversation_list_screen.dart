@@ -55,9 +55,8 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
 
     return Scaffold(
       backgroundColor: context.appCanvas,
-      appBar: AppBar(
-        title: Text('Chat', style: AppTypography.headingMedium),
-        backgroundColor: context.appCanvas,
+      appBar: MomAppBar(
+        pageTitle: 'Chat',
         actions: [
           TextButton.icon(
             onPressed: state.isLoading ? null : _createNewConversation,

@@ -4,6 +4,7 @@ import '../models/symptom.dart';
 import '../providers/symptom_provider.dart';
 import '../utils/symptom_resolve.dart';
 import '../widgets/symptom_source_chat_link.dart';
+import '../widgets/widgets.dart';
 import '../theme/colors.dart';
 import 'package:intl/intl.dart';
 
@@ -48,8 +49,8 @@ class _SymptomHistoryScreenState extends ConsumerState<SymptomHistoryScreen> {
     final historyAsync = ref.watch(symptomHistoryProvider(params));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Symptom History'),
+      appBar: MomAppBar(
+        pageTitle: 'Symptom History',
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),

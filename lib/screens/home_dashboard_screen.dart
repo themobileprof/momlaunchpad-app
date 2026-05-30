@@ -48,6 +48,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
 
     return Scaffold(
       backgroundColor: context.appCanvas,
+      appBar: const MomAppBar(pageTitle: 'Home'),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(recentSymptomsProvider);
@@ -68,9 +69,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Home', style: AppTypography.headingLarge),
                     if (profile?.pregnancyWeek != null) ...[
-                      const SizedBox(height: AppSpacing.spaceXS),
                       AppBadge(
                         label: 'Week ${profile!.pregnancyWeek}',
                         icon: Icons.favorite_rounded,

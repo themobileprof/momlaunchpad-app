@@ -70,6 +70,21 @@ class AppTypography {
         letterSpacing: -0.5,
       );
 
+  static TextStyle get appBarBrand => GoogleFonts.fraunces(
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        color: AppColors.plum,
+        letterSpacing: -0.2,
+        height: 1.1,
+      );
+
+  static TextStyle get pageTitle => GoogleFonts.fraunces(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.ink,
+        height: 1.2,
+      );
+
   static TextStyle headingLargeLight() =>
       headingLarge.copyWith(color: AppColors.white);
 

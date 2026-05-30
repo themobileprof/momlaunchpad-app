@@ -220,13 +220,8 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
 
     return Scaffold(
       backgroundColor: context.appCanvas,
-      appBar: AppBar(
-        title: Text(
-          _isEditing ? 'Edit visit' : 'Add visit',
-          style: AppTypography.headingMedium,
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+      appBar: MomAppBar(
+        pageTitle: _isEditing ? 'Edit visit' : 'Add visit',
       ),
       body: Form(
         key: _formKey,
