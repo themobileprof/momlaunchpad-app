@@ -5,28 +5,62 @@ import 'spacing.dart';
 import 'typography.dart';
 import 'theme_extensions.dart';
 
-/// MomLaunchpad theme — vibrant rose & plum, logo-aligned.
-ThemeData buildAppTheme() {
-  final colorScheme = ColorScheme.light(
-    primary: AppColors.rose,
-    onPrimary: AppColors.white,
-    primaryContainer: AppColors.roseSoft,
-    onPrimaryContainer: AppColors.plum,
-    secondary: AppColors.plum,
-    onSecondary: AppColors.white,
-    secondaryContainer: AppColors.orchidSoft,
-    onSecondaryContainer: AppColors.plumDark,
-    surface: AppColors.surface,
-    onSurface: AppColors.ink,
-    error: AppColors.error,
-    onError: AppColors.white,
-    outline: AppColors.inkLight.withValues(alpha: 0.35),
-  );
+ThemeData buildAppLightTheme() => _buildTheme(Brightness.light);
+
+ThemeData buildAppDarkTheme() => _buildTheme(Brightness.dark);
+
+/// MomLaunchpad theme — solid plum primary, light and dark variants.
+ThemeData _buildTheme(Brightness brightness) {
+  final isDark = brightness == Brightness.dark;
+
+  final canvas = isDark ? AppColors.canvasDark : AppColors.canvasLight;
+  final surface = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+  final onSurface = isDark ? AppColors.inkDarkMode : AppColors.inkLightMode;
+  final onSurfaceMuted =
+      isDark ? AppColors.inkMutedDark : AppColors.inkMutedLight;
+  final primary = isDark ? AppColors.plumLight : AppColors.plum;
+  final primaryContainer =
+      isDark ? AppColors.plumDark : AppColors.orchidSoft;
+  final secondaryContainer =
+      isDark ? AppColors.surfaceMutedDark : AppColors.roseSoft;
+
+  final colorScheme = isDark
+      ? ColorScheme.dark(
+          primary: primary,
+          onPrimary: AppColors.surfaceLight,
+          primaryContainer: primaryContainer,
+          onPrimaryContainer: AppColors.inkDarkMode,
+          secondary: AppColors.plumLight,
+          onSecondary: AppColors.surfaceLight,
+          secondaryContainer: secondaryContainer,
+          onSecondaryContainer: AppColors.inkDarkMode,
+          surface: surface,
+          onSurface: onSurface,
+          error: AppColors.error,
+          onError: AppColors.surfaceLight,
+          outline: onSurfaceMuted.withValues(alpha: 0.35),
+        )
+      : ColorScheme.light(
+          primary: primary,
+          onPrimary: AppColors.surfaceLight,
+          primaryContainer: primaryContainer,
+          onPrimaryContainer: AppColors.plumDark,
+          secondary: AppColors.plum,
+          onSecondary: AppColors.surfaceLight,
+          secondaryContainer: secondaryContainer,
+          onSecondaryContainer: AppColors.plumDark,
+          surface: surface,
+          onSurface: onSurface,
+          error: AppColors.error,
+          onError: AppColors.surfaceLight,
+          outline: onSurfaceMuted.withValues(alpha: 0.35),
+        );
 
   return ThemeData(
     useMaterial3: true,
+    brightness: brightness,
     colorScheme: colorScheme,
-    scaffoldBackgroundColor: AppColors.canvas,
+    scaffoldBackgroundColor: canvas,
     textTheme: TextTheme(
       displayLarge: AppTypography.headingLarge,
       displayMedium: AppTypography.headingMedium,
@@ -38,22 +72,22 @@ ThemeData buildAppTheme() {
       bodySmall: AppTypography.caption,
       labelLarge: AppTypography.button,
       labelSmall: AppTypography.label,
-    ).apply(bodyColor: AppColors.ink, displayColor: AppColors.ink),
+    ).apply(bodyColor: onSurface, displayColor: onSurface),
     cardTheme: CardThemeData(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.radiusLarge),
       ),
-      color: AppColors.surface,
-      shadowColor: AppColors.shadowTint,
+      color: surface,
+      shadowColor: AppColors.shadowTintFor(brightness),
       margin: EdgeInsets.zero,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.rose,
-        foregroundColor: AppColors.white,
+        backgroundColor: primary,
+        foregroundColor: AppColors.surfaceLight,
         elevation: 0,
-        shadowColor: AppColors.rose.withValues(alpha: 0.3),
+        shadowColor: primary.withValues(alpha: 0.25),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
         ),
@@ -61,13 +95,13 @@ ThemeData buildAppTheme() {
           horizontal: AppSpacing.spaceLG,
           vertical: AppSpacing.spaceMD,
         ),
-        textStyle: AppTypography.button.copyWith(color: AppColors.white),
+        textStyle: AppTypography.button.copyWith(color: AppColors.surfaceLight),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: AppColors.plum,
-        foregroundColor: AppColors.white,
+        backgroundColor: primary,
+        foregroundColor: AppColors.surfaceLight,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
         ),
@@ -76,30 +110,30 @@ ThemeData buildAppTheme() {
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: AppColors.plum,
+        foregroundColor: primary,
         textStyle: AppTypography.button.copyWith(
-          color: AppColors.plum,
+          color: primary,
           fontWeight: FontWeight.w600,
         ),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.plum,
-        side: const BorderSide(color: AppColors.plum, width: 1.5),
+        foregroundColor: primary,
+        side: BorderSide(color: primary, width: 1.5),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
         ),
-        textStyle: AppTypography.button.copyWith(color: AppColors.plum),
+        textStyle: AppTypography.button.copyWith(color: primary),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.surface,
-      labelStyle: AppTypography.caption.copyWith(color: AppColors.inkMuted),
-      hintStyle: AppTypography.caption,
-      prefixIconColor: AppColors.plum,
-      suffixIconColor: AppColors.inkMuted,
+      fillColor: isDark ? AppColors.surfaceMutedDark : AppColors.surfaceLight,
+      labelStyle: AppTypography.caption.copyWith(color: onSurfaceMuted),
+      hintStyle: AppTypography.caption.copyWith(color: onSurfaceMuted),
+      prefixIconColor: primary,
+      suffixIconColor: onSurfaceMuted,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
         borderSide: BorderSide.none,
@@ -107,12 +141,12 @@ ThemeData buildAppTheme() {
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
         borderSide: BorderSide(
-          color: AppColors.plum.withValues(alpha: 0.12),
+          color: primary.withValues(alpha: isDark ? 0.25 : 0.12),
         ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
-        borderSide: const BorderSide(color: AppColors.rose, width: 2),
+        borderSide: BorderSide(color: primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
@@ -128,26 +162,24 @@ ThemeData buildAppTheme() {
       ),
     ),
     appBarTheme: AppBarTheme(
-      backgroundColor: AppColors.canvas,
-      foregroundColor: AppColors.ink,
+      backgroundColor: canvas,
+      foregroundColor: onSurface,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
-      titleTextStyle: AppTypography.headingSmall,
+      titleTextStyle: AppTypography.headingSmall.copyWith(color: onSurface),
       surfaceTintColor: Colors.transparent,
     ),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
-      backgroundColor: AppColors.surface,
-      selectedItemColor: AppColors.rose,
-      unselectedItemColor: AppColors.inkLight,
+      backgroundColor: surface,
+      selectedItemColor: primary,
+      unselectedItemColor: onSurfaceMuted,
       elevation: 0,
       type: BottomNavigationBarType.fixed,
-      selectedLabelStyle: AppTypography.label.copyWith(color: AppColors.rose),
-      unselectedLabelStyle: AppTypography.label,
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: AppColors.rose,
-      foregroundColor: AppColors.white,
+      backgroundColor: primary,
+      foregroundColor: AppColors.surfaceLight,
       elevation: 4,
       highlightElevation: 8,
       shape: RoundedRectangleBorder(
@@ -155,16 +187,16 @@ ThemeData buildAppTheme() {
       ),
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: AppColors.surface,
+      backgroundColor: surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.radiusLarge),
       ),
       elevation: 12,
-      titleTextStyle: AppTypography.headingMedium,
-      contentTextStyle: AppTypography.bodyText,
+      titleTextStyle: AppTypography.headingMedium.copyWith(color: onSurface),
+      contentTextStyle: AppTypography.bodyText.copyWith(color: onSurface),
     ),
     bottomSheetTheme: BottomSheetThemeData(
-      backgroundColor: AppColors.surface,
+      backgroundColor: surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppRadius.radiusLarge),
@@ -173,8 +205,8 @@ ThemeData buildAppTheme() {
       elevation: 12,
     ),
     chipTheme: ChipThemeData(
-      backgroundColor: AppColors.orchidSoft,
-      labelStyle: AppTypography.label.copyWith(color: AppColors.plum),
+      backgroundColor: isDark ? AppColors.surfaceMutedDark : AppColors.orchidSoft,
+      labelStyle: AppTypography.label.copyWith(color: onSurface),
       side: BorderSide.none,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.spaceMD,
@@ -185,36 +217,43 @@ ThemeData buildAppTheme() {
       ),
     ),
     dividerTheme: DividerThemeData(
-      color: AppColors.plum.withValues(alpha: 0.08),
+      color: primary.withValues(alpha: isDark ? 0.15 : 0.08),
       thickness: 1,
       space: AppSpacing.spaceMD,
     ),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: AppColors.plumDark,
+      backgroundColor: isDark ? AppColors.surfaceMutedDark : AppColors.plumDark,
       contentTextStyle: AppTypography.bodyTextMedium.copyWith(
-        color: AppColors.white,
+        color: AppColors.surfaceLight,
       ),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
       ),
     ),
-    progressIndicatorTheme: const ProgressIndicatorThemeData(
-      color: AppColors.rose,
-    ),
-    iconTheme: const IconThemeData(
-      color: AppColors.ink,
-      size: 24,
+    progressIndicatorTheme: ProgressIndicatorThemeData(color: primary),
+    iconTheme: IconThemeData(color: onSurface, size: 24),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return primary;
+        return onSurfaceMuted;
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return primary.withValues(alpha: 0.35);
+        }
+        return onSurfaceMuted.withValues(alpha: 0.25);
+      }),
     ),
     extensions: [
-      AppColorsExtension.light,
+      isDark ? AppColorsExtension.dark : AppColorsExtension.light,
       AppSpacingExtension.standard,
       AppTypographyExtension.standard,
     ],
   );
 }
 
-/// Applies Google Fonts as the default font family for the app.
+/// Applies Google Fonts while keeping Fraunces headings.
 ThemeData applyGoogleFonts(ThemeData theme) {
   return theme.copyWith(
     textTheme: GoogleFonts.plusJakartaSansTextTheme(theme.textTheme).copyWith(
@@ -226,3 +265,6 @@ ThemeData applyGoogleFonts(ThemeData theme) {
     ),
   );
 }
+
+/// Backwards-compatible alias.
+ThemeData buildAppTheme() => buildAppLightTheme();

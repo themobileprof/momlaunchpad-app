@@ -172,8 +172,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(2),
-                  gradient: active ? AppColors.brandGradient : null,
-                  color: active ? null : AppColors.primaryPurple.withValues(alpha: 0.15),
+                  color: active
+                      ? context.appPrimary
+                      : context.appPrimary.withValues(alpha: 0.15),
                 ),
               ),
             );
@@ -232,10 +233,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              gradient: AppColors.brandGradient,
+              color: context.appPrimary,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(Icons.favorite_rounded, color: Colors.white),
+            child: Icon(Icons.favorite_rounded, color: context.appOnPrimary),
           ),
           const SizedBox(height: AppSpacing.spaceLG),
           Text(
@@ -386,18 +387,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
-          gradient: selected ? AppColors.brandGradient : null,
-          color: selected ? null : AppColors.white,
+          color: selected ? context.appPrimary : context.appSurface,
           border: Border.all(
             color: selected
                 ? Colors.transparent
-                : AppColors.primaryPurple.withValues(alpha: 0.2),
+                : context.appPrimary.withValues(alpha: 0.2),
           ),
         ),
         child: Text(
           label,
           style: AppTypography.bodyText.copyWith(
-            color: selected ? Colors.white : AppColors.textDark,
+            color: selected ? context.appOnPrimary : context.appInk,
             fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),

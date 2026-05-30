@@ -39,8 +39,7 @@ class ChatBubble extends StatelessWidget {
                 vertical: AppSpacing.spaceSM + 4,
               ),
               decoration: BoxDecoration(
-                gradient: isUser ? AppColors.brandGradient : null,
-                color: isUser ? null : AppColors.surface,
+                color: isUser ? context.appPrimary : context.appSurface,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(20),
                   topRight: const Radius.circular(20),
@@ -55,14 +54,14 @@ class ChatBubble extends StatelessWidget {
                 boxShadow: isUser
                     ? [
                         BoxShadow(
-                          color: AppColors.rose.withValues(alpha: 0.22),
+                          color: context.appPrimary.withValues(alpha: 0.2),
                           blurRadius: 10,
                           offset: const Offset(0, 3),
                         ),
                       ]
                     : [
                         BoxShadow(
-                          color: AppColors.shadowTint,
+                          color: AppColors.shadowTintFor(context.appBrightness),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -76,7 +75,7 @@ class ChatBubble extends StatelessWidget {
                     child: Text(
                       content.isEmpty && isStreaming ? '...' : content,
                       style: AppTypography.bodyText.copyWith(
-                        color: isUser ? AppColors.white : AppColors.textDark,
+                        color: isUser ? context.appOnPrimary : context.appInk,
                         height: 1.5,
                       ),
                     ),
@@ -94,7 +93,7 @@ class ChatBubble extends StatelessWidget {
                 _formatTime(timestamp!),
                 style: AppTypography.caption.copyWith(
                   fontSize: 11,
-                  color: AppColors.textLight.withOpacity(0.6),
+                  color: context.appInkSubtle.withValues(alpha: 0.75),
                 ),
               ),
             ],

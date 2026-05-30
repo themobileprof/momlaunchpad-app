@@ -70,6 +70,13 @@ class ProfileNotifier extends Notifier<ProfileState> {
     }
   }
 
+  Future<UserProfile> updateProfile(ProfileSavePayload payload) async {
+    final profile = await _apiService.updateProfile(payload);
+    state = ProfileState(profile: profile, isLoading: false);
+    await ref.read(authProvider.notifier).refreshUser();
+    return profile;
+  }
+
   Future<UserProfile> completeOnboarding({
     required String name,
     required String language,

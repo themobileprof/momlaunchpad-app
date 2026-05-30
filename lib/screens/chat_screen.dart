@@ -277,9 +277,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     style: AppTypography.caption,
                   ),
                   onPressed: () => _prefillStarterPrompt(prompt),
-                  backgroundColor: AppColors.white,
+                  backgroundColor: context.appSurface,
                   side: BorderSide(
-                    color: AppColors.primaryPurple.withOpacity(0.2),
+                    color: context.appPrimary.withValues(alpha: 0.2),
                   ),
                 );
               }).toList(),
@@ -315,10 +315,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.spaceMD),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: context.appSurface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppColors.shadowTintFor(context.appBrightness),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -646,14 +646,9 @@ class _SendButton extends StatelessWidget {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        gradient: onPressed != null
-            ? const LinearGradient(
-                colors: [AppColors.primaryPink, Color(0xFFFF6B9D)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              )
-            : null,
-        color: onPressed == null ? AppColors.textLight.withOpacity(0.3) : null,
+        color: onPressed == null
+            ? context.appInkSubtle.withValues(alpha: 0.3)
+            : context.appPrimary,
         borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
       ),
       child: Material(
@@ -663,7 +658,7 @@ class _SendButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
           child: Icon(
             isConnected ? Icons.send_rounded : Icons.cloud_off,
-            color: AppColors.white,
+            color: context.appOnPrimary,
             size: 22,
           ),
         ),

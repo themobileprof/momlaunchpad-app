@@ -26,6 +26,9 @@ class GlassContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = context.appBrightness;
+    final fill = color ?? AppColors.glassFill(brightness);
+
     return Container(
       margin: margin,
       child: ClipRRect(
@@ -35,12 +38,14 @@ class GlassContainer extends StatelessWidget {
           child: Container(
             padding: padding,
             decoration: BoxDecoration(
-              color: (color ?? AppColors.glassWhite).withOpacity(opacity),
+              color: fill.withValues(alpha: opacity.clamp(0.0, 1.0)),
               borderRadius: borderRadius ?? BorderRadius.circular(16),
-              border: border ?? Border.all(
-                color: AppColors.glassBorder.withOpacity(0.3),
-                width: 1.5,
-              ),
+              border: border ??
+                  Border.all(
+                    color: AppColors.glassBorderColor(brightness)
+                        .withValues(alpha: 0.35),
+                    width: 1.5,
+                  ),
             ),
             child: child,
           ),

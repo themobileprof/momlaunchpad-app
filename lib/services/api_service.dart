@@ -185,18 +185,38 @@ class ApiService {
     required int pregnancyWeek,
     required bool isFirstPregnancy,
     String? primaryConcern,
+    String? dietPreference,
+  }) {
+    return _saveProfile(
+      ProfileSavePayload(
+        name: name,
+        language: language,
+        pregnancyWeek: pregnancyWeek,
+        isFirstPregnancy: isFirstPregnancy,
+        primaryConcern: primaryConcern,
+        dietPreference: dietPreference,
+      ),
+      onboarding: true,
+    );
+  }
+
+  /// Update profile fields from the profile page.
+  Future<UserProfile> updateProfile(ProfileSavePayload payload) {
+    return _saveProfile(payload, onboarding: false);
+  }
+
+  Future<UserProfile> _saveProfile(
+    ProfileSavePayload payload, {
+    required bool onboarding,
   }) async {
+    final path = onboarding
+        ? '$baseUrl/api/users/me/onboarding'
+        : '$baseUrl/api/users/me/profile';
+
     final response = await _http.put(
-      Uri.parse('$baseUrl/api/users/me/onboarding'),
+      Uri.parse(path),
       headers: await _getHeaders(),
-      body: jsonEncode({
-        'name': name,
-        'language': language,
-        'pregnancy_week': pregnancyWeek,
-        'is_first_pregnancy': isFirstPregnancy,
-        if (primaryConcern != null && primaryConcern.isNotEmpty)
-          'primary_concern': primaryConcern,
-      }),
+      body: jsonEncode(payload.toJson()),
     );
 
     if (response.statusCode == 200) {
@@ -207,7 +227,12 @@ class ApiService {
 
     throw ApiException(
       statusCode: response.statusCode,
-      message: _errorMessageFromBody(response, 'Failed to complete onboarding'),
+      message: _errorMessageFromBody(
+        response,
+        onboarding
+            ? 'Failed to complete onboarding'
+            : 'Failed to update profile',
+      ),
     );
   }
 

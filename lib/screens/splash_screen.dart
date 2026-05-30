@@ -20,10 +20,10 @@ class SplashScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: AppColors.brandGradient,
+                  color: context.appPrimary,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.rose.withValues(alpha: 0.3),
+                      color: context.appPrimary.withValues(alpha: 0.25),
                       blurRadius: 32,
                       offset: const Offset(0, 12),
                     ),
@@ -31,8 +31,8 @@ class SplashScreen extends StatelessWidget {
                 ),
                 child: Container(
                   padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                    color: AppColors.surface,
+                  decoration: BoxDecoration(
+                    color: context.appSurface,
                     shape: BoxShape.circle,
                   ),
                   child: ClipOval(

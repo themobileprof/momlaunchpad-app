@@ -3,28 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
-import '../widgets/widgets.dart'; // Import this to get GlassContainer
+import '../widgets/widgets.dart';
+import '../widgets/more_menu_sheet.dart';
 import 'conversation_list_screen.dart';
 import 'calendar_screen.dart';
-import 'savings_screen.dart';
-import 'settings_screen.dart';
+import 'profile_screen.dart';
 
-/// Navigation item data
-class _NavItem {
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-  final Widget screen;
-
-  const _NavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-    required this.screen,
-  });
-}
-
-/// Home screen with bottom navigation - optimized with PageView for smoother transitions
+/// Primary shell: Chat, Calendar, Profile tabs + More menu for secondary pages.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -36,8 +21,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentIndex = 0;
   late PageController _pageController;
 
-  // Define navigation items for cleaner code
-  static const List<_NavItem> _navItems = [
+  static const List<_NavItem> _primaryTabs = [
     _NavItem(
       icon: Icons.chat_bubble_outline_rounded,
       activeIcon: Icons.chat_bubble_rounded,
@@ -51,16 +35,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       screen: CalendarScreen(),
     ),
     _NavItem(
-      icon: Icons.savings_outlined,
-      activeIcon: Icons.savings_rounded,
-      label: 'Savings',
-      screen: SavingsScreen(),
-    ),
-    _NavItem(
-      icon: Icons.settings_outlined,
-      activeIcon: Icons.settings_rounded,
-      label: 'Settings',
-      screen: SettingsScreen(),
+      icon: Icons.person_outline_rounded,
+      activeIcon: Icons.person_rounded,
+      label: 'Profile',
+      screen: ProfileScreen(),
     ),
   ];
 
@@ -78,10 +56,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _onNavTap(int index) {
     if (_currentIndex == index) return;
-    
-    // Haptic feedback for better UX
     HapticFeedback.lightImpact();
-    
     setState(() => _currentIndex = index);
     _pageController.animateToPage(
       index,
@@ -90,22 +65,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _onPageChanged(int index) {
-    if (_currentIndex != index) {
-      setState(() => _currentIndex = index);
-    }
+  void _onMoreTap() {
+    HapticFeedback.lightImpact();
+    MoreMenuSheet.show(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.canvas,
+      backgroundColor: context.appCanvas,
       extendBody: true,
       body: PageView(
         controller: _pageController,
-        onPageChanged: _onPageChanged,
-        physics: const NeverScrollableScrollPhysics(), // Disable swipe navigation
-        children: _navItems.map((item) => item.screen).toList(),
+        onPageChanged: (index) {
+          if (_currentIndex != index) {
+            setState(() => _currentIndex = index);
+          }
+        },
+        physics: const NeverScrollableScrollPhysics(),
+        children: _primaryTabs.map((item) => item.screen).toList(),
       ),
       bottomNavigationBar: _buildBottomNav(),
     );
@@ -119,28 +97,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         opacity: 0.8,
         borderRadius: BorderRadius.circular(32),
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.spaceSM,
+          horizontal: AppSpacing.spaceXS,
           vertical: AppSpacing.spaceSM,
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(
-            _navItems.length,
-            (index) => _NavBarItem(
-              icon: _navItems[index].icon,
-              activeIcon: _navItems[index].activeIcon,
-              label: _navItems[index].label,
-              isSelected: _currentIndex == index,
-              onTap: () => _onNavTap(index),
+          children: [
+            for (var i = 0; i < _primaryTabs.length; i++)
+              Expanded(
+                child: _NavBarItem(
+                  icon: _primaryTabs[i].icon,
+                  activeIcon: _primaryTabs[i].activeIcon,
+                  label: _primaryTabs[i].label,
+                  isSelected: _currentIndex == i,
+                  onTap: () => _onNavTap(i),
+                ),
+              ),
+            Expanded(
+              child: _NavBarItem(
+                icon: Icons.apps_rounded,
+                activeIcon: Icons.apps_rounded,
+                label: 'More',
+                isSelected: false,
+                onTap: _onMoreTap,
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Custom navigation bar item with animation
+class _NavItem {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final Widget screen;
+
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.screen,
+  });
+}
+
 class _NavBarItem extends StatelessWidget {
   final IconData icon;
   final IconData activeIcon;
@@ -158,25 +159,26 @@ class _NavBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = context.appPrimary;
+    final onPrimary = context.appOnPrimary;
+    final muted = context.appInkSubtle;
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.spaceSM,
+          horizontal: AppSpacing.spaceXS,
           vertical: AppSpacing.spaceSM,
         ),
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? AppColors.brandGradient
-              : null,
-          color: isSelected ? null : Colors.transparent,
+          color: isSelected ? primary : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.rose.withValues(alpha: 0.28),
+                    color: primary.withValues(alpha: 0.25),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -186,24 +188,21 @@ class _NavBarItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Icon(
-                isSelected ? activeIcon : icon,
-                key: ValueKey(isSelected),
-                color: isSelected ? AppColors.white : AppColors.inkMuted,
-                size: 22,
-              ),
+            Icon(
+              isSelected ? activeIcon : icon,
+              color: isSelected ? onPrimary : muted,
+              size: 22,
             ),
             const SizedBox(height: 4),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? AppColors.white : AppColors.inkMuted,
+                color: isSelected ? onPrimary : muted,
               ),
-              child: Text(label),
             ),
           ],
         ),

@@ -23,10 +23,10 @@ class AuthLogoHeader extends StatelessWidget {
           padding: const EdgeInsets.all(5),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: AppColors.brandGradient,
+            color: context.appPrimary,
             boxShadow: [
               BoxShadow(
-                color: AppColors.rose.withValues(alpha: 0.22),
+                color: context.appPrimary.withValues(alpha: 0.2),
                 blurRadius: 20,
                 offset: const Offset(0, 6),
               ),
@@ -34,8 +34,8 @@ class AuthLogoHeader extends StatelessWidget {
           ),
           child: Container(
             padding: const EdgeInsets.all(3),
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
+            decoration: BoxDecoration(
+              color: context.appSurface,
               shape: BoxShape.circle,
             ),
             child: ClipOval(

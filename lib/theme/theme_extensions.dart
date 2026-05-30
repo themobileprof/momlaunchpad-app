@@ -41,10 +41,23 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
   static const light = AppColorsExtension(
     primaryPink: AppColors.primaryPink,
     primaryPurple: AppColors.primaryPurple,
-    backgroundLight: AppColors.backgroundLight,
-    textDark: AppColors.textDark,
-    textLight: AppColors.textLight,
-    white: AppColors.white,
+    backgroundLight: AppColors.canvasLight,
+    textDark: AppColors.inkLightMode,
+    textLight: AppColors.inkSubtleLight,
+    white: AppColors.surfaceLight,
+    success: AppColors.success,
+    warning: AppColors.warning,
+    error: AppColors.error,
+    info: AppColors.info,
+  );
+
+  static const dark = AppColorsExtension(
+    primaryPink: AppColors.rose,
+    primaryPurple: AppColors.plumLight,
+    backgroundLight: AppColors.canvasDark,
+    textDark: AppColors.inkDarkMode,
+    textLight: AppColors.inkSubtleDark,
+    white: AppColors.surfaceDark,
     success: AppColors.success,
     warning: AppColors.warning,
     error: AppColors.error,

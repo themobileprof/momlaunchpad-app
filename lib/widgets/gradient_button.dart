@@ -3,7 +3,7 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 
-/// Primary CTA — rose-to-plum gradient matching the logo.
+/// Primary CTA — solid plum background.
 class GradientButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -23,6 +23,7 @@ class GradientButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final disabled = onPressed == null || isLoading;
+    final background = context.appPrimary;
 
     return Semantics(
       button: true,
@@ -39,37 +40,39 @@ class GradientButton extends StatelessWidget {
             child: Ink(
               height: height,
               decoration: BoxDecoration(
-                gradient: AppColors.brandGradient,
+                color: background,
                 borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.rose.withValues(alpha: 0.35),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
+                    color: background.withValues(alpha: 0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Center(
                 child: isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 22,
                         width: 22,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                          valueColor: AlwaysStoppedAnimation(
+                            context.appOnPrimary,
+                          ),
                         ),
                       )
                     : Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (icon != null) ...[
-                            Icon(icon, color: Colors.white, size: 20),
+                            Icon(icon, color: context.appOnPrimary, size: 20),
                             const SizedBox(width: AppSpacing.spaceSM),
                           ],
                           Text(
                             label,
                             style: AppTypography.button.copyWith(
-                              color: Colors.white,
+                              color: context.appOnPrimary,
                             ),
                           ),
                         ],

@@ -54,10 +54,10 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
     final state = ref.watch(conversationProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.canvas,
+      backgroundColor: context.appCanvas,
       appBar: AppBar(
         title: Text('Chat', style: AppTypography.headingMedium),
-        backgroundColor: AppColors.canvas,
+        backgroundColor: context.appCanvas,
         actions: [
           TextButton.icon(
             onPressed: state.isLoading ? null : _createNewConversation,
@@ -205,11 +205,11 @@ class _ContinueChatCard extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.all(AppSpacing.spaceLG),
           decoration: BoxDecoration(
-            gradient: AppColors.brandGradient,
+            color: context.appPrimary,
             borderRadius: BorderRadius.circular(AppRadius.radiusLarge),
             boxShadow: [
               BoxShadow(
-                color: AppColors.rose.withValues(alpha: 0.28),
+                color: context.appPrimary.withValues(alpha: 0.22),
                 blurRadius: 18,
                 offset: const Offset(0, 8),
               ),

@@ -4,7 +4,12 @@ class UserProfile {
   final String language;
   final bool onboardingCompleted;
   final DateTime? expectedDeliveryDate;
+  final DateTime? pregnancyStartDate;
   final int? pregnancyWeek;
+  final bool? isFirstPregnancy;
+  final String? primaryConcern;
+  final String? dietPreference;
+  final Map<String, String> learnedFacts;
   final Map<String, String> facts;
 
   UserProfile({
@@ -12,48 +17,90 @@ class UserProfile {
     required this.language,
     required this.onboardingCompleted,
     this.expectedDeliveryDate,
+    this.pregnancyStartDate,
     this.pregnancyWeek,
+    this.isFirstPregnancy,
+    this.primaryConcern,
+    this.dietPreference,
+    this.learnedFacts = const {},
     this.facts = const {},
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
-    final rawFacts = json['facts'];
-    final facts = <String, String>{};
-    if (rawFacts is Map) {
-      rawFacts.forEach((key, value) {
-        facts[key.toString()] = value.toString();
-      });
-    }
-
     return UserProfile(
       name: json['name']?.toString() ?? '',
       language: json['language']?.toString() ?? 'en',
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
-      expectedDeliveryDate: json['expected_delivery_date'] != null
-          ? DateTime.parse(json['expected_delivery_date'].toString())
-          : null,
+      expectedDeliveryDate: _parseDate(json['expected_delivery_date']),
+      pregnancyStartDate: _parseDate(json['pregnancy_start_date']),
       pregnancyWeek: json['pregnancy_week'] as int?,
-      facts: facts,
+      isFirstPregnancy: json['is_first_pregnancy'] as bool?,
+      primaryConcern: json['primary_concern']?.toString(),
+      dietPreference: json['diet_preference']?.toString(),
+      learnedFacts: _parseFactMap(json['learned_facts']),
+      facts: _parseFactMap(json['facts']),
     );
   }
 
-  String? get primaryConcern => facts['primary_concern'];
-  String? get isFirstPregnancy => facts['is_first_pregnancy'];
-  String? get diet => facts['diet'];
+  static DateTime? _parseDate(Object? value) {
+    if (value == null) return null;
+    return DateTime.parse(value.toString());
+  }
+
+  static Map<String, String> _parseFactMap(Object? raw) {
+    if (raw is! Map) return const {};
+    return raw.map((key, value) => MapEntry(key.toString(), value.toString()));
+  }
+
+  String? get diet => dietPreference ?? facts['diet'];
 
   String get pregnancySummary {
     if (pregnancyWeek != null) {
       return 'Week $pregnancyWeek';
     }
     if (expectedDeliveryDate != null) {
-      final month = expectedDeliveryDate!.month;
-      final day = expectedDeliveryDate!.day;
+      final date = expectedDeliveryDate!;
       const months = [
         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
       ];
-      return 'Due ${months[month - 1]} $day';
+      return 'Due ${months[date.month - 1]} ${date.day}';
     }
     return 'Not set';
+  }
+}
+
+/// Payload for saving profile or completing onboarding.
+class ProfileSavePayload {
+  final String name;
+  final String language;
+  final int? pregnancyWeek;
+  final DateTime? expectedDeliveryDate;
+  final bool? isFirstPregnancy;
+  final String? primaryConcern;
+  final String? dietPreference;
+
+  const ProfileSavePayload({
+    required this.name,
+    required this.language,
+    this.pregnancyWeek,
+    this.expectedDeliveryDate,
+    this.isFirstPregnancy,
+    this.primaryConcern,
+    this.dietPreference,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'language': language,
+      if (pregnancyWeek != null) 'pregnancy_week': pregnancyWeek,
+      if (expectedDeliveryDate != null)
+        'expected_delivery_date':
+            expectedDeliveryDate!.toUtc().toIso8601String(),
+      if (isFirstPregnancy != null) 'is_first_pregnancy': isFirstPregnancy,
+      if (primaryConcern != null) 'primary_concern': primaryConcern,
+      if (dietPreference != null) 'diet_preference': dietPreference,
+    };
   }
 }

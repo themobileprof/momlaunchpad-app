@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 
-/// Atmospheric canvas with soft rose/plum orbs — used on auth and splash screens.
+/// Atmospheric canvas — solid background, optional soft accent orbs.
 class AppBackground extends StatelessWidget {
   final Widget child;
   final bool showOrbs;
@@ -14,25 +14,23 @@ class AppBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(gradient: AppColors.softGlow),
+    final canvas = context.appCanvas;
+    final accent = context.appPrimary.withValues(alpha: 0.06);
+
+    return ColoredBox(
+      color: canvas,
       child: Stack(
         children: [
           if (showOrbs) ...[
             Positioned(
               top: -80,
               right: -60,
-              child: _Orb(size: 260, gradient: AppColors.heroOrbPink),
+              child: _Orb(size: 260, color: accent),
             ),
             Positioned(
               top: 120,
               left: -90,
-              child: _Orb(size: 220, gradient: AppColors.heroOrbPurple),
-            ),
-            Positioned(
-              bottom: -40,
-              right: 40,
-              child: _Orb(size: 180, gradient: AppColors.heroOrbPurple),
+              child: _Orb(size: 220, color: accent),
             ),
           ],
           child,
@@ -44,16 +42,16 @@ class AppBackground extends StatelessWidget {
 
 class _Orb extends StatelessWidget {
   final double size;
-  final Gradient gradient;
+  final Color color;
 
-  const _Orb({required this.size, required this.gradient});
+  const _Orb({required this.size, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(shape: BoxShape.circle, gradient: gradient),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 }

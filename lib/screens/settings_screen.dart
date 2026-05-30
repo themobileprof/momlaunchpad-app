@@ -4,9 +4,8 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../providers/auth_provider.dart';
-import '../providers/profile_provider.dart';
+import '../providers/theme_provider.dart';
 import '../models/user.dart';
-import '../models/user_profile.dart';
 import '../widgets/widgets.dart';
 import 'symptom_stats_screen.dart';
 
@@ -17,7 +16,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
-    final profile = ref.watch(profileProvider).profile;
+    final themePreference = ref.watch(themePreferenceProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -31,8 +30,7 @@ class SettingsScreen extends ConsumerWidget {
           bottom: 120, // Space for floating navbar
         ),
         children: [
-          // User profile card
-          _buildProfileCard(user, profile),
+          _buildAccountCard(user),
 
           const SizedBox(height: AppSpacing.spaceLG),
 
@@ -54,6 +52,19 @@ class SettingsScreen extends ConsumerWidget {
 
           // Settings sections
           _buildSectionHeader('Health'),
+          AppListTileCard(
+            leadingIcon: Icons.person_outline_rounded,
+            iconColor: AppColors.primaryPurple,
+            title: 'Your profile',
+            subtitle: 'Edit pregnancy details in the Profile tab',
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Open the Profile tab from the bottom bar'),
+                ),
+              );
+            },
+          ),
           AppListTileCard(
             leadingIcon: Icons.health_and_safety_rounded,
             iconColor: AppColors.primaryPink,
@@ -87,8 +98,8 @@ class SettingsScreen extends ConsumerWidget {
           AppListTileCard(
             leadingIcon: Icons.dark_mode_rounded,
             title: 'Appearance',
-            subtitle: 'Light mode',
-            onTap: () => _showComingSoon(context, 'Theme settings'),
+            subtitle: themePreference.label,
+            onTap: () => _showAppearancePicker(context, ref),
           ),
 
           const SizedBox(height: AppSpacing.spaceLG),
@@ -163,10 +174,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileCard(User? user, UserProfile? profile) {
-    final pregnancyLabel = profile?.pregnancySummary;
-    final concern = profile?.primaryConcern;
-
+  Widget _buildAccountCard(User? user) {
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.spaceLG),
       child: Row(
@@ -189,23 +197,6 @@ class SettingsScreen extends ConsumerWidget {
                   user?.email ?? 'No email',
                   style: AppTypography.caption,
                 ),
-                if (pregnancyLabel != null && pregnancyLabel != 'Not set') ...[
-                  const SizedBox(height: 8),
-                  AppBadge(
-                    label: pregnancyLabel,
-                    variant: AppBadgeVariant.primary,
-                    small: true,
-                  ),
-                ],
-                if (concern != null && concern.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    'Focus: $concern',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.textLight,
-                    ),
-                  ),
-                ],
                 const SizedBox(height: 8),
                 AppBadge(
                   label: 'Free Plan',
@@ -214,13 +205,6 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ],
             ),
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.edit_rounded,
-              color: AppColors.primaryPurple,
-            ),
-            onPressed: () {},
           ),
         ],
       ),
@@ -241,6 +225,50 @@ class SettingsScreen extends ConsumerWidget {
           letterSpacing: 0.5,
         ),
       ),
+    );
+  }
+
+  void _showAppearancePicker(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return Consumer(
+          builder: (context, ref, _) {
+            final current = ref.watch(themePreferenceProvider);
+
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.spaceLG),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Appearance', style: AppTypography.headingMedium),
+                    const SizedBox(height: AppSpacing.spaceMD),
+                    ...AppThemePreference.values.map((option) {
+                      final selected = current == option;
+                      return ListTile(
+                        title: Text(option.label),
+                        trailing: selected
+                            ? Icon(Icons.check_rounded, color: context.appPrimary)
+                            : null,
+                        onTap: () async {
+                          await ref
+                              .read(themePreferenceProvider.notifier)
+                              .setPreference(option);
+                          if (sheetContext.mounted) {
+                            Navigator.pop(sheetContext);
+                          }
+                        },
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

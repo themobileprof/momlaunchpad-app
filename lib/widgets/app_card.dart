@@ -29,19 +29,22 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = borderRadius ?? AppRadius.radiusLarge;
-    
+    final surface = backgroundColor ?? context.appSurface;
+    final borderColor = context.appInkSubtle.withValues(alpha: 0.2);
+    final shadowColor = AppColors.shadowTintFor(context.appBrightness);
+
     Widget card = Container(
       padding: padding ?? const EdgeInsets.all(AppSpacing.spaceMD),
       decoration: BoxDecoration(
-        color: backgroundColor ?? AppColors.white,
+        color: surface,
         borderRadius: BorderRadius.circular(radius),
         border: variant == AppCardVariant.outlined
-            ? Border.all(color: AppColors.textLight.withOpacity(0.2))
+            ? Border.all(color: borderColor)
             : null,
-          boxShadow: variant == AppCardVariant.elevated
+        boxShadow: variant == AppCardVariant.elevated
             ? [
                 BoxShadow(
-                  color: AppColors.shadowDark.withOpacity(0.08), // Much softer shadow
+                  color: shadowColor,
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                   spreadRadius: -2,
