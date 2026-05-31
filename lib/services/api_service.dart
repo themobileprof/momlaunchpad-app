@@ -182,25 +182,8 @@ class ApiService {
   }
 
   /// Save first-time onboarding answers.
-  Future<UserProfile> completeOnboarding({
-    required String name,
-    required String language,
-    required int pregnancyWeek,
-    required bool isFirstPregnancy,
-    String? primaryConcern,
-    String? dietPreference,
-  }) {
-    return _saveProfile(
-      ProfileSavePayload(
-        name: name,
-        language: language,
-        pregnancyWeek: pregnancyWeek,
-        isFirstPregnancy: isFirstPregnancy,
-        primaryConcern: primaryConcern,
-        dietPreference: dietPreference,
-      ),
-      onboarding: true,
-    );
+  Future<UserProfile> completeOnboarding(ProfileSavePayload payload) {
+    return _saveProfile(payload, onboarding: true);
   }
 
   /// Update profile fields from the profile page.
@@ -239,7 +222,7 @@ class ApiService {
     );
   }
 
-  /// Fetch today's personalized welcome message (cached server-side per day).
+  /// Fetch this week's personalized welcome message (cached server-side per week).
   Future<WelcomeMessage> getWelcomeMessage() async {
     final response = await _http.get(
       Uri.parse('$baseUrl/api/users/me/welcome'),

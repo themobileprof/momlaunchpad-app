@@ -30,7 +30,7 @@ class ChatService {
   WebSocketChannel? _channel;
   
   Future<void> connect(String jwtToken) async {
-    final uri = Uri.parse('ws://api.momlaunchpad.com/ws/chat?token=$jwtToken');
+    final uri = Uri.parse('wss://api.momlaunchpad.com/ws/chat?token=$jwtToken');
     
     _channel = WebSocketChannel.connect(uri);
     
@@ -59,7 +59,7 @@ class ChatService {
 ```dart
 // 1. Login via HTTP to get JWT
 final loginResponse = await http.post(
-  Uri.parse('http://api.momlaunchpad.com/api/auth/login'),
+  Uri.parse('https://api.momlaunchpad.com/api/auth/login'),
   body: jsonEncode({'email': email, 'password': password}),
   headers: {'Content-Type': 'application/json'},
 );
@@ -422,7 +422,7 @@ class ChatProvider extends ChangeNotifier {
   
   Future<void> connect(String token) async {
     try {
-      final uri = Uri.parse('ws://api.momlaunchpad.com/ws/chat?token=$token');
+      final uri = Uri.parse('wss://api.momlaunchpad.com/ws/chat?token=$token');
       _channel = WebSocketChannel.connect(uri);
       _isConnected = true;
       notifyListeners();

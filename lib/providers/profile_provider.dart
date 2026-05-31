@@ -77,31 +77,22 @@ class ProfileNotifier extends Notifier<ProfileState> {
   }
 
   Future<UserProfile> updateProfile(ProfileSavePayload payload) async {
+    final previous = state.profile;
     final profile = await _apiService.updateProfile(payload);
     state = ProfileState(profile: profile, isLoading: false);
     await ref.read(authProvider.notifier).refreshUser();
-    await ref.read(welcomeProvider.notifier).refreshWelcome();
+    if (welcomeRelevantProfileChange(previous, profile)) {
+      await ref.read(welcomeProvider.notifier).refreshAfterPersonalizationChange();
+    }
     return profile;
   }
 
-  Future<UserProfile> completeOnboarding({
-    required String name,
-    required String language,
-    required int pregnancyWeek,
-    required bool isFirstPregnancy,
-    String? primaryConcern,
-  }) async {
-    final profile = await _apiService.completeOnboarding(
-      name: name,
-      language: language,
-      pregnancyWeek: pregnancyWeek,
-      isFirstPregnancy: isFirstPregnancy,
-      primaryConcern: primaryConcern,
-    );
+  Future<UserProfile> completeOnboarding(ProfileSavePayload payload) async {
+    final profile = await _apiService.completeOnboarding(payload);
 
     state = ProfileState(profile: profile, isLoading: false);
     await ref.read(authProvider.notifier).refreshUser();
-    await ref.read(welcomeProvider.notifier).refreshWelcome();
+    await ref.read(welcomeProvider.notifier).refreshAfterPersonalizationChange();
     return profile;
   }
 }

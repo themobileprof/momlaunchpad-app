@@ -1,0 +1,54 @@
+name: Release APK
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Create .env from secret
+        # GitHub secret `env_file`: full .env contents for production, e.g.
+        #   API_BASE_URL=https://api.momlaunchpad.com
+        #   WS_BASE_URL=wss://api.momlaunchpad.com
+        #   GOOGLE_WEB_CLIENT_ID=...
+        env:
+          ENV_FILE: ${{ secrets.env_file }}
+        run: printf '%s\n' "$ENV_FILE" > .env
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: momlaunchpad-${{ github.event.release.tag_name }}
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 90
+
+      - name: Attach APK to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

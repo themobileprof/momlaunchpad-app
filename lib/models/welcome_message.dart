@@ -1,4 +1,4 @@
-/// Daily personalized welcome message from the backend.
+/// Weekly personalized welcome message from the backend.
 class WelcomeMessage {
   final String message;
   final DateTime cacheDate;
@@ -17,6 +17,12 @@ class WelcomeMessage {
       source: json['source'] as String? ?? 'gemini',
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'message': message,
+        'cache_date': cacheDate.toUtc().toIso8601String(),
+        'source': source,
+      };
 
   bool get isFromGemini => source == 'gemini' || source == 'cache';
 }

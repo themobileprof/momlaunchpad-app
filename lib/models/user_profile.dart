@@ -1,8 +1,14 @@
+import 'journey_stage.dart';
+
 /// User profile and personalization facts from the backend.
 class UserProfile {
   final String name;
   final String language;
   final bool onboardingCompleted;
+  final JourneyStage? journeyStage;
+  final DateTime? journeyStageSince;
+  final DateTime? babyBirthDate;
+  final DateTime? lossDate;
   final DateTime? expectedDeliveryDate;
   final DateTime? pregnancyStartDate;
   final int? pregnancyWeek;
@@ -16,6 +22,10 @@ class UserProfile {
     required this.name,
     required this.language,
     required this.onboardingCompleted,
+    this.journeyStage,
+    this.journeyStageSince,
+    this.babyBirthDate,
+    this.lossDate,
     this.expectedDeliveryDate,
     this.pregnancyStartDate,
     this.pregnancyWeek,
@@ -31,6 +41,10 @@ class UserProfile {
       name: json['name']?.toString() ?? '',
       language: json['language']?.toString() ?? 'en',
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
+      journeyStage: JourneyStage.fromApi(json['journey_stage']?.toString()),
+      journeyStageSince: _parseDate(json['journey_stage_since']),
+      babyBirthDate: _parseDate(json['baby_birth_date']),
+      lossDate: _parseDate(json['loss_date']),
       expectedDeliveryDate: _parseDate(json['expected_delivery_date']),
       pregnancyStartDate: _parseDate(json['pregnancy_start_date']),
       pregnancyWeek: _parseInt(json['pregnancy_week']),
@@ -81,8 +95,11 @@ class UserProfile {
 class ProfileSavePayload {
   final String name;
   final String language;
+  final JourneyStage? journeyStage;
   final int? pregnancyWeek;
   final DateTime? expectedDeliveryDate;
+  final DateTime? babyBirthDate;
+  final DateTime? lossDate;
   final bool? isFirstPregnancy;
   final String? primaryConcern;
   final String? dietPreference;
@@ -90,8 +107,11 @@ class ProfileSavePayload {
   const ProfileSavePayload({
     required this.name,
     required this.language,
+    this.journeyStage,
     this.pregnancyWeek,
     this.expectedDeliveryDate,
+    this.babyBirthDate,
+    this.lossDate,
     this.isFirstPregnancy,
     this.primaryConcern,
     this.dietPreference,
@@ -101,10 +121,15 @@ class ProfileSavePayload {
     return {
       'name': name,
       'language': language,
+      if (journeyStage != null) 'journey_stage': journeyStage!.apiValue,
       if (pregnancyWeek != null) 'pregnancy_week': pregnancyWeek,
       if (expectedDeliveryDate != null)
         'expected_delivery_date':
             expectedDeliveryDate!.toUtc().toIso8601String(),
+      if (babyBirthDate != null)
+        'baby_birth_date': babyBirthDate!.toUtc().toIso8601String(),
+      if (lossDate != null)
+        'loss_date': lossDate!.toUtc().toIso8601String(),
       if (isFirstPregnancy != null) 'is_first_pregnancy': isFirstPregnancy,
       if (primaryConcern != null) 'primary_concern': primaryConcern,
       if (dietPreference != null) 'diet_preference': dietPreference,

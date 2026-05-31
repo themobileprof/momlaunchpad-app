@@ -1,7 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/user_profile.dart';
 import '../models/welcome_message.dart';
 import '../services/api_service.dart';
+import '../utils/welcome_cache.dart';
 import 'service_providers.dart';
+
+const _welcomePrefsKey = 'welcome_message_v1';
 
 class WelcomeState {
   final WelcomeMessage? message;
@@ -13,6 +20,12 @@ class WelcomeState {
     this.isLoading = false,
     this.error,
   });
+
+  bool get hasFreshMessage {
+    final msg = message;
+    if (msg == null) return false;
+    return WelcomeCache.isFresh(msg.cacheDate);
+  }
 
   WelcomeState copyWith({
     WelcomeMessage? message,
@@ -29,34 +42,99 @@ class WelcomeState {
 
 class WelcomeNotifier extends Notifier<WelcomeState> {
   late final ApiService _apiService;
+  bool _fetchInProgress = false;
 
   @override
   WelcomeState build() {
     _apiService = ref.read(apiServiceProvider);
-    Future.microtask(fetchWelcome);
-    return const WelcomeState(isLoading: true);
+    Future.microtask(_restoreFromDisk);
+    return const WelcomeState(isLoading: false);
   }
 
-  Future<void> fetchWelcome() async {
-    state = state.copyWith(isLoading: true, error: null);
+  /// Called when Home loads: show stored message, fetch only if missing or >7 days old.
+  Future<void> ensureFreshForHome() async {
+    if (state.message == null) {
+      await _restoreFromDisk();
+    }
+    if (state.hasFreshMessage || _fetchInProgress) return;
+    await _fetch(showLoadingSpinner: state.message == null);
+  }
+
+  Future<void> refreshWelcome() async {
+    await _fetch(showLoadingSpinner: state.message == null);
+  }
+
+  /// After journey or personalization changes (server clears its cache).
+  Future<void> refreshAfterPersonalizationChange() async {
+    await _clearDiskCache();
+    await _fetch(showLoadingSpinner: false);
+  }
+
+  Future<void> _restoreFromDisk() async {
     try {
-      final message = await _apiService.getWelcomeMessage();
-      state = WelcomeState(message: message, isLoading: false);
-    } on ApiException catch (e) {
-      state = WelcomeState(isLoading: false, error: e.message);
-    } catch (_) {
-      state = const WelcomeState(
-        isLoading: false,
-        error: 'Failed to load welcome message',
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_welcomePrefsKey);
+      if (raw == null) return;
+
+      final message = WelcomeMessage.fromJson(
+        Map<String, dynamic>.from(jsonDecode(raw) as Map),
       );
+      state = WelcomeState(message: message, isLoading: false);
+    } catch (_) {
+      // Ignore corrupt local cache.
     }
   }
 
-  /// Reload after profile or health data changes (backend invalidates daily cache on profile save).
-  Future<void> refreshWelcome() async {
-    state = const WelcomeState(isLoading: true);
-    await fetchWelcome();
+  Future<void> _persistToDisk(WelcomeMessage message) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_welcomePrefsKey, jsonEncode(message.toJson()));
   }
+
+  Future<void> _clearDiskCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_welcomePrefsKey);
+    state = const WelcomeState(isLoading: false);
+  }
+
+  Future<void> _fetch({required bool showLoadingSpinner}) async {
+    if (_fetchInProgress) return;
+    _fetchInProgress = true;
+
+    if (showLoadingSpinner) {
+      state = state.copyWith(isLoading: true, error: null);
+    }
+
+    try {
+      final message = await _apiService.getWelcomeMessage();
+      state = WelcomeState(message: message, isLoading: false);
+      await _persistToDisk(message);
+    } on ApiException catch (e) {
+      state = WelcomeState(
+        message: state.message,
+        isLoading: false,
+        error: e.message,
+      );
+    } catch (_) {
+      state = WelcomeState(
+        message: state.message,
+        isLoading: false,
+        error: state.message == null ? 'Failed to load welcome message' : null,
+      );
+    } finally {
+      _fetchInProgress = false;
+    }
+  }
+}
+
+/// Whether a profile update should regenerate the welcome on the server.
+bool welcomeRelevantProfileChange(UserProfile? before, UserProfile after) {
+  if (before == null) return true;
+  return before.journeyStage != after.journeyStage ||
+      before.pregnancyWeek != after.pregnancyWeek ||
+      before.expectedDeliveryDate != after.expectedDeliveryDate ||
+      before.babyBirthDate != after.babyBirthDate ||
+      before.lossDate != after.lossDate ||
+      before.primaryConcern != after.primaryConcern;
 }
 
 final welcomeProvider = NotifierProvider<WelcomeNotifier, WelcomeState>(

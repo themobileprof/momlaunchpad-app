@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../utils/journey_helpers.dart';
 import '../providers/profile_provider.dart';
 import '../providers/symptom_provider.dart';
 import '../providers/welcome_provider.dart';
@@ -14,7 +15,7 @@ import 'conversation_list_screen.dart';
 import 'doctor_visit_form_screen.dart';
 import 'symptom_stats_screen.dart';
 
-/// Home dashboard with a daily personalized welcome message.
+/// Home dashboard with a weekly personalized welcome message.
 class HomeDashboardScreen extends ConsumerStatefulWidget {
   const HomeDashboardScreen({super.key});
 
@@ -24,27 +25,18 @@ class HomeDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
-  Object? _lastProfileRefreshKey;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(welcomeProvider.notifier).ensureFreshForHome();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final welcomeState = ref.watch(welcomeProvider);
     final profile = ref.watch(profileProvider).profile;
-
-    ref.listen(profileProvider, (previous, next) {
-      final profile = next.profile;
-      if (profile == null) return;
-      final key = Object.hash(
-        profile.name,
-        profile.pregnancyWeek,
-        profile.primaryConcern,
-        profile.expectedDeliveryDate?.millisecondsSinceEpoch,
-      );
-      if (_lastProfileRefreshKey != null && _lastProfileRefreshKey != key) {
-        ref.read(welcomeProvider.notifier).refreshWelcome();
-      }
-      _lastProfileRefreshKey = key;
-    });
 
     return Scaffold(
       backgroundColor: context.appCanvas,
@@ -53,7 +45,6 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
         onRefresh: () async {
           ref.invalidate(recentSymptomsProvider);
           ref.invalidate(symptomStatsProvider);
-          await ref.read(welcomeProvider.notifier).refreshWelcome();
         },
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -69,9 +60,9 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (profile?.pregnancyWeek != null) ...[
+                    if (profile != null) ...[
                       AppBadge(
-                        label: 'Week ${profile!.pregnancyWeek}',
+                        label: JourneyHelpers.homeBadgeLabel(profile),
                         icon: Icons.favorite_rounded,
                         variant: AppBadgeVariant.secondary,
                       ),
@@ -196,7 +187,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
 
   Widget _buildWelcomeSection(WelcomeState welcomeState) {
     if (welcomeState.isLoading && welcomeState.message == null) {
-      return const _WelcomeLoadingCard();
+      return const SizedBox.shrink();
     }
     if (welcomeState.error != null && welcomeState.message == null) {
       return _WelcomeErrorCard(
@@ -206,7 +197,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     if (welcomeState.message != null) {
       return _WelcomeCard(message: welcomeState.message!.message);
     }
-    return const _WelcomeLoadingCard();
+    return const SizedBox.shrink();
   }
 
   void _open(BuildContext context, Widget screen) {
@@ -234,7 +225,7 @@ class _WelcomeCard extends StatelessWidget {
             children: [
               Icon(Icons.waving_hand_rounded, color: context.appPrimary, size: 22),
               const SizedBox(width: AppSpacing.spaceSM),
-              Text('Today\'s note for you', style: AppTypography.bodyTextMedium),
+              Text('This week\'s note for you', style: AppTypography.bodyTextMedium),
             ],
           ),
           const SizedBox(height: AppSpacing.spaceMD),
@@ -243,51 +234,6 @@ class _WelcomeCard extends StatelessWidget {
             style: AppTypography.bodyText.copyWith(
               fontSize: 16,
               height: 1.55,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WelcomeLoadingCard extends StatelessWidget {
-  const _WelcomeLoadingCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return GlassContainer(
-      opacity: 0.92,
-      padding: const EdgeInsets.all(AppSpacing.spaceMD),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 14,
-            width: 140,
-            decoration: BoxDecoration(
-              color: AppColors.primaryPurple.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.spaceMD),
-          for (var i = 0; i < 4; i++) ...[
-            Container(
-              height: 12,
-              width: double.infinity,
-              margin: EdgeInsets.only(bottom: i == 3 ? 0 : 10),
-              decoration: BoxDecoration(
-                color: AppColors.primaryPurple.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(6),
-              ),
-            ),
-          ],
-          const SizedBox(height: AppSpacing.spaceSM),
-          const Center(
-            child: SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(strokeWidth: 2),
             ),
           ),
         ],

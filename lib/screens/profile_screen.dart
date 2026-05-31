@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/journey_stage.dart';
 import '../models/user_profile.dart';
 import '../providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
+import '../utils/journey_helpers.dart';
 import '../utils/pregnancy_timing.dart';
 import '../services/api_service.dart';
+import '../widgets/journey_transition_sheet.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -25,8 +28,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   int _pregnancyWeek = 20;
   DateTime? _dueDate;
+  DateTime? _babyBirthDate;
+  DateTime? _lossDate;
   bool _dueDateManuallySet = false;
   bool? _isFirstPregnancy;
+  JourneyStage? _journeyStage;
   String _language = 'en';
   String? _dietPreference;
   bool _isSaving = false;
@@ -73,6 +79,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _dueDateManuallySet = false;
     }
     _isFirstPregnancy = profile.isFirstPregnancy;
+    _journeyStage = JourneyHelpers.stageOf(profile);
+    _babyBirthDate = profile.babyBirthDate;
+    _lossDate = profile.lossDate;
     _concernController.text = profile.primaryConcern ?? '';
     _dietPreference = profile.dietPreference ?? profile.diet ?? '';
   }
@@ -125,9 +134,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ProfileSavePayload(
               name: _nameController.text.trim(),
               language: _language,
-              pregnancyWeek: _dueDateManuallySet ? null : _pregnancyWeek,
-              expectedDeliveryDate:
-                  _dueDateManuallySet ? _dueDate : null,
+              journeyStage: _journeyStage,
+              pregnancyWeek: _journeyStage == JourneyStage.pregnant &&
+                      !_dueDateManuallySet
+                  ? _pregnancyWeek
+                  : null,
+              expectedDeliveryDate: _journeyStage == JourneyStage.pregnant &&
+                      _dueDateManuallySet
+                  ? _dueDate
+                  : null,
+              babyBirthDate: _journeyStage == JourneyStage.postpartum
+                  ? _babyBirthDate
+                  : null,
+              lossDate: _journeyStage == JourneyStage.miscarriage ? _lossDate : null,
               isFirstPregnancy: _isFirstPregnancy,
               primaryConcern: _concernController.text.trim().isEmpty
                   ? null
@@ -159,6 +178,59 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _updateJourney() async {
+    final profile = ref.read(profileProvider).profile;
+    if (profile == null) return;
+
+    final payload = await showJourneyTransitionPicker(context, profile);
+    if (payload == null || !mounted) return;
+
+    setState(() => _isSaving = true);
+    try {
+      final saved = await ref.read(profileProvider.notifier).updateProfile(payload);
+      if (mounted) {
+        setState(() => _applyProfile(saved, force: true));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Journey updated')),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _pickBabyBirthDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _babyBirthDate ?? DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365 * 2)),
+      lastDate: DateTime.now(),
+      helpText: 'Baby\'s birth date',
+    );
+    if (picked != null && mounted) {
+      setState(() => _babyBirthDate = picked);
+    }
+  }
+
+  Future<void> _pickLossDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _lossDate ?? DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now(),
+      helpText: 'Date of loss (optional)',
+    );
+    if (picked != null && mounted) {
+      setState(() => _lossDate = picked);
     }
   }
 
@@ -231,94 +303,185 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.spaceLG),
-                  _buildSectionTitle('Pregnancy journey'),
+                  _buildSectionTitle('Your journey'),
                   AppCard(
                     padding: const EdgeInsets.all(AppSpacing.spaceMD),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Center(
-                          child: Text(
-                            'Week $_pregnancyWeek',
-                            style: AppTypography.headingMedium.copyWith(
-                              color: AppColors.primaryPurple,
-                            ),
-                          ),
-                        ),
-                        Slider(
-                          value: _pregnancyWeek.toDouble(),
-                          min: 4,
-                          max: 42,
-                          divisions: 38,
-                          activeColor: AppColors.primaryPink,
-                          onChanged: (value) {
-                            _onPregnancyWeekChanged(value.round());
-                          },
-                        ),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Expected due date'),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _dueDate == null
-                                    ? 'Tap to set a custom date'
-                                    : MaterialLocalizations.of(context)
-                                        .formatMediumDate(_dueDate!),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _dueDateManuallySet
-                                    ? 'Custom date · week adjusted to match'
-                                    : 'Calculated from pregnancy week',
-                                style: AppTypography.caption.copyWith(
-                                  color: AppColors.textLight,
-                                ),
-                              ),
-                            ],
-                          ),
-                          trailing: const Icon(Icons.calendar_today_outlined),
-                          onTap: _pickDueDate,
-                        ),
-                        if (_dueDateManuallySet)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton(
-                              onPressed: _useWeekBasedDueDate,
-                              child: const Text('Recalculate from week'),
-                            ),
-                          ),
-                        const Divider(),
                         Text(
-                          'First pregnancy?',
-                          style: AppTypography.bodyTextMedium,
+                          _journeyStage?.label ?? 'Not set',
+                          style: AppTypography.headingMedium.copyWith(
+                            color: AppColors.primaryPurple,
+                          ),
                         ),
-                        const SizedBox(height: AppSpacing.spaceSM),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _ChoiceButton(
-                                label: 'Yes',
-                                selected: _isFirstPregnancy == true,
-                                onTap: () =>
-                                    setState(() => _isFirstPregnancy = true),
-                              ),
+                        const SizedBox(height: 4),
+                        Text(
+                          profile == null
+                              ? ''
+                              : JourneyHelpers.profileSummary(profile),
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.textLight,
+                          ),
+                        ),
+                        if (_journeyStage != null) ...[
+                          const SizedBox(height: AppSpacing.spaceSM),
+                          Text(
+                            _journeyStage!.transitionHint,
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textLight,
                             ),
-                            const SizedBox(width: AppSpacing.spaceSM),
-                            Expanded(
-                              child: _ChoiceButton(
-                                label: 'No',
-                                selected: _isFirstPregnancy == false,
-                                onTap: () =>
-                                    setState(() => _isFirstPregnancy = false),
-                              ),
-                            ),
-                          ],
+                          ),
+                        ],
+                        const SizedBox(height: AppSpacing.spaceMD),
+                        OutlinedButton.icon(
+                          onPressed: _isSaving ? null : _updateJourney,
+                          icon: const Icon(Icons.swap_horiz_rounded),
+                          label: const Text('Update my journey'),
                         ),
                       ],
                     ),
                   ),
+                  if (_journeyStage == JourneyStage.pregnant) ...[
+                    const SizedBox(height: AppSpacing.spaceLG),
+                    _buildSectionTitle('Pregnancy details'),
+                    AppCard(
+                      padding: const EdgeInsets.all(AppSpacing.spaceMD),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Text(
+                              'Week $_pregnancyWeek',
+                              style: AppTypography.headingMedium.copyWith(
+                                color: AppColors.primaryPurple,
+                              ),
+                            ),
+                          ),
+                          Slider(
+                            value: _pregnancyWeek.toDouble(),
+                            min: 4,
+                            max: 42,
+                            divisions: 38,
+                            activeColor: AppColors.primaryPink,
+                            onChanged: (value) {
+                              _onPregnancyWeekChanged(value.round());
+                            },
+                          ),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Expected due date'),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _dueDate == null
+                                      ? 'Tap to set a custom date'
+                                      : MaterialLocalizations.of(context)
+                                          .formatMediumDate(_dueDate!),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _dueDateManuallySet
+                                      ? 'Custom date · week adjusted to match'
+                                      : 'Calculated from pregnancy week',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.textLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            trailing: const Icon(Icons.calendar_today_outlined),
+                            onTap: _pickDueDate,
+                          ),
+                          if (_dueDateManuallySet)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton(
+                                onPressed: _useWeekBasedDueDate,
+                                child: const Text('Recalculate from week'),
+                              ),
+                            ),
+                          const Divider(),
+                          Text(
+                            'First pregnancy?',
+                            style: AppTypography.bodyTextMedium,
+                          ),
+                          const SizedBox(height: AppSpacing.spaceSM),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _ChoiceButton(
+                                  label: 'Yes',
+                                  selected: _isFirstPregnancy == true,
+                                  onTap: () =>
+                                      setState(() => _isFirstPregnancy = true),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.spaceSM),
+                              Expanded(
+                                child: _ChoiceButton(
+                                  label: 'No',
+                                  selected: _isFirstPregnancy == false,
+                                  onTap: () =>
+                                      setState(() => _isFirstPregnancy = false),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (_journeyStage == JourneyStage.postpartum) ...[
+                    const SizedBox(height: AppSpacing.spaceLG),
+                    _buildSectionTitle('Postpartum'),
+                    AppCard(
+                      padding: const EdgeInsets.all(AppSpacing.spaceMD),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Baby\'s birth date'),
+                            subtitle: Text(
+                              _babyBirthDate == null
+                                  ? 'Tap to set'
+                                  : MaterialLocalizations.of(context)
+                                      .formatMediumDate(_babyBirthDate!),
+                            ),
+                            trailing: const Icon(Icons.calendar_today_outlined),
+                            onTap: _pickBabyBirthDate,
+                          ),
+                          Text(
+                            'We focus on your recovery and wellbeing in this stage.',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (_journeyStage == JourneyStage.miscarriage) ...[
+                    const SizedBox(height: AppSpacing.spaceLG),
+                    _buildSectionTitle('Support after loss'),
+                    AppCard(
+                      padding: const EdgeInsets.all(AppSpacing.spaceMD),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Date of loss (optional)'),
+                        subtitle: Text(
+                          _lossDate == null
+                              ? 'Tap to add if you\'d like'
+                              : MaterialLocalizations.of(context)
+                                  .formatMediumDate(_lossDate!),
+                        ),
+                        trailing: const Icon(Icons.calendar_today_outlined),
+                        onTap: _pickLossDate,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.spaceLG),
                   _buildSectionTitle('Preferences'),
                   AppCard(
@@ -448,7 +611,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'MomLaunchpad uses this to tailor guidance. We keep learning more every time you chat.',
+                'MomLaunchPad uses this to tailor support for women across TTC, pregnancy, postpartum, and loss. We keep learning more every time you chat.',
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textLight,
                 ),
