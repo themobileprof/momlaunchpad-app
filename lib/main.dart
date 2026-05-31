@@ -23,11 +23,36 @@ void main() async {
   );
 }
 
-class MomLaunchpadApp extends ConsumerWidget {
+class MomLaunchpadApp extends ConsumerStatefulWidget {
   const MomLaunchpadApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MomLaunchpadApp> createState() => _MomLaunchpadAppState();
+}
+
+class _MomLaunchpadAppState extends ConsumerState<MomLaunchpadApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(authProvider.notifier).refreshSessionIfLoggedIn();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themePreference = ref.watch(themePreferenceProvider);
 
     ref.listen(authProvider, (previous, next) {

@@ -59,18 +59,55 @@ class AuthNotifier extends Notifier<AuthState> {
   /// Check if user is logged in on app start
   Future<void> _checkLoginStatus() async {
     state = state.copyWith(isLoading: true);
-    
+
     try {
-      final isLoggedIn = await _storageService.isLoggedIn();
-      if (isLoggedIn) {
-        final user = await _apiService.getCurrentUser();
-        state = AuthState(user: user, isLoggedIn: true);
-      } else {
+      final hasToken = await _storageService.isLoggedIn();
+      if (!hasToken) {
         state = AuthState(isLoggedIn: false);
+        return;
       }
-    } catch (e) {
-      debugPrint('Login check error: $e');
+
+      try {
+        final authResponse = await _apiService.refreshSession();
+        state = AuthState(
+          user: authResponse.user,
+          isLoggedIn: true,
+        );
+        return;
+      } on ApiException catch (e) {
+        if (e.isUnauthorized) {
+          await _storageService.clearAll();
+          state = AuthState(isLoggedIn: false);
+          return;
+        }
+      } catch (e) {
+        debugPrint('Session refresh error: $e');
+      }
+
+      final cachedUser = await _storageService.getCachedUser();
+      if (cachedUser != null) {
+        state = AuthState(user: cachedUser, isLoggedIn: true);
+        return;
+      }
+
       state = AuthState(isLoggedIn: false);
+    } finally {
+      if (state.isLoading) {
+        state = state.copyWith(isLoading: false);
+      }
+    }
+  }
+
+  /// Silently extend the session when the app returns to the foreground.
+  Future<void> refreshSessionIfLoggedIn() async {
+    if (!state.isLoggedIn) return;
+    if (!await _storageService.isLoggedIn()) return;
+
+    try {
+      final authResponse = await _apiService.refreshSession();
+      state = state.copyWith(user: authResponse.user);
+    } catch (e) {
+      debugPrint('Background session refresh: $e');
     }
   }
 

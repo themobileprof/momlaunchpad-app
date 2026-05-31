@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:momlaunchpad_mobile/models/user.dart';
 import 'package:momlaunchpad_mobile/services/storage_service.dart';
 
 /// In-memory [StorageService] for tests (no platform secure storage).
@@ -5,6 +8,7 @@ class FakeStorageService extends StorageService {
   static const _tokenKey = 'jwt_token';
   static const _userIdKey = 'user_id';
   static const _languageKey = 'language';
+  static const _cachedUserKey = 'cached_user';
 
   final Map<String, String> _mem = {};
 
@@ -35,6 +39,18 @@ class FakeStorageService extends StorageService {
   @override
   Future<void> saveLanguage(String language) async {
     _mem[_languageKey] = language;
+  }
+
+  @override
+  Future<void> saveCachedUser(User user) async {
+    _mem[_cachedUserKey] = jsonEncode(user.toJson());
+  }
+
+  @override
+  Future<User?> getCachedUser() async {
+    final raw = _mem[_cachedUserKey];
+    if (raw == null) return null;
+    return User.fromJson(Map<String, dynamic>.from(jsonDecode(raw) as Map));
   }
 
   @override

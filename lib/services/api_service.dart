@@ -54,6 +54,12 @@ class ApiService {
     return fallback;
   }
 
+  Future<void> _persistAuthSession(AuthResponse authResponse) async {
+    await _storage.saveToken(authResponse.token);
+    await _storage.saveUserId(authResponse.user.id);
+    await _storage.saveCachedUser(authResponse.user);
+  }
+
   // ============ AUTH ENDPOINTS ============
 
   /// Register new user
@@ -76,8 +82,7 @@ class ApiService {
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final authResponse = AuthResponse.fromJson(jsonDecode(response.body));
-      await _storage.saveToken(authResponse.token);
-      await _storage.saveUserId(authResponse.user.id);
+      await _persistAuthSession(authResponse);
       return authResponse;
     } else {
       throw ApiException(
@@ -103,8 +108,7 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final authResponse = AuthResponse.fromJson(jsonDecode(response.body));
-      await _storage.saveToken(authResponse.token);
-      await _storage.saveUserId(authResponse.user.id);
+      await _persistAuthSession(authResponse);
       return authResponse;
     } else {
       throw ApiException(
@@ -128,8 +132,7 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final authResponse = AuthResponse.fromJson(jsonDecode(response.body));
-      await _storage.saveToken(authResponse.token);
-      await _storage.saveUserId(authResponse.user.id);
+      await _persistAuthSession(authResponse);
       return authResponse;
     } else {
       throw ApiException(
@@ -137,6 +140,25 @@ class ApiService {
         message: _errorMessageFromBody(response, 'Google sign-in failed'),
       );
     }
+  }
+
+  /// Extend the session with a fresh JWT (works within server refresh grace window).
+  Future<AuthResponse> refreshSession() async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/auth/refresh'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      final authResponse = AuthResponse.fromJson(jsonDecode(response.body));
+      await _persistAuthSession(authResponse);
+      return authResponse;
+    }
+
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Session expired'),
+    );
   }
 
   /// Get current user info
@@ -147,7 +169,9 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      return User.fromJson(jsonDecode(response.body));
+      final user = User.fromJson(jsonDecode(response.body));
+      await _storage.saveCachedUser(user);
+      return user;
     } else if (response.statusCode == 401) {
       throw ApiException(
         statusCode: 401,
