@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/community.dart';
+import '../providers/community_provider.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -7,7 +9,7 @@ import 'app_card.dart';
 import 'community_author_row.dart';
 import 'simple_formatted_text.dart';
 
-class CommunityPostCard extends StatelessWidget {
+class CommunityPostCard extends ConsumerWidget {
   final CommunityPost post;
   final VoidCallback? onTap;
   final VoidCallback? onLike;
@@ -22,7 +24,8 @@ class CommunityPostCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final badgeCatalog = ref.watch(communityProvider).badgeCatalog;
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.spaceMD),
       onTap: onTap,
@@ -36,6 +39,7 @@ class CommunityPostCard extends StatelessWidget {
                   author: post.author,
                   timestamp: post.createdAt,
                   subtitle: post.locationLabel.isNotEmpty ? post.locationLabel : null,
+                  badgeCatalog: badgeCatalog,
                 ),
               ),
               if (onMore != null)

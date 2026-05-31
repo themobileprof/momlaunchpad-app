@@ -145,6 +145,7 @@ class CommunityReply {
 class CommunityEvent {
   final String id;
   final String postId;
+  final String? eventType;
   final String title;
   final String? description;
   final String? venue;
@@ -159,6 +160,7 @@ class CommunityEvent {
   const CommunityEvent({
     required this.id,
     required this.postId,
+    this.eventType,
     required this.title,
     this.description,
     this.venue,
@@ -175,6 +177,7 @@ class CommunityEvent {
     return CommunityEvent(
       id: json['id'].toString(),
       postId: json['post_id'].toString(),
+      eventType: json['event_type']?.toString(),
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString(),
       venue: json['venue']?.toString(),
@@ -208,7 +211,7 @@ class CommunityInterestGroup {
       key: json['key']?.toString() ?? '',
       label: json['label']?.toString() ?? '',
       items: (json['items'] as List<dynamic>? ?? [])
-          .map((e) => CommunityInterest.fromJson(Map<String, dynamic>.from(e as Map)))
+          .map((e) => CommunityInterestItem.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),
     );
   }
@@ -227,6 +230,9 @@ class CommunityInterest {
     );
   }
 }
+
+/// Alias for catalog interest items returned by the API.
+typedef CommunityInterestItem = CommunityInterest;
 
 /// Community onboarding / status from API.
 class CommunityStatus {
@@ -318,6 +324,7 @@ class CreatePostPayload {
 }
 
 class CreateEventPayload {
+  final String eventType;
   final String title;
   final String? description;
   final String? venue;
@@ -325,6 +332,7 @@ class CreateEventPayload {
   final DateTime? endsAt;
 
   const CreateEventPayload({
+    required this.eventType,
     required this.title,
     this.description,
     this.venue,
@@ -333,6 +341,7 @@ class CreateEventPayload {
   });
 
   Map<String, dynamic> toJson() => {
+        'event_type': eventType,
         'title': title,
         if (description != null) 'description': description,
         if (venue != null) 'venue': venue,
@@ -341,11 +350,68 @@ class CreateEventPayload {
       };
 }
 
-/// Badge display labels.
-const communityBadgeLabels = {
-  'midwife': 'Midwife',
-  'doctor': 'Doctor',
-  'pediatrician': 'Pediatrician',
-  'lactation_consultant': 'Lactation Consultant',
-  'community_moderator': 'Moderator',
-};
+class CommunityCountryOption {
+  final String code;
+  final String name;
+
+  const CommunityCountryOption({required this.code, required this.name});
+
+  factory CommunityCountryOption.fromJson(Map<String, dynamic> json) {
+    return CommunityCountryOption(
+      code: json['code']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+    );
+  }
+}
+
+class CommunityRegionOption {
+  final String id;
+  final String countryCode;
+  final String code;
+  final String name;
+
+  const CommunityRegionOption({
+    required this.id,
+    required this.countryCode,
+    required this.code,
+    required this.name,
+  });
+
+  factory CommunityRegionOption.fromJson(Map<String, dynamic> json) {
+    return CommunityRegionOption(
+      id: json['id']?.toString() ?? '',
+      countryCode: json['country_code']?.toString() ?? '',
+      code: json['code']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+    );
+  }
+}
+
+class CommunityCatalogItem {
+  final String key;
+  final String label;
+  final String? description;
+
+  const CommunityCatalogItem({
+    required this.key,
+    required this.label,
+    this.description,
+  });
+
+  factory CommunityCatalogItem.fromJson(Map<String, dynamic> json) {
+    return CommunityCatalogItem(
+      key: json['key']?.toString() ?? '',
+      label: json['label']?.toString() ?? '',
+      description: json['description']?.toString(),
+    );
+  }
+}
+
+/// Badge labels resolved from GET /community/badge-types (no hard-coded map).
+class CommunityBadgeCatalog {
+  final Map<String, String> labels;
+
+  const CommunityBadgeCatalog(this.labels);
+
+  String labelFor(String key) => labels[key] ?? key;
+}

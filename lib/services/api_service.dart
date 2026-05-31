@@ -653,8 +653,90 @@ class ApiService {
     );
   }
 
+  Future<List<CommunityCountryOption>> getCommunityCountries() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/community/locations/countries'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load countries'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    return (body['countries'] as List<dynamic>? ?? [])
+        .map((e) => CommunityCountryOption.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<List<String>> getCommunityLocationSuggestions({
+    required String countryCode,
+    required String field,
+    required String query,
+    String? stateProvince,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/community/locations/suggestions').replace(
+      queryParameters: {
+        'country_code': countryCode,
+        'field': field,
+        'q': query,
+        if (stateProvince != null && stateProvince.isNotEmpty)
+          'state_province': stateProvince,
+      },
+    );
+    final response = await _http.get(uri, headers: await _getHeaders());
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load suggestions'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    return (body['suggestions'] as List<dynamic>? ?? [])
+        .map((e) => e.toString())
+        .toList();
+  }
+
+  Future<List<CommunityCatalogItem>> getCommunityEventTypes() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/community/event-types'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load event types'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    return (body['event_types'] as List<dynamic>? ?? [])
+        .map((e) => CommunityCatalogItem.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<CommunityBadgeCatalog> getCommunityBadgeCatalog() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/community/badge-types'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load badge types'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    final labels = <String, String>{};
+    for (final raw in body['badge_types'] as List<dynamic>? ?? []) {
+      final item = Map<String, dynamic>.from(raw as Map);
+      labels[item['key'].toString()] = item['label']?.toString() ?? item['key'].toString();
+    }
+    return CommunityBadgeCatalog(labels);
+  }
+
   Future<CommunityStatus> completeCommunityOnboarding({
-    required String country,
+    required String countryCode,
     required String stateProvince,
     required String city,
     required List<String> interests,
@@ -663,7 +745,7 @@ class ApiService {
       Uri.parse('$baseUrl/api/community/onboarding'),
       headers: await _getHeaders(),
       body: jsonEncode({
-        'country': country,
+        'country_code': countryCode,
         'state_province': stateProvince,
         'city': city,
         'interests': interests,

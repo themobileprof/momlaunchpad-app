@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/community_provider.dart';
+import '../providers/service_providers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
+import '../widgets/country_picker_field.dart';
 import '../widgets/gradient_button.dart';
+import '../widgets/location_suggest_field.dart';
 import '../widgets/widgets.dart';
 
 /// First-time community setup: location + up to 5 interests.
@@ -18,27 +21,36 @@ class CommunityOnboardingScreen extends ConsumerStatefulWidget {
 
 class _CommunityOnboardingScreenState
     extends ConsumerState<CommunityOnboardingScreen> {
-  final _countryController = TextEditingController();
   final _stateController = TextEditingController();
   final _cityController = TextEditingController();
   final _selected = <String>{};
+  String? _countryCode;
   bool _submitting = false;
 
   @override
   void dispose() {
-    _countryController.dispose();
     _stateController.dispose();
     _cityController.dispose();
     super.dispose();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = ref.read(communityProvider);
+      if (state.countries.isEmpty || state.interestGroups.isEmpty) {
+        ref.read(communityProvider.notifier).bootstrap();
+      }
+    });
+  }
+
   Future<void> _submit() async {
-    final country = _countryController.text.trim();
     final stateProvince = _stateController.text.trim();
     final city = _cityController.text.trim();
 
-    if (country.isEmpty || stateProvince.isEmpty || city.isEmpty) {
-      _showSnack('Please enter your country, state, and city.');
+    if (_countryCode == null || stateProvince.isEmpty || city.isEmpty) {
+      _showSnack('Please select your country and enter state and city.');
       return;
     }
     if (_selected.isEmpty) {
@@ -52,7 +64,7 @@ class _CommunityOnboardingScreenState
 
     setState(() => _submitting = true);
     final ok = await ref.read(communityProvider.notifier).completeOnboarding(
-          country: country,
+          countryCode: _countryCode!,
           stateProvince: stateProvince,
           city: city,
           interests: _selected.toList(),
@@ -82,9 +94,32 @@ class _CommunityOnboardingScreenState
     });
   }
 
+  Future<List<String>> _fetchStateSuggestions(String query) async {
+    if (_countryCode == null) return const [];
+    return ref.read(apiServiceProvider).getCommunityLocationSuggestions(
+          countryCode: _countryCode!,
+          field: 'state_province',
+          query: query,
+        );
+  }
+
+  Future<List<String>> _fetchCitySuggestions(String query) async {
+    if (_countryCode == null) return const [];
+    return ref.read(apiServiceProvider).getCommunityLocationSuggestions(
+          countryCode: _countryCode!,
+          field: 'city',
+          query: query,
+          stateProvince: _stateController.text.trim(),
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final groups = ref.watch(communityProvider).interestGroups;
+    final communityState = ref.watch(communityProvider);
+    final groups = communityState.interestGroups;
+    final countries = communityState.countries
+        .map((c) => (code: c.code, name: c.name))
+        .toList();
 
     return Scaffold(
       backgroundColor: context.appCanvas,
@@ -109,11 +144,32 @@ class _CommunityOnboardingScreenState
           const SizedBox(height: AppSpacing.spaceLG),
           Text('Where are you?', style: AppTypography.bodyTextMedium),
           const SizedBox(height: AppSpacing.spaceSM),
-          _LocationField(label: 'Country', controller: _countryController),
+          CountryPickerField(
+            countryCode: _countryCode,
+            countries: countries,
+            onSelected: (code) => setState(() => _countryCode = code),
+          ),
           const SizedBox(height: AppSpacing.spaceSM),
-          _LocationField(label: 'State / Province', controller: _stateController),
+          LocationSuggestField(
+            controller: _stateController,
+            label: 'State / Province',
+            enabled: _countryCode != null,
+            fetchSuggestions: _fetchStateSuggestions,
+          ),
           const SizedBox(height: AppSpacing.spaceSM),
-          _LocationField(label: 'City', controller: _cityController),
+          LocationSuggestField(
+            controller: _cityController,
+            label: 'City',
+            enabled: _countryCode != null,
+            fetchSuggestions: _fetchCitySuggestions,
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.spaceXS),
+            child: Text(
+              'Start typing to see suggestions. You can always enter your own.',
+              style: AppTypography.caption.copyWith(color: AppColors.textLight),
+            ),
+          ),
           const SizedBox(height: AppSpacing.spaceLG),
           Row(
             children: [
@@ -159,27 +215,6 @@ class _CommunityOnboardingScreenState
             label: 'Continue to Community',
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _LocationField extends StatelessWidget {
-  final String label;
-  final TextEditingController controller;
-
-  const _LocationField({required this.label, required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      textCapitalization: TextCapitalization.words,
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: context.appSurface,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }

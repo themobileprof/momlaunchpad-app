@@ -264,6 +264,7 @@ class _CommunityPostDetailScreenState
                 author: post.author,
                 timestamp: post.createdAt,
                 subtitle: post.locationLabel.isNotEmpty ? post.locationLabel : null,
+                badgeCatalog: ref.watch(communityProvider).badgeCatalog,
               ),
               const SizedBox(height: AppSpacing.spaceMD),
               SimpleFormattedText(post.body),
@@ -332,6 +333,7 @@ class _CommunityPostDetailScreenState
                       CommunityAuthorRow(
                         author: reply.author,
                         timestamp: reply.createdAt,
+                        badgeCatalog: ref.watch(communityProvider).badgeCatalog,
                       ),
                       const SizedBox(height: AppSpacing.spaceSM),
                       SimpleFormattedText(reply.body),

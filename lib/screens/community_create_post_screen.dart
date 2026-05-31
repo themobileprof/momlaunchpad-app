@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/community.dart';
 import '../providers/community_provider.dart';
+import '../providers/service_providers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -22,8 +23,27 @@ class _CommunityCreatePostScreenState
   final _eventVenueController = TextEditingController();
   bool _isAnonymous = false;
   bool _isEvent = false;
+  String? _eventType;
+  List<CommunityCatalogItem> _eventTypes = [];
   DateTime? _eventStartsAt;
   bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadEventTypes());
+  }
+
+  Future<void> _loadEventTypes() async {
+    try {
+      final types = await ref.read(apiServiceProvider).getCommunityEventTypes();
+      if (!mounted) return;
+      setState(() {
+        _eventTypes = types;
+        _eventType = types.isNotEmpty ? types.first.key : null;
+      });
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -63,13 +83,14 @@ class _CommunityCreatePostScreenState
     CreateEventPayload? event;
     if (_isEvent) {
       final title = _eventTitleController.text.trim();
-      if (title.isEmpty || _eventStartsAt == null) {
+      if (title.isEmpty || _eventStartsAt == null || _eventType == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Add an event title and start time')),
+          const SnackBar(content: Text('Add event type, title, and start time')),
         );
         return;
       }
       event = CreateEventPayload(
+        eventType: _eventType!,
         title: title,
         venue: _eventVenueController.text.trim().isEmpty
             ? null
@@ -139,6 +160,15 @@ class _CommunityCreatePostScreenState
             onChanged: (v) => setState(() => _isEvent = v),
           ),
           if (_isEvent) ...[
+            const SizedBox(height: AppSpacing.spaceSM),
+            DropdownButtonFormField<String>(
+              value: _eventType,
+              decoration: const InputDecoration(labelText: 'Event type'),
+              items: _eventTypes
+                  .map((t) => DropdownMenuItem(value: t.key, child: Text(t.label)))
+                  .toList(),
+              onChanged: (v) => setState(() => _eventType = v),
+            ),
             const SizedBox(height: AppSpacing.spaceSM),
             TextField(
               controller: _eventTitleController,

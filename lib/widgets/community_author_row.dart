@@ -6,12 +6,13 @@ import '../theme/typography.dart';
 
 class CommunityBadgeChip extends StatelessWidget {
   final String badgeType;
+  final String? label;
 
-  const CommunityBadgeChip({super.key, required this.badgeType});
+  const CommunityBadgeChip({super.key, required this.badgeType, this.label});
 
   @override
   Widget build(BuildContext context) {
-    final label = communityBadgeLabels[badgeType] ?? badgeType;
+    final display = label ?? badgeType;
     return Container(
       margin: const EdgeInsets.only(right: AppSpacing.spaceXS),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -20,7 +21,7 @@ class CommunityBadgeChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        label,
+        display,
         style: AppTypography.caption.copyWith(
           color: AppColors.primaryPurple,
           fontWeight: FontWeight.w600,
@@ -35,12 +36,14 @@ class CommunityAuthorRow extends StatelessWidget {
   final CommunityAuthor author;
   final DateTime? timestamp;
   final String? subtitle;
+  final CommunityBadgeCatalog badgeCatalog;
 
   const CommunityAuthorRow({
     super.key,
     required this.author,
     this.timestamp,
     this.subtitle,
+    this.badgeCatalog = const CommunityBadgeCatalog({}),
   });
 
   @override
@@ -78,7 +81,12 @@ class CommunityAuthorRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  ...author.badges.map((b) => CommunityBadgeChip(badgeType: b)),
+                  ...author.badges.map(
+                    (b) => CommunityBadgeChip(
+                      badgeType: b,
+                      label: badgeCatalog.labelFor(b),
+                    ),
+                  ),
                 ],
               ),
               if (subtitle != null || timestamp != null)

@@ -6,6 +6,8 @@ import 'service_providers.dart';
 class CommunityState {
   final CommunityStatus? status;
   final List<CommunityInterestGroup> interestGroups;
+  final List<CommunityCountryOption> countries;
+  final CommunityBadgeCatalog badgeCatalog;
   final CommunityFeedFilter filter;
   final List<CommunityPost> posts;
   final String? nextCursor;
@@ -16,6 +18,8 @@ class CommunityState {
   const CommunityState({
     this.status,
     this.interestGroups = const [],
+    this.countries = const [],
+    this.badgeCatalog = const CommunityBadgeCatalog({}),
     this.filter = CommunityFeedFilter.forYou,
     this.posts = const [],
     this.nextCursor,
@@ -29,6 +33,8 @@ class CommunityState {
   CommunityState copyWith({
     CommunityStatus? status,
     List<CommunityInterestGroup>? interestGroups,
+    List<CommunityCountryOption>? countries,
+    CommunityBadgeCatalog? badgeCatalog,
     CommunityFeedFilter? filter,
     List<CommunityPost>? posts,
     String? nextCursor,
@@ -39,6 +45,8 @@ class CommunityState {
     return CommunityState(
       status: status ?? this.status,
       interestGroups: interestGroups ?? this.interestGroups,
+      countries: countries ?? this.countries,
+      badgeCatalog: badgeCatalog ?? this.badgeCatalog,
       filter: filter ?? this.filter,
       posts: posts ?? this.posts,
       nextCursor: nextCursor ?? this.nextCursor,
@@ -64,10 +72,14 @@ class CommunityNotifier extends Notifier<CommunityState> {
       final results = await Future.wait([
         _api.getCommunityStatus(),
         _api.getCommunityInterests(),
+        _api.getCommunityCountries(),
+        _api.getCommunityBadgeCatalog(),
       ]);
       state = state.copyWith(
         status: results[0] as CommunityStatus,
         interestGroups: results[1] as List<CommunityInterestGroup>,
+        countries: results[2] as List<CommunityCountryOption>,
+        badgeCatalog: results[3] as CommunityBadgeCatalog,
         isLoading: false,
       );
       if (!state.needsOnboarding) {
@@ -83,14 +95,14 @@ class CommunityNotifier extends Notifier<CommunityState> {
   }
 
   Future<bool> completeOnboarding({
-    required String country,
+    required String countryCode,
     required String stateProvince,
     required String city,
     required List<String> interests,
   }) async {
     try {
       final status = await _api.completeCommunityOnboarding(
-        country: country,
+        countryCode: countryCode,
         stateProvince: stateProvince,
         city: city,
         interests: interests,
