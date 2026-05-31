@@ -153,22 +153,9 @@ class CommunityNotifier extends Notifier<CommunityState> {
       state = state.copyWith(
         posts: state.posts.map((p) {
           if (p.id != postId) return p;
-          return CommunityPost(
-            id: p.id,
-            body: p.body,
-            isAnonymous: p.isAnonymous,
-            category: p.category,
-            scope: p.scope,
-            medicalRelevance: p.medicalRelevance,
-            isEvent: p.isEvent,
+          return p.copyWith(
             likeCount: result.likeCount,
-            replyCount: p.replyCount,
             likedByMe: result.liked,
-            country: p.country,
-            stateProvince: p.stateProvince,
-            city: p.city,
-            createdAt: p.createdAt,
-            author: p.author,
           );
         }).toList(),
       );

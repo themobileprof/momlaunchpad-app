@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/journey_stage.dart';
 import '../models/user_profile.dart';
 import '../providers/auth_provider.dart';
@@ -28,7 +29,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _countryController = TextEditingController();
   final _stateController = TextEditingController();
   final _cityController = TextEditingController();
-  final _photoUrlController = TextEditingController();
 
   int _pregnancyWeek = 20;
   DateTime? _dueDate;
@@ -40,6 +40,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String _language = 'en';
   String? _dietPreference;
   bool _isSaving = false;
+  bool _isUploadingPhoto = false;
   bool _initialized = false;
 
   static const _dietOptions = [
@@ -67,7 +68,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _countryController.dispose();
     _stateController.dispose();
     _cityController.dispose();
-    _photoUrlController.dispose();
     super.dispose();
   }
 
@@ -95,7 +95,51 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _countryController.text = profile.country ?? '';
     _stateController.text = profile.stateProvince ?? '';
     _cityController.text = profile.city ?? '';
-    _photoUrlController.text = profile.profilePhotoUrl ?? '';
+  }
+
+  Future<void> _pickProfilePhoto() async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 2048,
+      maxHeight: 2048,
+      imageQuality: 85,
+    );
+    if (file == null || !mounted) return;
+
+    setState(() => _isUploadingPhoto = true);
+    try {
+      await ref.read(profileProvider.notifier).uploadProfilePhoto(file.path);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile photo updated')),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
+  }
+
+  Future<void> _removeProfilePhoto() async {
+    setState(() => _isUploadingPhoto = true);
+    try {
+      await ref.read(profileProvider.notifier).deleteProfilePhoto();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile photo removed')),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
   }
 
   void _onPregnancyWeekChanged(int week) {
@@ -176,9 +220,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               city: _cityController.text.trim().isEmpty
                   ? null
                   : _cityController.text.trim(),
-              profilePhotoUrl: _photoUrlController.text.trim().isEmpty
-                  ? null
-                  : _photoUrlController.text.trim(),
             ),
           );
 
@@ -291,6 +332,76 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 children: [
                   _buildHeader(user?.email),
                   const SizedBox(height: AppSpacing.spaceLG),
+                  _buildSectionTitle('Profile photo'),
+                  AppCard(
+                    padding: const EdgeInsets.all(AppSpacing.spaceMD),
+                    child: Column(
+                      children: [
+                        Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            AppAvatar(
+                              name: _nameController.text,
+                              imageUrl: profile?.profilePhotoUrl,
+                              size: AppAvatarSize.xlarge,
+                            ),
+                            if (_isUploadingPhoto)
+                              Positioned.fill(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black26,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Center(
+                                    child: SizedBox(
+                                      width: 28,
+                                      height: 28,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.spaceMD),
+                        Text(
+                          'Your photo appears on community posts when you are not anonymous.',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.textLight,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppSpacing.spaceMD),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _isUploadingPhoto || _isSaving
+                                    ? null
+                                    : _pickProfilePhoto,
+                                icon: const Icon(Icons.photo_library_outlined),
+                                label: const Text('Upload photo'),
+                              ),
+                            ),
+                            if ((profile?.profilePhotoUrl ?? '').isNotEmpty) ...[
+                              const SizedBox(width: AppSpacing.spaceSM),
+                              IconButton(
+                                tooltip: 'Remove photo',
+                                onPressed: _isUploadingPhoto || _isSaving
+                                    ? null
+                                    : _removeProfilePhoto,
+                                icon: const Icon(Icons.delete_outline_rounded),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.spaceLG),
                   _buildSectionTitle('About you'),
                   AppCard(
                     padding: const EdgeInsets.all(AppSpacing.spaceMD),
@@ -332,13 +443,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     padding: const EdgeInsets.all(AppSpacing.spaceMD),
                     child: Column(
                       children: [
-                        TextFormField(
-                          controller: _photoUrlController,
-                          decoration: const InputDecoration(
-                            labelText: 'Profile photo URL (optional)',
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.spaceMD),
                         TextFormField(
                           controller: _countryController,
                           textCapitalization: TextCapitalization.words,
@@ -651,7 +755,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _buildHeader(String? email) {
     return Row(
       children: [
-        AppAvatar(name: _nameController.text, size: AppAvatarSize.large),
+        AppAvatar(
+          name: _nameController.text,
+          imageUrl: ref.watch(profileProvider).profile?.profilePhotoUrl,
+          size: AppAvatarSize.large,
+        ),
         const SizedBox(width: AppSpacing.spaceMD),
         Expanded(
           child: Column(

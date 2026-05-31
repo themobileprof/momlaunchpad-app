@@ -6,6 +6,7 @@ import '../providers/service_providers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
+import '../widgets/online_image_url_list_editor.dart';
 import '../widgets/widgets.dart';
 
 class CommunityCreatePostScreen extends ConsumerStatefulWidget {
@@ -27,6 +28,7 @@ class _CommunityCreatePostScreenState
   List<CommunityCatalogItem> _eventTypes = [];
   DateTime? _eventStartsAt;
   bool _submitting = false;
+  List<String> _imageUrls = [];
 
   @override
   void initState() {
@@ -105,6 +107,7 @@ class _CommunityCreatePostScreenState
             body: body,
             isAnonymous: _isAnonymous,
             event: event,
+            imageUrls: _imageUrls,
           ),
         );
     if (!mounted) return;
@@ -143,6 +146,10 @@ class _CommunityCreatePostScreenState
               fillColor: context.appSurface,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
             ),
+          ),
+          const SizedBox(height: AppSpacing.spaceMD),
+          OnlineImageUrlListEditor(
+            onChanged: (urls) => _imageUrls = urls,
           ),
           const SizedBox(height: AppSpacing.spaceMD),
           SwitchListTile(

@@ -87,6 +87,20 @@ class ProfileNotifier extends Notifier<ProfileState> {
     return profile;
   }
 
+  Future<UserProfile> uploadProfilePhoto(String filePath) async {
+    final profile = await _apiService.uploadProfilePhoto(filePath);
+    state = ProfileState(profile: profile, isLoading: false);
+    await ref.read(authProvider.notifier).refreshUser();
+    return profile;
+  }
+
+  Future<UserProfile> deleteProfilePhoto() async {
+    final profile = await _apiService.deleteProfilePhoto();
+    state = ProfileState(profile: profile, isLoading: false);
+    await ref.read(authProvider.notifier).refreshUser();
+    return profile;
+  }
+
   Future<UserProfile> completeOnboarding(ProfileSavePayload payload) async {
     final profile = await _apiService.completeOnboarding(payload);
 

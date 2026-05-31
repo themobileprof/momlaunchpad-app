@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
+import '../utils/image_url.dart';
 
 /// Avatar sizes
 enum AppAvatarSize { small, medium, large, xlarge }
@@ -65,6 +66,7 @@ class AppAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedUrl = resolveMediaUrl(imageUrl);
     Widget avatar = Stack(
       children: [
         Container(
@@ -73,15 +75,15 @@ class AppAvatar extends StatelessWidget {
           decoration: BoxDecoration(
             color: backgroundColor ?? AppColors.primaryPurple.withOpacity(0.15),
             shape: BoxShape.circle,
-            image: imageUrl != null
+            image: resolvedUrl != null
                 ? DecorationImage(
-                    image: NetworkImage(imageUrl!),
+                    image: NetworkImage(resolvedUrl),
                     fit: BoxFit.cover,
                     onError: (_, __) {},
                   )
                 : null,
           ),
-          child: imageUrl == null
+          child: resolvedUrl == null
               ? Center(
                   child: Text(
                     _initials,

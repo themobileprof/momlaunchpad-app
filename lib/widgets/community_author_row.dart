@@ -3,6 +3,7 @@ import '../models/community.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
+import '../utils/image_url.dart';
 
 class CommunityBadgeChip extends StatelessWidget {
   final String badgeType;
@@ -48,14 +49,14 @@ class CommunityAuthorRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final photoUrl = resolveMediaUrl(author.photoUrl);
     return Row(
       children: [
         CircleAvatar(
           radius: 18,
           backgroundColor: AppColors.primaryPurple.withValues(alpha: 0.15),
-          backgroundImage:
-              author.photoUrl != null ? NetworkImage(author.photoUrl!) : null,
-          child: author.photoUrl == null
+          backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+          child: photoUrl == null
               ? Text(
                   author.displayName.isNotEmpty
                       ? author.displayName[0].toUpperCase()

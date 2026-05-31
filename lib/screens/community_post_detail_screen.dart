@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
+import '../widgets/community_post_images.dart';
 import '../widgets/community_author_row.dart';
 import '../widgets/simple_formatted_text.dart';
 import '../widgets/widgets.dart';
@@ -89,23 +90,7 @@ class _CommunityPostDetailScreenState
         _replyController.clear();
         _submittingReply = false;
         if (_post != null) {
-          _post = CommunityPost(
-            id: _post!.id,
-            body: _post!.body,
-            isAnonymous: _post!.isAnonymous,
-            category: _post!.category,
-            scope: _post!.scope,
-            medicalRelevance: _post!.medicalRelevance,
-            isEvent: _post!.isEvent,
-            likeCount: _post!.likeCount,
-            replyCount: _post!.replyCount + 1,
-            likedByMe: _post!.likedByMe,
-            country: _post!.country,
-            stateProvince: _post!.stateProvince,
-            city: _post!.city,
-            createdAt: _post!.createdAt,
-            author: _post!.author,
-          );
+          _post = _post!.copyWith(replyCount: _post!.replyCount + 1);
         }
       });
     } on ApiException catch (e) {
@@ -119,22 +104,9 @@ class _CommunityPostDetailScreenState
     if (_post == null) return;
     final result = await ref.read(apiServiceProvider).toggleCommunityPostLike(_post!.id);
     setState(() {
-      _post = CommunityPost(
-        id: _post!.id,
-        body: _post!.body,
-        isAnonymous: _post!.isAnonymous,
-        category: _post!.category,
-        scope: _post!.scope,
-        medicalRelevance: _post!.medicalRelevance,
-        isEvent: _post!.isEvent,
+      _post = _post!.copyWith(
         likeCount: result.likeCount,
-        replyCount: _post!.replyCount,
         likedByMe: result.liked,
-        country: _post!.country,
-        stateProvince: _post!.stateProvince,
-        city: _post!.city,
-        createdAt: _post!.createdAt,
-        author: _post!.author,
       );
     });
   }
@@ -268,6 +240,7 @@ class _CommunityPostDetailScreenState
               ),
               const SizedBox(height: AppSpacing.spaceMD),
               SimpleFormattedText(post.body),
+              CommunityPostImages(imageUrls: post.imageUrls),
               const SizedBox(height: AppSpacing.spaceMD),
               Row(
                 children: [

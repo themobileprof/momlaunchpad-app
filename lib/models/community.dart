@@ -53,6 +53,7 @@ class CommunityPost {
   final String? city;
   final DateTime createdAt;
   final CommunityAuthor author;
+  final List<String> imageUrls;
 
   const CommunityPost({
     required this.id,
@@ -70,7 +71,46 @@ class CommunityPost {
     this.city,
     required this.createdAt,
     required this.author,
+    this.imageUrls = const [],
   });
+
+  CommunityPost copyWith({
+    String? id,
+    String? body,
+    bool? isAnonymous,
+    String? category,
+    String? scope,
+    String? medicalRelevance,
+    bool? isEvent,
+    int? likeCount,
+    int? replyCount,
+    bool? likedByMe,
+    String? country,
+    String? stateProvince,
+    String? city,
+    DateTime? createdAt,
+    CommunityAuthor? author,
+    List<String>? imageUrls,
+  }) {
+    return CommunityPost(
+      id: id ?? this.id,
+      body: body ?? this.body,
+      isAnonymous: isAnonymous ?? this.isAnonymous,
+      category: category ?? this.category,
+      scope: scope ?? this.scope,
+      medicalRelevance: medicalRelevance ?? this.medicalRelevance,
+      isEvent: isEvent ?? this.isEvent,
+      likeCount: likeCount ?? this.likeCount,
+      replyCount: replyCount ?? this.replyCount,
+      likedByMe: likedByMe ?? this.likedByMe,
+      country: country ?? this.country,
+      stateProvince: stateProvince ?? this.stateProvince,
+      city: city ?? this.city,
+      createdAt: createdAt ?? this.createdAt,
+      author: author ?? this.author,
+      imageUrls: imageUrls ?? this.imageUrls,
+    );
+  }
 
   factory CommunityPost.fromJson(Map<String, dynamic> json) {
     return CommunityPost(
@@ -91,6 +131,10 @@ class CommunityPost {
       author: CommunityAuthor.fromJson(
         Map<String, dynamic>.from(json['author'] as Map? ?? {}),
       ),
+      imageUrls: (json['image_urls'] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
+          .where((url) => url.isNotEmpty)
+          .toList(),
     );
   }
 
@@ -309,17 +353,20 @@ class CreatePostPayload {
   final String body;
   final bool isAnonymous;
   final CreateEventPayload? event;
+  final List<String> imageUrls;
 
   const CreatePostPayload({
     required this.body,
     this.isAnonymous = false,
     this.event,
+    this.imageUrls = const [],
   });
 
   Map<String, dynamic> toJson() => {
         'body': body,
         'is_anonymous': isAnonymous,
         if (event != null) 'event': event!.toJson(),
+        if (imageUrls.isNotEmpty) 'image_urls': imageUrls,
       };
 }
 

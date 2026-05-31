@@ -192,6 +192,52 @@ class ApiService {
     return _saveProfile(payload, onboarding: false);
   }
 
+  /// Upload a profile photo from a local file path.
+  Future<UserProfile> uploadProfilePhoto(String filePath) async {
+    final token = await _storage.getToken();
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/api/users/me/profile-photo'),
+    );
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    request.files.add(await http.MultipartFile.fromPath('photo', filePath));
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+
+    if (response.statusCode == 200) {
+      return UserProfile.fromJson(
+        Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+      );
+    }
+
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to upload profile photo'),
+    );
+  }
+
+  /// Remove the user's uploaded profile photo.
+  Future<UserProfile> deleteProfilePhoto() async {
+    final response = await _http.delete(
+      Uri.parse('$baseUrl/api/users/me/profile-photo'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      return UserProfile.fromJson(
+        Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+      );
+    }
+
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to remove profile photo'),
+    );
+  }
+
   Future<UserProfile> _saveProfile(
     ProfileSavePayload payload, {
     required bool onboarding,

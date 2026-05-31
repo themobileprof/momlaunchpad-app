@@ -7,6 +7,7 @@ import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import 'app_card.dart';
 import 'community_author_row.dart';
+import 'community_post_images.dart';
 import 'simple_formatted_text.dart';
 
 class CommunityPostCard extends ConsumerWidget {
@@ -69,6 +70,7 @@ class CommunityPostCard extends ConsumerWidget {
           ],
           const SizedBox(height: AppSpacing.spaceSM),
           SimpleFormattedText(post.body),
+          CommunityPostImages(imageUrls: post.imageUrls, compact: true),
           const SizedBox(height: AppSpacing.spaceMD),
           Row(
             children: [
