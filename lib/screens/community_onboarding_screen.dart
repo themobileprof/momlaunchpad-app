@@ -1,0 +1,186 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/community_provider.dart';
+import '../theme/colors.dart';
+import '../theme/spacing.dart';
+import '../theme/typography.dart';
+import '../widgets/gradient_button.dart';
+import '../widgets/widgets.dart';
+
+/// First-time community setup: location + up to 5 interests.
+class CommunityOnboardingScreen extends ConsumerStatefulWidget {
+  const CommunityOnboardingScreen({super.key});
+
+  @override
+  ConsumerState<CommunityOnboardingScreen> createState() =>
+      _CommunityOnboardingScreenState();
+}
+
+class _CommunityOnboardingScreenState
+    extends ConsumerState<CommunityOnboardingScreen> {
+  final _countryController = TextEditingController();
+  final _stateController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _selected = <String>{};
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _countryController.dispose();
+    _stateController.dispose();
+    _cityController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final country = _countryController.text.trim();
+    final stateProvince = _stateController.text.trim();
+    final city = _cityController.text.trim();
+
+    if (country.isEmpty || stateProvince.isEmpty || city.isEmpty) {
+      _showSnack('Please enter your country, state, and city.');
+      return;
+    }
+    if (_selected.isEmpty) {
+      _showSnack('Pick at least one interest.');
+      return;
+    }
+    if (_selected.length > 5) {
+      _showSnack('You can select up to 5 interests.');
+      return;
+    }
+
+    setState(() => _submitting = true);
+    final ok = await ref.read(communityProvider.notifier).completeOnboarding(
+          country: country,
+          stateProvince: stateProvince,
+          city: city,
+          interests: _selected.toList(),
+        );
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    if (ok) {
+      Navigator.pop(context, true);
+    } else {
+      _showSnack(ref.read(communityProvider).error ?? 'Something went wrong');
+    }
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _toggleInterest(String key) {
+    setState(() {
+      if (_selected.contains(key)) {
+        _selected.remove(key);
+      } else if (_selected.length < 5) {
+        _selected.add(key);
+      } else {
+        _showSnack('You can select up to 5 interests.');
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final groups = ref.watch(communityProvider).interestGroups;
+
+    return Scaffold(
+      backgroundColor: context.appCanvas,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text('Join the community', style: AppTypography.headingMedium),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.spaceMD,
+          AppSpacing.spaceSM,
+          AppSpacing.spaceMD,
+          120,
+        ),
+        children: [
+          Text(
+            'Your location helps us show nearby discussions and events. '
+            'Pick a few topics so we can personalize your feed.',
+            style: AppTypography.bodyText.copyWith(color: AppColors.textLight),
+          ),
+          const SizedBox(height: AppSpacing.spaceLG),
+          Text('Where are you?', style: AppTypography.bodyTextMedium),
+          const SizedBox(height: AppSpacing.spaceSM),
+          _LocationField(label: 'Country', controller: _countryController),
+          const SizedBox(height: AppSpacing.spaceSM),
+          _LocationField(label: 'State / Province', controller: _stateController),
+          const SizedBox(height: AppSpacing.spaceSM),
+          _LocationField(label: 'City', controller: _cityController),
+          const SizedBox(height: AppSpacing.spaceLG),
+          Row(
+            children: [
+              Text('Your interests', style: AppTypography.bodyTextMedium),
+              const Spacer(),
+              Text(
+                '${_selected.length}/5',
+                style: AppTypography.caption.copyWith(color: AppColors.textLight),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.spaceSM),
+          for (final group in groups) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.spaceMD, bottom: AppSpacing.spaceSM),
+              child: Text(
+                group.label,
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.primaryPurple,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            Wrap(
+              spacing: AppSpacing.spaceSM,
+              runSpacing: AppSpacing.spaceSM,
+              children: group.items.map((item) {
+                final selected = _selected.contains(item.key);
+                return FilterChip(
+                  label: Text(item.label),
+                  selected: selected,
+                  onSelected: (_) => _toggleInterest(item.key),
+                  selectedColor: AppColors.primaryPurple.withValues(alpha: 0.15),
+                  checkmarkColor: AppColors.primaryPurple,
+                );
+              }).toList(),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.spaceXL),
+          GradientButton(
+            onPressed: _submitting ? null : _submit,
+            isLoading: _submitting,
+            label: 'Continue to Community',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LocationField extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+
+  const _LocationField({required this.label, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      textCapitalization: TextCapitalization.words,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: context.appSurface,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+}

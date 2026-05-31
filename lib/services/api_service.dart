@@ -11,6 +11,7 @@ import '../models/doctor_visit.dart';
 import '../models/vital_reading.dart';
 import '../models/savings_summary.dart';
 import '../models/savings_entry.dart';
+import '../models/community.dart';
 import 'storage_service.dart';
 
 /// HTTP service for REST API calls
@@ -614,6 +615,333 @@ class ApiService {
       } catch (_) {
         // Ignore json parse error, fall through to generic error
       }
+    }
+  }
+
+  // ============ COMMUNITY ============
+
+  Future<List<CommunityInterestGroup>> getCommunityInterests() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/community/interests'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load interests'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    return (body['groups'] as List<dynamic>? ?? [])
+        .map((e) => CommunityInterestGroup.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<CommunityStatus> getCommunityStatus() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/community/status'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load community status'),
+      );
+    }
+    return CommunityStatus.fromJson(
+      Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+    );
+  }
+
+  Future<CommunityStatus> completeCommunityOnboarding({
+    required String country,
+    required String stateProvince,
+    required String city,
+    required List<String> interests,
+  }) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/community/onboarding'),
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        'country': country,
+        'state_province': stateProvince,
+        'city': city,
+        'interests': interests,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to complete onboarding'),
+      );
+    }
+    return CommunityStatus.fromJson(
+      Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+    );
+  }
+
+  Future<CommunityFeedPage> getCommunityFeed({
+    required CommunityFeedFilter filter,
+    String? cursor,
+    int limit = 20,
+  }) async {
+    final query = {
+      'filter': filter.apiValue,
+      'limit': '$limit',
+      if (cursor != null) 'cursor': cursor,
+    };
+    final uri = Uri.parse('$baseUrl/api/community/feed')
+        .replace(queryParameters: query);
+    final response = await _http.get(uri, headers: await _getHeaders());
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load feed'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    final posts = (body['posts'] as List<dynamic>? ?? [])
+        .map((e) => CommunityPost.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+    return CommunityFeedPage(
+      posts: posts,
+      nextCursor: body['next_cursor']?.toString(),
+    );
+  }
+
+  Future<CommunityPost> createCommunityPost(CreatePostPayload payload) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/community/posts'),
+      headers: await _getHeaders(),
+      body: jsonEncode(payload.toJson()),
+    );
+    if (response.statusCode != 201) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to create post'),
+      );
+    }
+    return CommunityPost.fromJson(
+      Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+    );
+  }
+
+  Future<CommunityPost> getCommunityPost(String id) async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/community/posts/$id'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load post'),
+      );
+    }
+    return CommunityPost.fromJson(
+      Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+    );
+  }
+
+  Future<List<CommunityReply>> getCommunityReplies(String postId) async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/community/posts/$postId/replies'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load replies'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    return (body['replies'] as List<dynamic>? ?? [])
+        .map((e) => CommunityReply.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<CommunityReply> createCommunityReply({
+    required String postId,
+    required String body,
+    bool isAnonymous = false,
+  }) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/community/posts/$postId/replies'),
+      headers: await _getHeaders(),
+      body: jsonEncode({'body': body, 'is_anonymous': isAnonymous}),
+    );
+    if (response.statusCode != 201) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to create reply'),
+      );
+    }
+    return CommunityReply.fromJson(
+      Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+    );
+  }
+
+  Future<({bool liked, int likeCount})> toggleCommunityPostLike(String postId) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/community/posts/$postId/like'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to update like'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    return (
+      liked: body['liked'] as bool? ?? false,
+      likeCount: body['like_count'] as int? ?? 0,
+    );
+  }
+
+  Future<({bool liked, int likeCount})> toggleCommunityReplyLike(String replyId) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/community/replies/$replyId/like'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to update like'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    return (
+      liked: body['liked'] as bool? ?? false,
+      likeCount: body['like_count'] as int? ?? 0,
+    );
+  }
+
+  Future<CommunityEvent?> getCommunityEvent(String postId) async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/community/posts/$postId/event'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode == 404) return null;
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load event'),
+      );
+    }
+    return CommunityEvent.fromJson(
+      Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+    );
+  }
+
+  Future<({bool interested, int count})> toggleEventInterest(String eventId) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/community/events/$eventId/interested'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to update interest'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    return (
+      interested: body['interested'] as bool? ?? false,
+      count: body['interested_count'] as int? ?? 0,
+    );
+  }
+
+  Future<void> reportCommunityPost(String postId, {required String reason, String? details}) async {
+    await _reportCommunityTarget('posts/$postId/report', reason, details);
+  }
+
+  Future<void> reportCommunityReply(String replyId, {required String reason, String? details}) async {
+    await _reportCommunityTarget('replies/$replyId/report', reason, details);
+  }
+
+  Future<void> hideCommunityPost(String postId) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/community/posts/$postId/hide'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to hide post'),
+      );
+    }
+  }
+
+  Future<void> blockCommunityUser(String userId) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/community/users/$userId/block'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to block user'),
+      );
+    }
+  }
+
+  Future<void> followCommunityUser(String userId) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/community/users/$userId/follow'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to follow user'),
+      );
+    }
+  }
+
+  Future<List<CommunityNotification>> getCommunityNotifications() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/community/notifications'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load notifications'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    return (body['notifications'] as List<dynamic>? ?? [])
+        .map((e) => CommunityNotification.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<void> markCommunityNotificationRead(String id) async {
+    final response = await _http.put(
+      Uri.parse('$baseUrl/api/community/notifications/$id/read'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to mark notification read'),
+      );
+    }
+  }
+
+  Future<void> _reportCommunityTarget(String path, String reason, String? details) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/community/$path'),
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        'reason': reason,
+        if (details != null) 'details': details,
+      }),
+    );
+    if (response.statusCode != 201) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to submit report'),
+      );
     }
   }
 }

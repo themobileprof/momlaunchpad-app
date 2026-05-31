@@ -26,5 +26,6 @@ final homeNavigationProvider =
   HomeNavigationNotifier.new,
 );
 
-/// Calendar tab index in [HomeScreen].
-const calendarTabIndex = 2;
+/// Tab indices in [HomeScreen].
+const communityTabIndex = 1;
+const calendarTabIndex = 3;

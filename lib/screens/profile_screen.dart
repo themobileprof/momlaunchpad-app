@@ -25,6 +25,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _concernController = TextEditingController();
+  final _countryController = TextEditingController();
+  final _stateController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _photoUrlController = TextEditingController();
 
   int _pregnancyWeek = 20;
   DateTime? _dueDate;
@@ -60,6 +64,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void dispose() {
     _nameController.dispose();
     _concernController.dispose();
+    _countryController.dispose();
+    _stateController.dispose();
+    _cityController.dispose();
+    _photoUrlController.dispose();
     super.dispose();
   }
 
@@ -84,6 +92,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _lossDate = profile.lossDate;
     _concernController.text = profile.primaryConcern ?? '';
     _dietPreference = profile.dietPreference ?? profile.diet ?? '';
+    _countryController.text = profile.country ?? '';
+    _stateController.text = profile.stateProvince ?? '';
+    _cityController.text = profile.city ?? '';
+    _photoUrlController.text = profile.profilePhotoUrl ?? '';
   }
 
   void _onPregnancyWeekChanged(int week) {
@@ -155,6 +167,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   (_dietPreference == null || _dietPreference!.isEmpty)
                       ? null
                       : _dietPreference,
+              country: _countryController.text.trim().isEmpty
+                  ? null
+                  : _countryController.text.trim(),
+              stateProvince: _stateController.text.trim().isEmpty
+                  ? null
+                  : _stateController.text.trim(),
+              city: _cityController.text.trim().isEmpty
+                  ? null
+                  : _cityController.text.trim(),
+              profilePhotoUrl: _photoUrlController.text.trim().isEmpty
+                  ? null
+                  : _photoUrlController.text.trim(),
             ),
           );
 
@@ -298,6 +322,41 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           onChanged: (value) {
                             if (value != null) setState(() => _language = value);
                           },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.spaceLG),
+                  _buildSectionTitle('Community location'),
+                  AppCard(
+                    padding: const EdgeInsets.all(AppSpacing.spaceMD),
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _photoUrlController,
+                          decoration: const InputDecoration(
+                            labelText: 'Profile photo URL (optional)',
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.spaceMD),
+                        TextFormField(
+                          controller: _countryController,
+                          textCapitalization: TextCapitalization.words,
+                          decoration: const InputDecoration(labelText: 'Country'),
+                        ),
+                        const SizedBox(height: AppSpacing.spaceMD),
+                        TextFormField(
+                          controller: _stateController,
+                          textCapitalization: TextCapitalization.words,
+                          decoration: const InputDecoration(
+                            labelText: 'State / Province',
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.spaceMD),
+                        TextFormField(
+                          controller: _cityController,
+                          textCapitalization: TextCapitalization.words,
+                          decoration: const InputDecoration(labelText: 'City'),
                         ),
                       ],
                     ),

@@ -17,6 +17,12 @@ class UserProfile {
   final String? dietPreference;
   final Map<String, String> learnedFacts;
   final Map<String, String> facts;
+  final String? profilePhotoUrl;
+  final String? country;
+  final String? stateProvince;
+  final String? city;
+  final bool communityOnboardingCompleted;
+  final List<String> communityInterests;
 
   UserProfile({
     required this.name,
@@ -34,6 +40,12 @@ class UserProfile {
     this.dietPreference,
     this.learnedFacts = const {},
     this.facts = const {},
+    this.profilePhotoUrl,
+    this.country,
+    this.stateProvince,
+    this.city,
+    this.communityOnboardingCompleted = false,
+    this.communityInterests = const [],
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -53,6 +65,15 @@ class UserProfile {
       dietPreference: json['diet_preference']?.toString(),
       learnedFacts: _parseFactMap(json['learned_facts']),
       facts: _parseFactMap(json['facts']),
+      profilePhotoUrl: json['profile_photo_url']?.toString(),
+      country: json['country']?.toString(),
+      stateProvince: json['state_province']?.toString(),
+      city: json['city']?.toString(),
+      communityOnboardingCompleted:
+          json['community_onboarding_completed'] as bool? ?? false,
+      communityInterests: (json['community_interests'] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
+          .toList(),
     );
   }
 
@@ -103,6 +124,10 @@ class ProfileSavePayload {
   final bool? isFirstPregnancy;
   final String? primaryConcern;
   final String? dietPreference;
+  final String? profilePhotoUrl;
+  final String? country;
+  final String? stateProvince;
+  final String? city;
 
   const ProfileSavePayload({
     required this.name,
@@ -115,6 +140,10 @@ class ProfileSavePayload {
     this.isFirstPregnancy,
     this.primaryConcern,
     this.dietPreference,
+    this.profilePhotoUrl,
+    this.country,
+    this.stateProvince,
+    this.city,
   });
 
   Map<String, dynamic> toJson() {
@@ -133,6 +162,10 @@ class ProfileSavePayload {
       if (isFirstPregnancy != null) 'is_first_pregnancy': isFirstPregnancy,
       if (primaryConcern != null) 'primary_concern': primaryConcern,
       if (dietPreference != null) 'diet_preference': dietPreference,
+      if (profilePhotoUrl != null) 'profile_photo_url': profilePhotoUrl,
+      if (country != null) 'country': country,
+      if (stateProvince != null) 'state_province': stateProvince,
+      if (city != null) 'city': city,
     };
   }
 }
