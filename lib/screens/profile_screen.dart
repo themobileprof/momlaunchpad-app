@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/journey_stage.dart';
+import '../models/community.dart';
 import '../models/user_profile.dart';
 import '../providers/auth_provider.dart';
+import '../providers/community_provider.dart';
 import '../providers/profile_provider.dart';
+import '../providers/service_providers.dart';
 import '../utils/journey_helpers.dart';
 import '../utils/pregnancy_timing.dart';
 import '../services/api_service.dart';
 import '../widgets/journey_transition_sheet.dart';
+import '../widgets/country_picker_field.dart';
+import '../widgets/location_suggest_field.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -26,9 +31,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _concernController = TextEditingController();
-  final _countryController = TextEditingController();
   final _stateController = TextEditingController();
   final _cityController = TextEditingController();
+
+  String? _countryCode;
 
   int _pregnancyWeek = 20;
   DateTime? _dueDate;
@@ -62,13 +68,76 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = ref.read(communityProvider);
+      if (state.countries.isEmpty) {
+        ref.read(communityProvider.notifier).bootstrap();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _concernController.dispose();
-    _countryController.dispose();
     _stateController.dispose();
     _cityController.dispose();
     super.dispose();
+  }
+
+  void _resolveCountryCode(UserProfile profile, List<CommunityCountryOption> countries) {
+    if (_countryCode != null || countries.isEmpty) return;
+    if (profile.countryCode != null && profile.countryCode!.isNotEmpty) {
+      _countryCode = profile.countryCode;
+      return;
+    }
+    final name = profile.country?.trim().toLowerCase();
+    if (name == null || name.isEmpty) return;
+    for (final country in countries) {
+      if (country.name.toLowerCase() == name) {
+        _countryCode = country.code;
+        break;
+      }
+    }
+  }
+
+  String? _selectedCountryName(List<CommunityCountryOption> countries) {
+    if (_countryCode == null) return null;
+    for (final country in countries) {
+      if (country.code == _countryCode) return country.name;
+    }
+    return null;
+  }
+
+  Future<List<String>> _fetchStateSuggestions(String query) async {
+    if (_countryCode == null) return const [];
+    return ref.read(apiServiceProvider).getCommunityLocationSuggestions(
+          countryCode: _countryCode!,
+          field: 'state_province',
+          query: query,
+        );
+  }
+
+  Future<List<String>> _fetchCitySuggestions(String query) async {
+    if (_countryCode == null) return const [];
+    return ref.read(apiServiceProvider).getCommunityLocationSuggestions(
+          countryCode: _countryCode!,
+          field: 'city',
+          query: query,
+          stateProvince: _stateController.text.trim(),
+        );
+  }
+
+  void _onCountrySelected(String code, List<CommunityCountryOption> countries) {
+    setState(() {
+      if (_countryCode != code) {
+        _stateController.clear();
+        _cityController.clear();
+      }
+      _countryCode = code;
+    });
   }
 
   void _applyProfile(UserProfile profile, {bool force = false}) {
@@ -92,7 +161,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _lossDate = profile.lossDate;
     _concernController.text = profile.primaryConcern ?? '';
     _dietPreference = profile.dietPreference ?? profile.diet ?? '';
-    _countryController.text = profile.country ?? '';
+    _countryCode = profile.countryCode;
     _stateController.text = profile.stateProvince ?? '';
     _cityController.text = profile.city ?? '';
   }
@@ -211,9 +280,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   (_dietPreference == null || _dietPreference!.isEmpty)
                       ? null
                       : _dietPreference,
-              country: _countryController.text.trim().isEmpty
-                  ? null
-                  : _countryController.text.trim(),
+              country: _selectedCountryName(
+                ref.read(communityProvider).countries,
+              ),
+              countryCode: _countryCode,
               stateProvince: _stateController.text.trim().isEmpty
                   ? null
                   : _stateController.text.trim(),
@@ -303,10 +373,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final profileState = ref.watch(profileProvider);
+    final communityState = ref.watch(communityProvider);
     final profile = profileState.profile;
+    final countries = communityState.countries
+        .map((c) => (code: c.code, name: c.name))
+        .toList();
 
     if (profile != null) {
       _applyProfile(profile);
+      _resolveCountryCode(profile, communityState.countries);
     }
 
     return Scaffold(
@@ -442,25 +517,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   AppCard(
                     padding: const EdgeInsets.all(AppSpacing.spaceMD),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        TextFormField(
-                          controller: _countryController,
-                          textCapitalization: TextCapitalization.words,
-                          decoration: const InputDecoration(labelText: 'Country'),
-                        ),
-                        const SizedBox(height: AppSpacing.spaceMD),
-                        TextFormField(
-                          controller: _stateController,
-                          textCapitalization: TextCapitalization.words,
-                          decoration: const InputDecoration(
-                            labelText: 'State / Province',
+                        CountryPickerField(
+                          countryCode: _countryCode,
+                          countries: countries,
+                          onSelected: (code) => _onCountrySelected(
+                            code,
+                            communityState.countries,
                           ),
                         ),
                         const SizedBox(height: AppSpacing.spaceMD),
-                        TextFormField(
+                        LocationSuggestField(
+                          controller: _stateController,
+                          label: 'State / Province',
+                          enabled: _countryCode != null,
+                          fetchSuggestions: _fetchStateSuggestions,
+                        ),
+                        const SizedBox(height: AppSpacing.spaceMD),
+                        LocationSuggestField(
                           controller: _cityController,
-                          textCapitalization: TextCapitalization.words,
-                          decoration: const InputDecoration(labelText: 'City'),
+                          label: 'City',
+                          enabled: _countryCode != null,
+                          fetchSuggestions: _fetchCitySuggestions,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: AppSpacing.spaceXS),
+                          child: Text(
+                            'Start typing state or city to see suggestions.',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textLight,
+                            ),
+                          ),
                         ),
                       ],
                     ),

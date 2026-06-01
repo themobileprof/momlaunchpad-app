@@ -19,6 +19,7 @@ class UserProfile {
   final Map<String, String> facts;
   final String? profilePhotoUrl;
   final String? country;
+  final String? countryCode;
   final String? stateProvince;
   final String? city;
   final bool communityOnboardingCompleted;
@@ -42,6 +43,7 @@ class UserProfile {
     this.facts = const {},
     this.profilePhotoUrl,
     this.country,
+    this.countryCode,
     this.stateProvince,
     this.city,
     this.communityOnboardingCompleted = false,
@@ -67,6 +69,7 @@ class UserProfile {
       facts: _parseFactMap(json['facts']),
       profilePhotoUrl: json['profile_photo_url']?.toString(),
       country: json['country']?.toString(),
+      countryCode: json['country_code']?.toString(),
       stateProvince: json['state_province']?.toString(),
       city: json['city']?.toString(),
       communityOnboardingCompleted:
@@ -126,6 +129,7 @@ class ProfileSavePayload {
   final String? dietPreference;
   final String? profilePhotoUrl;
   final String? country;
+  final String? countryCode;
   final String? stateProvince;
   final String? city;
 
@@ -142,6 +146,7 @@ class ProfileSavePayload {
     this.dietPreference,
     this.profilePhotoUrl,
     this.country,
+    this.countryCode,
     this.stateProvince,
     this.city,
   });
@@ -164,6 +169,7 @@ class ProfileSavePayload {
       if (dietPreference != null) 'diet_preference': dietPreference,
       if (profilePhotoUrl != null) 'profile_photo_url': profilePhotoUrl,
       if (country != null) 'country': country,
+      if (countryCode != null) 'country_code': countryCode,
       if (stateProvince != null) 'state_province': stateProvince,
       if (city != null) 'city': city,
     };

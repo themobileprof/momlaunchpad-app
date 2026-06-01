@@ -66,6 +66,14 @@ class CommunityNotifier extends Notifier<CommunityState> {
     return const CommunityState();
   }
 
+  Future<void> loadCountries() async {
+    if (state.countries.isNotEmpty) return;
+    try {
+      final countries = await _api.getCommunityCountries();
+      state = state.copyWith(countries: countries);
+    } catch (_) {}
+  }
+
   Future<void> bootstrap() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
