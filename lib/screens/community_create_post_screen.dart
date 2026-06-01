@@ -155,7 +155,7 @@ class _CommunityCreatePostScreenState
           const SizedBox(height: AppSpacing.spaceMD),
           if (_isEventMode) ...[
             DropdownButtonFormField<String>(
-              value: _eventType,
+              initialValue: _eventType,
               decoration: const InputDecoration(labelText: 'Event type'),
               items: _eventTypes
                   .map((t) => DropdownMenuItem(value: t.key, child: Text(t.label)))

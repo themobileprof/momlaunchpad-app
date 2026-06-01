@@ -214,7 +214,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         horizontal: AppSpacing.spaceMD,
         vertical: AppSpacing.spaceSM,
       ),
-      color: AppColors.error.withOpacity(0.1),
+      color: AppColors.error.withValues(alpha: 0.1),
       child: Row(
         children: [
           const Icon(Icons.error_outline, color: AppColors.error, size: 18),
@@ -261,13 +261,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: AppColors.primaryPurple.withOpacity(0.1),
+                color: AppColors.primaryPurple.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.chat_bubble_outline_rounded,
                 size: 40,
-                color: AppColors.primaryPurple.withOpacity(0.6),
+                color: AppColors.primaryPurple.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: AppSpacing.spaceLG),
@@ -387,7 +387,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           vertical: AppSpacing.spaceSM + 4,
                         ),
                         hintStyle: AppTypography.bodyText.copyWith(
-                          color: AppColors.textLight.withOpacity(0.6),
+                          color: AppColors.textLight.withValues(alpha: 0.6),
                         ),
                       ),
                       style: AppTypography.bodyText,
@@ -424,7 +424,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.primaryPink.withOpacity(0.1),
+                color: AppColors.primaryPink.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
@@ -590,7 +590,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               Expanded(
                 child: Container(
                   height: 1,
-                  color: AppColors.textLight.withOpacity(0.1),
+                  color: AppColors.textLight.withValues(alpha: 0.1),
                 ),
               ),
               Padding(
@@ -609,7 +609,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               Expanded(
                 child: Container(
                   height: 1,
-                  color: AppColors.textLight.withOpacity(0.1),
+                  color: AppColors.textLight.withValues(alpha: 0.1),
                 ),
               ),
             ],
@@ -622,7 +622,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               vertical: 4,
             ),
             decoration: BoxDecoration(
-              color: AppColors.primaryPink.withOpacity(0.08),
+              color: AppColors.primaryPink.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(AppRadius.radiusSmall),
             ),
             child: Text(

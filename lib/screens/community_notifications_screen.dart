@@ -91,7 +91,7 @@ class _CommunityNotificationsScreenState
     return ListView.separated(
       padding: const EdgeInsets.all(AppSpacing.spaceMD),
       itemCount: _items.length,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.spaceSM),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.spaceSM),
       itemBuilder: (context, index) {
         final item = _items[index];
         final unread = item.readAt == null;

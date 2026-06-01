@@ -83,7 +83,7 @@ class _OnlineImageUrlFieldState extends State<OnlineImageUrlField> {
               child: Image.network(
                 url,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _previewError(),
+                errorBuilder: (_, _, _) => _previewError(),
                 loadingBuilder: (context, child, progress) {
                   if (progress == null) return child;
                   return Container(

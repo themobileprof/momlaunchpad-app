@@ -98,7 +98,7 @@ class _LocationSuggestFieldState extends State<LocationSuggestField> {
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.spaceXS),
                 shrinkWrap: true,
                 itemCount: options.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final option = options.elementAt(index);
                   return ListTile(

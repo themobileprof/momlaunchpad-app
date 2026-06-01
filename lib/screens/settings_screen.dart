@@ -128,7 +128,7 @@ class SettingsScreen extends ConsumerWidget {
             child: Text(
               'Version 1.0.0',
               style: AppTypography.caption.copyWith(
-                color: AppColors.textLight.withOpacity(0.5),
+                color: AppColors.textLight.withValues(alpha: 0.5),
               ),
             ),
           ),

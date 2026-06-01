@@ -91,15 +91,15 @@ class AppTextField extends StatelessWidget {
             fillColor: enabled ? AppColors.white : AppColors.backgroundLight,
             contentPadding: const EdgeInsets.all(AppSpacing.spaceMD),
             hintStyle: AppTypography.bodyText.copyWith(
-              color: AppColors.textLight.withOpacity(0.6),
+              color: AppColors.textLight.withValues(alpha: 0.6),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
-              borderSide: BorderSide(color: AppColors.textLight.withOpacity(0.2)),
+              borderSide: BorderSide(color: AppColors.textLight.withValues(alpha: 0.2)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
-              borderSide: BorderSide(color: AppColors.textLight.withOpacity(0.2)),
+              borderSide: BorderSide(color: AppColors.textLight.withValues(alpha: 0.2)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
@@ -115,7 +115,7 @@ class AppTextField extends StatelessWidget {
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
-              borderSide: BorderSide(color: AppColors.textLight.withOpacity(0.1)),
+              borderSide: BorderSide(color: AppColors.textLight.withValues(alpha: 0.1)),
             ),
           ),
         ),
@@ -201,7 +201,7 @@ class AppSearchBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -238,7 +238,7 @@ class AppSearchBar extends StatelessWidget {
             vertical: AppSpacing.spaceMD,
           ),
           hintStyle: AppTypography.bodyText.copyWith(
-            color: AppColors.textLight.withOpacity(0.6),
+            color: AppColors.textLight.withValues(alpha: 0.6),
           ),
         ),
       ),

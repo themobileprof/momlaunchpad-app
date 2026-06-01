@@ -497,7 +497,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                         const SizedBox(height: AppSpacing.spaceMD),
                         DropdownButtonFormField<String>(
-                          value: _language,
+                          initialValue: _language,
                           decoration: const InputDecoration(
                             labelText: 'Language',
                           ),
@@ -741,7 +741,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         DropdownButtonFormField<String>(
-                          value: _dietPreference ?? '',
+                          initialValue: _dietPreference ?? '',
                           decoration: const InputDecoration(
                             labelText: 'Diet preference',
                           ),

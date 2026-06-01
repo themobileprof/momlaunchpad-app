@@ -172,7 +172,8 @@ class _CommunityPostDetailScreenState
               onTap: () async {
                 Navigator.pop(context);
                 await ref.read(communityProvider.notifier).hidePost(widget.postId);
-                if (mounted) Navigator.pop(context);
+                if (!context.mounted) return;
+                Navigator.pop(context);
               },
             ),
             if (_post?.author.id != null)
@@ -182,12 +183,11 @@ class _CommunityPostDetailScreenState
                 onTap: () async {
                   Navigator.pop(context);
                   await ref.read(apiServiceProvider).blockCommunityUser(_post!.author.id!);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('User blocked')),
-                    );
-                    Navigator.pop(context);
-                  }
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('User blocked')),
+                  );
+                  Navigator.pop(context);
                 },
               ),
           ],

@@ -180,7 +180,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                     CircularProgressIndicator(
                       value: summary.progressPercentage / 100,
                       strokeWidth: 12,
-                      backgroundColor: AppColors.textLight.withOpacity(0.2),
+                      backgroundColor: AppColors.textLight.withValues(alpha: 0.2),
                       valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
                     ),
                     Center(
@@ -403,7 +403,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                 const SizedBox(height: AppSpacing.spaceMD),
                 
                 DropdownButtonFormField<String>(
-                  value: selectedCurrency,
+                  initialValue: selectedCurrency,
                   decoration: const InputDecoration(labelText: 'Currency'),
                   items: currencies.entries.map((e) {
                     return DropdownMenuItem(value: e.key, child: Text(e.value));

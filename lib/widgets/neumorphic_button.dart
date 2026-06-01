@@ -57,7 +57,7 @@ class _NeumorphicButtonState extends State<NeumorphicButton> {
               ? [
                   // Pressed state: Inner shadows or flat
                   BoxShadow(
-                    color: AppColors.shadowDark.withOpacity(0.1),
+                    color: AppColors.shadowDark.withValues(alpha: 0.1),
                     offset: const Offset(2, 2),
                     blurRadius: 4,
                   ),
@@ -70,7 +70,7 @@ class _NeumorphicButtonState extends State<NeumorphicButton> {
               : [
                   // Unpressed state: Outer soft shadows
                   BoxShadow(
-                    color: AppColors.shadowDark.withOpacity(0.3),
+                    color: AppColors.shadowDark.withValues(alpha: 0.3),
                     offset: const Offset(4, 4),
                     blurRadius: 10,
                   ),

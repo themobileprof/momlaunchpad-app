@@ -28,12 +28,8 @@ jobs:
       - run: flutter pub get
 
       - name: Create .env from secret
-        # GitHub secret `env_file`: full .env contents for production, e.g.
-        #   API_BASE_URL=https://api.momlaunchpad.com
-        #   WS_BASE_URL=wss://api.momlaunchpad.com
-        #   GOOGLE_WEB_CLIENT_ID=...
         env:
-          ENV_FILE: ${{ secrets.env_file }}
+          ENV_FILE: ${{ secrets.ENV_FILE }}
         run: printf '%s\n' "$ENV_FILE" > .env
 
       - name: Build release APK

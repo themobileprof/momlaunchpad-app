@@ -12,9 +12,7 @@ class StorageService {
   static const String _cachedUserKey = 'cached_user';
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-    ),
+    aOptions: AndroidOptions(),
     iOptions: IOSOptions(
       accessibility: KeychainAccessibility.first_unlock,
     ),

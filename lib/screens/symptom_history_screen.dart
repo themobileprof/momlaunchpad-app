@@ -128,7 +128,7 @@ class _SymptomHistoryScreenState extends ConsumerState<SymptomHistoryScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryPink.withOpacity(0.1),
+                    color: AppColors.primaryPink.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -148,7 +148,7 @@ class _SymptomHistoryScreenState extends ConsumerState<SymptomHistoryScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: severityColor.withOpacity(0.1),
+                    color: severityColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(

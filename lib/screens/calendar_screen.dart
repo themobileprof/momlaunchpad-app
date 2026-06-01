@@ -89,7 +89,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.blushPrimary.withOpacity(0.3),
+                      color: AppColors.blushPrimary.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -572,7 +572,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
                 // Priority Dropdown
                 DropdownButtonFormField<String>(
-                  value: selectedPriority,
+                  initialValue: selectedPriority,
                   decoration: const InputDecoration(labelText: 'Priority'),
                   items: const [
                     DropdownMenuItem(value: 'low', child: Text('Low')),

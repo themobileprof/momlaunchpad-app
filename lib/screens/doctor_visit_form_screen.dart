@@ -235,7 +235,7 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
           children: [
             _sectionTitle('Visit details'),
             DropdownButtonFormField<String>(
-              value: _visitType,
+              initialValue: _visitType,
               decoration: const InputDecoration(labelText: 'Visit type'),
               items: doctorVisitTypes
                   .map(

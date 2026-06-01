@@ -22,7 +22,7 @@ class PremiumUpsellDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppSpacing.spaceMD),
             decoration: BoxDecoration(
-              color: AppColors.primaryPurple.withOpacity(0.1),
+              color: AppColors.primaryPurple.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(

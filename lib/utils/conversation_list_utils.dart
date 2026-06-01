@@ -131,10 +131,11 @@ List<ConversationSection> groupConversationsByDate(
   final currentItems = <Conversation>[];
 
   void flush() {
-    if (currentSection == null || currentItems.isEmpty) return;
+    final section = currentSection;
+    if (section == null || currentItems.isEmpty) return;
     sections.add(ConversationSection(
-      section: currentSection!,
-      label: sectionLabel(currentSection!),
+      section: section,
+      label: sectionLabel(section),
       conversations: List.from(currentItems),
     ));
     currentItems.clear();

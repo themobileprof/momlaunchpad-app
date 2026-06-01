@@ -20,6 +20,16 @@ jobs:
 
       - run: flutter pub get
 
+      - name: Create .env
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          if [ -n "$ENV_FILE" ]; then
+            printf '%s\n' "$ENV_FILE" > .env
+          else
+            cp .env.example .env
+          fi
+
       - name: Analyze
         run: flutter analyze
 

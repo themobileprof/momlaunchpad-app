@@ -32,7 +32,7 @@ class CommunityPostImages extends StatelessWidget {
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           itemCount: imageUrls.length,
-          separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.spaceSM),
+          separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.spaceSM),
           itemBuilder: (context, index) {
             return SizedBox(
               width: compact ? 120 : 160,
@@ -63,7 +63,7 @@ class _NetworkImageTile extends StatelessWidget {
         height: height,
         width: double.infinity,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(
+        errorBuilder: (_, _, _) => Container(
           height: height,
           color: AppColors.primaryPurple.withValues(alpha: 0.08),
           alignment: Alignment.center,

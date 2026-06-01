@@ -24,17 +24,17 @@ class AppBadge extends StatelessWidget {
   Color get _backgroundColor {
     switch (variant) {
       case AppBadgeVariant.primary:
-        return AppColors.primaryPink.withOpacity(0.15);
+        return AppColors.primaryPink.withValues(alpha: 0.15);
       case AppBadgeVariant.secondary:
-        return AppColors.primaryPurple.withOpacity(0.15);
+        return AppColors.primaryPurple.withValues(alpha: 0.15);
       case AppBadgeVariant.success:
-        return AppColors.success.withOpacity(0.15);
+        return AppColors.success.withValues(alpha: 0.15);
       case AppBadgeVariant.warning:
-        return AppColors.warning.withOpacity(0.15);
+        return AppColors.warning.withValues(alpha: 0.15);
       case AppBadgeVariant.error:
-        return AppColors.error.withOpacity(0.15);
+        return AppColors.error.withValues(alpha: 0.15);
       case AppBadgeVariant.info:
-        return AppColors.info.withOpacity(0.15);
+        return AppColors.info.withValues(alpha: 0.15);
     }
   }
 
@@ -127,7 +127,7 @@ class StatusDot extends StatelessWidget {
         boxShadow: isActive
             ? [
                 BoxShadow(
-                  color: color.withOpacity(0.4),
+                  color: color.withValues(alpha: 0.4),
                   blurRadius: 4,
                   spreadRadius: 1,
                 ),
@@ -186,7 +186,7 @@ class _PulsingDotState extends State<_PulsingDot>
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: widget.color.withOpacity(0.4),
+                  color: widget.color.withValues(alpha: 0.4),
                   blurRadius: 4 * _animation.value,
                   spreadRadius: 1,
                 ),

@@ -73,13 +73,13 @@ class AppAvatar extends StatelessWidget {
           width: _size,
           height: _size,
           decoration: BoxDecoration(
-            color: backgroundColor ?? AppColors.primaryPurple.withOpacity(0.15),
+            color: backgroundColor ?? AppColors.primaryPurple.withValues(alpha: 0.15),
             shape: BoxShape.circle,
             image: resolvedUrl != null
                 ? DecorationImage(
                     image: NetworkImage(resolvedUrl),
                     fit: BoxFit.cover,
-                    onError: (_, __) {},
+                    onError: (_, _) {},
                   )
                 : null,
           ),

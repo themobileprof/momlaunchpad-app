@@ -174,7 +174,7 @@ class _StreamingIndicatorState extends State<_StreamingIndicator>
               height: 4,
               decoration: BoxDecoration(
                 color: (widget.isUser ? AppColors.white : AppColors.primaryPink)
-                    .withOpacity(_animations[index].value),
+                    .withValues(alpha: _animations[index].value),
                 shape: BoxShape.circle,
               ),
             );
@@ -248,7 +248,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -268,8 +268,8 @@ class _TypingIndicatorState extends State<TypingIndicator>
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryPink.withOpacity(
-                          0.4 + 0.6 * _animations[index].value,
+                        color: AppColors.primaryPink.withValues(
+                          alpha: 0.4 + 0.6 * _animations[index].value,
                         ),
                         shape: BoxShape.circle,
                       ),

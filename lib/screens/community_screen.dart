@@ -68,11 +68,10 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                       postId,
                       reason: 'inappropriate',
                     );
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Report submitted')),
-                  );
-                }
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Report submitted')),
+                );
               },
             ),
             ListTile(

@@ -109,7 +109,7 @@ class AppListTileCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: (iconColor ?? AppColors.primaryPurple).withOpacity(0.1),
+                  color: (iconColor ?? AppColors.primaryPurple).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadius.radiusSmall),
                 ),
                 child: Icon(
