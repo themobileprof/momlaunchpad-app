@@ -11,7 +11,7 @@ import 'community_screen.dart';
 import 'home_dashboard_screen.dart';
 import 'calendar_screen.dart';
 
-/// Primary shell: Home, Community, Chat, Calendar tabs + More menu.
+/// Primary shell: Home, Chat, Community, Calendar tabs + More menu.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -31,16 +31,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       screen: HomeDashboardScreen(),
     ),
     _NavItem(
-      icon: Icons.groups_outlined,
-      activeIcon: Icons.groups_rounded,
-      label: 'Community',
-      screen: CommunityScreen(),
-    ),
-    _NavItem(
       icon: Icons.chat_bubble_outline_rounded,
       activeIcon: Icons.chat_bubble_rounded,
       label: 'Chat',
       screen: ConversationListScreen(),
+    ),
+    _NavItem(
+      icon: Icons.groups_outlined,
+      activeIcon: Icons.groups_rounded,
+      label: 'Community',
+      screen: CommunityScreen(),
     ),
     _NavItem(
       icon: Icons.calendar_today_outlined,

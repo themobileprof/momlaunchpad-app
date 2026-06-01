@@ -10,7 +10,12 @@ import '../widgets/online_image_url_list_editor.dart';
 import '../widgets/widgets.dart';
 
 class CommunityCreatePostScreen extends ConsumerStatefulWidget {
-  const CommunityCreatePostScreen({super.key});
+  final CommunityComposeMode mode;
+
+  const CommunityCreatePostScreen({
+    super.key,
+    this.mode = CommunityComposeMode.post,
+  });
 
   @override
   ConsumerState<CommunityCreatePostScreen> createState() =>
@@ -23,17 +28,20 @@ class _CommunityCreatePostScreenState
   final _eventTitleController = TextEditingController();
   final _eventVenueController = TextEditingController();
   bool _isAnonymous = false;
-  bool _isEvent = false;
   String? _eventType;
   List<CommunityCatalogItem> _eventTypes = [];
   DateTime? _eventStartsAt;
   bool _submitting = false;
   List<String> _imageUrls = [];
 
+  bool get _isEventMode => widget.mode == CommunityComposeMode.event;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadEventTypes());
+    if (_isEventMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadEventTypes());
+    }
   }
 
   Future<void> _loadEventTypes() async {
@@ -77,13 +85,19 @@ class _CommunityCreatePostScreenState
     final body = _bodyController.text.trim();
     if (body.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Write something to share')),
+        SnackBar(
+          content: Text(
+            _isEventMode
+                ? 'Describe your event so others know what to expect'
+                : 'Write something to share',
+          ),
+        ),
       );
       return;
     }
 
     CreateEventPayload? event;
-    if (_isEvent) {
+    if (_isEventMode) {
       final title = _eventTitleController.text.trim();
       if (title.isEmpty || _eventStartsAt == null || _eventType == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -121,7 +135,7 @@ class _CommunityCreatePostScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.appCanvas,
-      appBar: MomAppBar(pageTitle: 'New post'),
+      appBar: MomAppBar(pageTitle: _isEventMode ? 'New event' : 'New post'),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.spaceMD,
@@ -131,43 +145,15 @@ class _CommunityCreatePostScreenState
         ),
         children: [
           Text(
-            'Use **bold**, *italic*, - bullets, and [links](https://example.com). '
-            'AI will categorize your post automatically.',
+            _isEventMode
+                ? 'Events appear in the Events tab with date, venue, and RSVP. '
+                    'Use the description for details moms should know before joining.'
+                : 'Use **bold**, *italic*, - bullets, and [links](https://example.com). '
+                    'AI will categorize your post automatically.',
             style: AppTypography.caption.copyWith(color: AppColors.textLight),
           ),
           const SizedBox(height: AppSpacing.spaceMD),
-          TextField(
-            controller: _bodyController,
-            minLines: 5,
-            maxLines: 12,
-            decoration: InputDecoration(
-              hintText: 'Share with the community…',
-              filled: true,
-              fillColor: context.appSurface,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.spaceMD),
-          OnlineImageUrlListEditor(
-            onChanged: (urls) => _imageUrls = urls,
-          ),
-          const SizedBox(height: AppSpacing.spaceMD),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Post as Anonymous Mom'),
-            subtitle: const Text('Moderators can still see your account'),
-            value: _isAnonymous,
-            onChanged: (v) => setState(() => _isAnonymous = v),
-          ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('This is a local event'),
-            subtitle: const Text('Antenatal classes, meetups, workshops…'),
-            value: _isEvent,
-            onChanged: (v) => setState(() => _isEvent = v),
-          ),
-          if (_isEvent) ...[
-            const SizedBox(height: AppSpacing.spaceSM),
+          if (_isEventMode) ...[
             DropdownButtonFormField<String>(
               value: _eventType,
               decoration: const InputDecoration(labelText: 'Event type'),
@@ -179,11 +165,13 @@ class _CommunityCreatePostScreenState
             const SizedBox(height: AppSpacing.spaceSM),
             TextField(
               controller: _eventTitleController,
+              textCapitalization: TextCapitalization.sentences,
               decoration: const InputDecoration(labelText: 'Event title'),
             ),
             const SizedBox(height: AppSpacing.spaceSM),
             TextField(
               controller: _eventVenueController,
+              textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(labelText: 'Venue (optional)'),
             ),
             const SizedBox(height: AppSpacing.spaceSM),
@@ -197,12 +185,45 @@ class _CommunityCreatePostScreenState
               trailing: const Icon(Icons.calendar_today_outlined),
               onTap: _pickEventDate,
             ),
+            const SizedBox(height: AppSpacing.spaceMD),
+            Text(
+              'Description',
+              style: AppTypography.bodyTextMedium.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: AppSpacing.spaceXS),
           ],
+          TextField(
+            controller: _bodyController,
+            minLines: 5,
+            maxLines: 12,
+            decoration: InputDecoration(
+              hintText: _isEventMode
+                  ? 'What happens at this event? Who is it for?'
+                  : 'Share with the community…',
+              filled: true,
+              fillColor: context.appSurface,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+          ),
+          if (!_isEventMode) ...[
+            const SizedBox(height: AppSpacing.spaceMD),
+            OnlineImageUrlListEditor(
+              onChanged: (urls) => _imageUrls = urls,
+            ),
+          ],
+          const SizedBox(height: AppSpacing.spaceMD),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Post as Anonymous Mom'),
+            subtitle: const Text('Moderators can still see your account'),
+            value: _isAnonymous,
+            onChanged: (v) => setState(() => _isAnonymous = v),
+          ),
           const SizedBox(height: AppSpacing.spaceXL),
           GradientButton(
             onPressed: _submitting ? null : _submit,
             isLoading: _submitting,
-            label: 'Post',
+            label: _isEventMode ? 'Publish event' : 'Post',
           ),
         ],
       ),

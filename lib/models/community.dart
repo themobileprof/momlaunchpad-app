@@ -10,6 +10,12 @@ enum CommunityFeedFilter {
   const CommunityFeedFilter(this.apiValue, this.label);
 }
 
+/// Whether the compose screen creates a discussion post or a structured local event.
+enum CommunityComposeMode {
+  post,
+  event,
+}
+
 /// Author shown on posts and replies.
 class CommunityAuthor {
   final String? id;

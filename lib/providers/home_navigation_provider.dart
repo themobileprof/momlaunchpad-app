@@ -27,5 +27,6 @@ final homeNavigationProvider =
 );
 
 /// Tab indices in [HomeScreen].
-const communityTabIndex = 1;
+const chatTabIndex = 1;
+const communityTabIndex = 2;
 const calendarTabIndex = 3;
