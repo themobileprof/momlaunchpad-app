@@ -30,3 +30,16 @@ final homeNavigationProvider =
 const chatTabIndex = 1;
 const communityTabIndex = 2;
 const calendarTabIndex = 3;
+
+/// Switches the home shell to a primary tab (e.g. from dashboard quick links).
+class HomeTabRequestNotifier extends Notifier<int?> {
+  @override
+  int? build() => null;
+
+  void openTab(int index) => state = index;
+
+  void clear() => state = null;
+}
+
+final homeTabRequestProvider =
+    NotifierProvider<HomeTabRequestNotifier, int?>(HomeTabRequestNotifier.new);

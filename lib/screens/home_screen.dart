@@ -90,6 +90,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
     });
 
+    ref.listen(homeTabRequestProvider, (previous, next) {
+      if (next == null) return;
+      if (_currentIndex != next) {
+        _onNavTap(next);
+      }
+      ref.read(homeTabRequestProvider.notifier).clear();
+    });
+
     return Scaffold(
       backgroundColor: context.appCanvas,
       extendBody: true,

@@ -4,12 +4,14 @@ import '../utils/journey_helpers.dart';
 import '../providers/profile_provider.dart';
 import '../providers/symptom_provider.dart';
 import '../providers/welcome_provider.dart';
+import '../providers/home_community_preview_provider.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../widgets/widgets.dart';
 import '../widgets/log_vitals_sheet.dart';
 import '../widgets/ongoing_symptom_prompt.dart';
+import '../widgets/home_community_highlight.dart';
 import 'calendar_screen.dart';
 import 'conversation_list_screen.dart';
 import 'doctor_visit_form_screen.dart';
@@ -30,6 +32,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(welcomeProvider.notifier).ensureFreshForHome();
+      ref.read(homeCommunityPreviewProvider.notifier).load();
     });
   }
 
@@ -45,6 +48,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
         onRefresh: () async {
           ref.invalidate(recentSymptomsProvider);
           ref.invalidate(symptomStatsProvider);
+          await ref.read(homeCommunityPreviewProvider.notifier).load();
         },
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -75,6 +79,12 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceMD),
                 child: _buildWelcomeSection(welcomeState),
+              ),
+            ),
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.only(top: AppSpacing.spaceLG),
+                child: HomeCommunityHighlight(),
               ),
             ),
             const SliverToBoxAdapter(child: OngoingSymptomPrompt()),
