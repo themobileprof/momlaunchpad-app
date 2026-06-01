@@ -7,6 +7,7 @@ class Reminder {
   final DateTime scheduledTime;
   final String priority; // 'low', 'medium', 'high', 'urgent'
   final bool isCompleted;
+  final String? communityEventId;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -18,6 +19,7 @@ class Reminder {
     required this.scheduledTime,
     required this.priority,
     required this.isCompleted,
+    this.communityEventId,
     required this.createdAt,
     this.updatedAt,
   });
@@ -31,6 +33,7 @@ class Reminder {
       scheduledTime: DateTime.parse(json['reminder_time'] as String),
       priority: json['priority'] as String,
       isCompleted: json['is_completed'] as bool? ?? false,
+      communityEventId: json['community_event_id']?.toString(),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
@@ -47,6 +50,7 @@ class Reminder {
       'reminder_time': scheduledTime.toIso8601String(),
       'priority': priority,
       'is_completed': isCompleted,
+      if (communityEventId != null) 'community_event_id': communityEventId,
       'created_at': createdAt.toIso8601String(),
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
     };
@@ -60,6 +64,7 @@ class Reminder {
     DateTime? scheduledTime,
     String? priority,
     bool? isCompleted,
+    String? communityEventId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -71,6 +76,7 @@ class Reminder {
       scheduledTime: scheduledTime ?? this.scheduledTime,
       priority: priority ?? this.priority,
       isCompleted: isCompleted ?? this.isCompleted,
+      communityEventId: communityEventId ?? this.communityEventId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

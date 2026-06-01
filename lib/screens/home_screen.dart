@@ -5,7 +5,10 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../widgets/widgets.dart';
 import '../widgets/more_menu_sheet.dart';
+import '../widgets/community_compose_fab.dart';
 import '../providers/home_navigation_provider.dart';
+import '../providers/community_provider.dart';
+import '../utils/community_compose.dart';
 import 'conversation_list_screen.dart';
 import 'community_screen.dart';
 import 'home_dashboard_screen.dart';
@@ -90,17 +93,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       backgroundColor: context.appCanvas,
       extendBody: true,
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) {
-          if (_currentIndex != index) {
-            setState(() => _currentIndex = index);
-          }
-        },
-        physics: const NeverScrollableScrollPhysics(),
-        children: _primaryTabs.map((item) => item.screen).toList(),
+      body: Stack(
+        children: [
+          PageView(
+            controller: _pageController,
+            onPageChanged: (index) {
+              if (_currentIndex != index) {
+                setState(() => _currentIndex = index);
+              }
+            },
+            physics: const NeverScrollableScrollPhysics(),
+            children: _primaryTabs.map((item) => item.screen).toList(),
+          ),
+          _buildCommunityComposeFab(),
+        ],
       ),
       bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+
+  Widget _buildCommunityComposeFab() {
+    if (_currentIndex != communityTabIndex) {
+      return const SizedBox.shrink();
+    }
+
+    final communityState = ref.watch(communityProvider);
+    if (communityState.needsOnboarding) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned(
+      right: AppSpacing.spaceLG,
+      bottom: communityComposeFabBottomOffset(context),
+      child: CommunityComposeFab(
+        filter: communityState.filter,
+        onPressed: () => openCommunityCompose(context, ref),
+      ),
     );
   }
 

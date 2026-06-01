@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/community.dart';
 import '../providers/community_provider.dart';
+import '../providers/reminders_provider.dart';
 import '../providers/service_providers.dart';
 import '../services/api_service.dart';
 import '../theme/colors.dart';
@@ -113,24 +114,41 @@ class _CommunityPostDetailScreenState
 
   Future<void> _toggleEventInterest() async {
     if (_event == null) return;
-    final result =
-        await ref.read(apiServiceProvider).toggleEventInterest(_event!.id);
-    setState(() {
-      _event = CommunityEvent(
-        id: _event!.id,
-        postId: _event!.postId,
-        title: _event!.title,
-        description: _event!.description,
-        venue: _event!.venue,
-        startsAt: _event!.startsAt,
-        endsAt: _event!.endsAt,
-        country: _event!.country,
-        stateProvince: _event!.stateProvince,
-        city: _event!.city,
-        interestedCount: result.count,
-        interestedByMe: result.interested,
+    try {
+      final result =
+          await ref.read(apiServiceProvider).toggleEventInterest(_event!.id);
+      if (!mounted) return;
+      setState(() {
+        _event = CommunityEvent(
+          id: _event!.id,
+          postId: _event!.postId,
+          title: _event!.title,
+          description: _event!.description,
+          venue: _event!.venue,
+          startsAt: _event!.startsAt,
+          endsAt: _event!.endsAt,
+          country: _event!.country,
+          stateProvince: _event!.stateProvince,
+          city: _event!.city,
+          interestedCount: result.count,
+          interestedByMe: result.interested,
+        );
+      });
+      await ref.read(remindersProvider.notifier).fetchReminders();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.interested
+                ? 'Added to your calendar'
+                : 'Removed from your calendar',
+          ),
+        ),
       );
-    });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   void _showPostActions() {

@@ -7,76 +7,10 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../widgets/community_post_card.dart';
 import '../widgets/widgets.dart';
-import 'community_create_post_screen.dart';
+import '../utils/community_compose.dart';
 import 'community_notifications_screen.dart';
 import 'community_onboarding_screen.dart';
 import 'community_post_detail_screen.dart';
-
-/// Primary compose actions — always visible above the feed (FAB is hidden by bottom nav).
-class _CommunityComposeBar extends StatelessWidget {
-  final CommunityFeedFilter filter;
-  final VoidCallback onNewPost;
-  final VoidCallback onCreateEvent;
-
-  const _CommunityComposeBar({
-    required this.filter,
-    required this.onNewPost,
-    required this.onCreateEvent,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final eventsTab = filter == CommunityFeedFilter.events;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.spaceMD,
-        0,
-        AppSpacing.spaceMD,
-        AppSpacing.spaceMD,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: eventsTab
-                ? OutlinedButton.icon(
-                    onPressed: onNewPost,
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    label: const Text('New post'),
-                  )
-                : FilledButton.icon(
-                    onPressed: onNewPost,
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    label: const Text('New post'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primaryPurple,
-                      foregroundColor: AppColors.white,
-                    ),
-                  ),
-          ),
-          const SizedBox(width: AppSpacing.spaceSM),
-          Expanded(
-            child: eventsTab
-                ? FilledButton.icon(
-                    onPressed: onCreateEvent,
-                    icon: const Icon(Icons.event_outlined, size: 18),
-                    label: const Text('Create event'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primaryPurple,
-                      foregroundColor: AppColors.white,
-                    ),
-                  )
-                : OutlinedButton.icon(
-                    onPressed: onCreateEvent,
-                    icon: const Icon(Icons.event_outlined, size: 18),
-                    label: const Text('Create event'),
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 /// Main community tab: personalized local parenting feed.
 class CommunityScreen extends ConsumerStatefulWidget {
@@ -108,25 +42,8 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     }
   }
 
-  Future<void> _openCompose(CommunityComposeMode mode) async {
-    final post = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CommunityCreatePostScreen(mode: mode),
-      ),
-    );
-    if (post != null && mounted) {
-      if (mode == CommunityComposeMode.event) {
-        ref.read(communityProvider.notifier).setFilter(CommunityFeedFilter.events);
-      }
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CommunityPostDetailScreen(postId: post.id),
-        ),
-      );
-    }
-  }
+  Future<void> _openCompose({CommunityComposeMode? mode}) =>
+      openCommunityCompose(context, ref, mode: mode);
 
   void _openPost(String postId) {
     Navigator.push(
@@ -256,13 +173,6 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
             ),
           ),
         ),
-        SliverToBoxAdapter(
-          child: _CommunityComposeBar(
-            filter: state.filter,
-            onNewPost: () => _openCompose(CommunityComposeMode.post),
-            onCreateEvent: () => _openCompose(CommunityComposeMode.event),
-          ),
-        ),
         if (state.posts.isEmpty)
           SliverFillRemaining(
             hasScrollBody: false,
@@ -273,9 +183,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                   ? 'Create a meetup, class, or playdate for moms near you.'
                   : 'Share a question, tip, or update with the community.',
               actionLabel: isEventsTab ? 'Create event' : 'New post',
-              onAction: () => _openCompose(
-                isEventsTab ? CommunityComposeMode.event : CommunityComposeMode.post,
-              ),
+              onAction: () => _openCompose(),
             ),
           )
         else
@@ -284,7 +192,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
               AppSpacing.spaceMD,
               0,
               AppSpacing.spaceMD,
-              120,
+              160,
             ),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
