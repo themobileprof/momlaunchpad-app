@@ -3,13 +3,11 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../widgets/glass_container.dart';
-import '../screens/savings_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/symptom_stats_screen.dart';
-import '../screens/doctor_visits_screen.dart';
 import '../screens/profile_screen.dart';
 
-/// Bottom sheet listing secondary destinations (Savings, Settings, etc.).
+/// Bottom sheet listing secondary destinations (profile, settings, etc.).
 class MoreMenuSheet extends StatelessWidget {
   const MoreMenuSheet({super.key});
 
@@ -59,22 +57,10 @@ class MoreMenuSheet extends StatelessWidget {
               Text('More', style: AppTypography.headingMedium),
               const SizedBox(height: AppSpacing.spaceSM),
               _MoreMenuItem(
-                icon: Icons.savings_outlined,
-                title: 'Savings',
-                subtitle: 'Track your baby fund',
-                onTap: () => _open(context, const SavingsScreen()),
-              ),
-              _MoreMenuItem(
                 icon: Icons.health_and_safety_outlined,
                 title: 'Health tracker',
                 subtitle: 'Symptoms, vitals, and stats',
                 onTap: () => _open(context, const SymptomStatsScreen()),
-              ),
-              _MoreMenuItem(
-                icon: Icons.medical_information_outlined,
-                title: 'Visit records',
-                subtitle: 'Doctor visits, vitals, and medications',
-                onTap: () => _open(context, const DoctorVisitsScreen()),
               ),
               _MoreMenuItem(
                 icon: Icons.person_outline_rounded,

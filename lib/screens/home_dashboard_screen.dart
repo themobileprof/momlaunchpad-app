@@ -9,12 +9,10 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../widgets/widgets.dart';
-import '../widgets/log_vitals_sheet.dart';
 import '../widgets/ongoing_symptom_prompt.dart';
 import '../widgets/home_community_highlight.dart';
 import 'calendar_screen.dart';
 import 'conversation_list_screen.dart';
-import 'doctor_visit_form_screen.dart';
 import 'symptom_stats_screen.dart';
 
 /// Home dashboard with a weekly personalized welcome message.
@@ -94,7 +92,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                   AppSpacing.spaceMD,
                   AppSpacing.spaceLG,
                   AppSpacing.spaceMD,
-                  AppSpacing.spaceSM,
+                  120,
                 ),
                 child: Text('Quick links', style: AppTypography.bodyTextMedium),
               ),
@@ -104,7 +102,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                 AppSpacing.spaceMD,
                 0,
                 AppSpacing.spaceMD,
-                0,
+                120,
               ),
               sliver: SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -137,60 +135,8 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                 ]),
               ),
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.spaceMD,
-                  AppSpacing.spaceLG,
-                  AppSpacing.spaceMD,
-                  AppSpacing.spaceSM,
-                ),
-                child: Text('Health logging', style: AppTypography.bodyTextMedium),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.spaceMD,
-                0,
-                AppSpacing.spaceMD,
-                120,
-              ),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: AppSpacing.spaceSM,
-                  crossAxisSpacing: AppSpacing.spaceSM,
-                  childAspectRatio: 1.6,
-                ),
-                delegate: SliverChildListDelegate([
-                  _QuickLinkCard(
-                    icon: Icons.add_circle_outline,
-                    label: 'Log vitals',
-                    onTap: () => _openLogVitals(context),
-                  ),
-                  _QuickLinkCard(
-                    icon: Icons.local_hospital_outlined,
-                    label: 'Doctor visit',
-                    onTap: () => _openDoctorVisitForm(context),
-                  ),
-                ]),
-              ),
-            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Future<void> _openLogVitals(BuildContext context) async {
-    await LogVitalsSheet.show(context);
-  }
-
-  void _openDoctorVisitForm(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const DoctorVisitFormScreen(),
       ),
     );
   }
