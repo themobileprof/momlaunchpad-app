@@ -262,7 +262,7 @@ class _WelcomeErrorCard extends StatelessWidget {
     return AppCard(
       child: Column(
         children: [
-          const Icon(Icons.error_outline, color: AppColors.error),
+          Icon(Icons.error_outline, color: AppColors.error),
           const SizedBox(height: AppSpacing.spaceSM),
           Text(
             'Could not load your welcome message',

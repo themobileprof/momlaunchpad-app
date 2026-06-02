@@ -109,12 +109,12 @@ class AppListTileCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: (iconColor ?? AppColors.primaryPurple).withValues(alpha: 0.1),
+                  color: (iconColor ?? context.appPrimary).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadius.radiusSmall),
                 ),
                 child: Icon(
                   leadingIcon,
-                  color: iconColor ?? AppColors.primaryPurple,
+                  color: iconColor ?? context.appPrimary,
                   size: 20,
                 ),
               )
@@ -130,13 +130,13 @@ class AppListTileCard extends StatelessWidget {
             ? Text(
                 subtitle!,
                 style: TextStyle(
-                  color: AppColors.textLight,
+                  color: context.appInkSubtle,
                   fontSize: 14,
                 ),
               )
             : null,
         trailing: trailing ?? (onTap != null
-            ? const Icon(Icons.chevron_right, color: AppColors.textLight)
+            ? Icon(Icons.chevron_right, color: context.appInkSubtle)
             : null),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.spaceMD,

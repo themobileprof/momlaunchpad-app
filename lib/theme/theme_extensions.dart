@@ -52,8 +52,8 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
   );
 
   static const dark = AppColorsExtension(
-    primaryPink: AppColors.rose,
-    primaryPurple: AppColors.plumLight,
+    primaryPink: AppColors.mint,
+    primaryPurple: AppColors.tealLight,
     backgroundLight: AppColors.canvasDark,
     textDark: AppColors.inkDarkMode,
     textLight: AppColors.inkSubtleDark,

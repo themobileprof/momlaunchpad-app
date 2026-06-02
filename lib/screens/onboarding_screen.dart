@@ -14,8 +14,9 @@ import '../widgets/app_background.dart';
 import '../widgets/glass_container.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/journey_stage_picker.dart';
+import '../widgets/solid_filter_chip.dart';
 
-/// First-time walkthrough — safe space for women across TTC, pregnancy, postpartum, and loss.
+/// First-time walkthrough for women trying to conceive or currently pregnant.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -31,21 +32,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _step = 0;
   JourneyStage? _journeyStage;
   int _pregnancyWeek = 20;
-  DateTime? _babyBirthDate;
-  DateTime? _lossDate;
   bool? _isFirstPregnancy;
   bool _isSubmitting = false;
 
   static const _stepCount = 5;
 
   static const _concernSuggestions = [
+    'Fertility',
     'Morning sickness',
     'Nutrition',
     'Sleep',
     'Cramping',
     'Anxiety',
-    'Fertility',
-    'Recovery',
   ];
 
   @override
@@ -75,10 +73,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       return;
     }
     if (_step == 3) {
-      if (_journeyStage == JourneyStage.postpartum && _babyBirthDate == null) {
-        _showMessage('Please add your baby\'s birth date');
-        return;
-      }
       if (_journeyStage == JourneyStage.pregnant && _isFirstPregnancy == null) {
         _showMessage('Please let us know if this is your first pregnancy');
         return;
@@ -119,9 +113,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               journeyStage: stage,
               pregnancyWeek:
                   JourneyHelpers.needsPregnancyWeek(stage) ? _pregnancyWeek : null,
-              babyBirthDate:
-                  JourneyHelpers.needsBabyBirthDate(stage) ? _babyBirthDate : null,
-              lossDate: stage == JourneyStage.miscarriage ? _lossDate : null,
               isFirstPregnancy: _journeyStage == JourneyStage.pregnant
                   ? (_isFirstPregnancy ?? true)
                   : null,
@@ -139,28 +130,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         setState(() => _isSubmitting = false);
       }
     }
-  }
-
-  Future<void> _pickBabyBirthDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _babyBirthDate ?? DateTime.now(),
-      firstDate: DateTime.now().subtract(const Duration(days: 365 * 2)),
-      lastDate: DateTime.now(),
-      helpText: 'When was your baby born?',
-    );
-    if (picked != null) setState(() => _babyBirthDate = picked);
-  }
-
-  Future<void> _pickLossDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _lossDate ?? DateTime.now(),
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now(),
-      helpText: 'Date of loss (optional)',
-    );
-    if (picked != null) setState(() => _lossDate = picked);
   }
 
   void _showMessage(String message) {
@@ -213,7 +182,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       children: [
         Text(
           'Getting to know you',
-          style: AppTypography.headingMedium.copyWith(color: AppColors.textDark),
+          style: AppTypography.headingMedium.copyWith(color: context.appInk),
         ),
         const SizedBox(height: AppSpacing.spaceSM),
         Row(
@@ -250,7 +219,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Text(
                 'Back',
                 style: AppTypography.button.copyWith(
-                  color: AppColors.primaryPurple,
+                  color: context.appPrimary,
                 ),
               ),
             )
@@ -299,18 +268,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
           const SizedBox(height: AppSpacing.spaceLG),
           Text(
-            'A safe space for women',
-            style: AppTypography.headingLarge.copyWith(color: AppColors.textDark),
+            'Support for your journey',
+            style: AppTypography.headingLarge.copyWith(color: context.appInk),
           ),
           const SizedBox(height: AppSpacing.spaceMD),
           Text(
-            'Whether you\'re trying to conceive, pregnant, postpartum, or healing after loss — MomLaunchPad centers your wellbeing and remembers what matters to you.',
-            style: AppTypography.bodyText.copyWith(color: AppColors.textLight),
+            'MomLaunchPad is built for women who are trying to conceive or currently pregnant — personalized chat, community, and gentle tools that remember what matters to you.',
+            style: AppTypography.bodyText.copyWith(color: context.appInkMuted),
           ),
           const SizedBox(height: AppSpacing.spaceLG),
-          _buildHighlight(Icons.self_improvement_outlined, 'Your journey, your pace'),
+          _buildHighlight(Icons.favorite_outline_rounded, 'Trying to conceive or expecting'),
           const SizedBox(height: AppSpacing.spaceSM),
-          _buildHighlight(Icons.health_and_safety_outlined, 'Support through every stage'),
+          _buildHighlight(Icons.health_and_safety_outlined, 'Support that grows with your journey'),
           const SizedBox(height: AppSpacing.spaceSM),
           _buildHighlight(Icons.chat_outlined, 'We learn more as you chat'),
         ],
@@ -321,12 +290,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Widget _buildHighlight(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: AppColors.primaryPink),
+        Icon(icon, size: 20, color: context.appSecondary),
         const SizedBox(width: AppSpacing.spaceSM),
         Expanded(
           child: Text(
             text,
-            style: AppTypography.bodyText.copyWith(color: AppColors.textDark),
+            style: AppTypography.bodyText.copyWith(color: context.appInk),
           ),
         ),
       ],
@@ -338,11 +307,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('What should we call you?', style: AppTypography.headingMedium),
+          Text('What should we call you?', style: AppTypography.headingMedium.copyWith(color: context.appInk)),
           const SizedBox(height: AppSpacing.spaceSM),
           Text(
             'We\'ll use this to make conversations feel personal.',
-            style: AppTypography.caption.copyWith(color: AppColors.textLight),
+            style: AppTypography.caption.copyWith(color: context.appInkMuted),
           ),
           const SizedBox(height: AppSpacing.spaceLG),
           TextField(
@@ -363,15 +332,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Where are you today?', style: AppTypography.headingMedium),
+          Text('Where are you today?', style: AppTypography.headingMedium.copyWith(color: context.appInk)),
           const SizedBox(height: AppSpacing.spaceSM),
           Text(
-            'You can update this anytime as your journey changes.',
-            style: AppTypography.caption.copyWith(color: AppColors.textLight),
+            'Choose trying to conceive or currently pregnant. You can update your journey later if life changes.',
+            style: AppTypography.caption.copyWith(color: context.appInkMuted),
           ),
           const SizedBox(height: AppSpacing.spaceLG),
           JourneyStagePicker(
             selected: _journeyStage,
+            options: JourneyStage.signupStages,
             onSelected: (stage) => setState(() => _journeyStage = stage),
           ),
         ],
@@ -388,12 +358,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         children: [
           Text(
             stage?.label ?? 'A few details',
-            style: AppTypography.headingMedium,
+            style: AppTypography.headingMedium.copyWith(color: context.appInk),
           ),
           const SizedBox(height: AppSpacing.spaceSM),
           Text(
             _stageDetailsSubtitle(stage),
-            style: AppTypography.caption.copyWith(color: AppColors.textLight),
+            style: AppTypography.caption.copyWith(color: context.appInkMuted),
           ),
           const SizedBox(height: AppSpacing.spaceLG),
           if (stage == JourneyStage.pregnant) ...[
@@ -401,7 +371,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Text(
                 'Week $_pregnancyWeek',
                 style: AppTypography.headingLarge.copyWith(
-                  color: AppColors.primaryPurple,
+                  color: context.appPrimary,
                 ),
               ),
             ),
@@ -410,7 +380,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               min: 4,
               max: 42,
               divisions: 38,
-              activeColor: AppColors.primaryPink,
+              activeColor: context.appSecondary,
               onChanged: (value) {
                 setState(() => _pregnancyWeek = value.round());
               },
@@ -419,12 +389,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Text(
                 'Estimated due date: ${DateFormat.yMMMd().format(PregnancyTiming.eddFromWeek(_pregnancyWeek))}',
                 style: AppTypography.bodyTextMedium.copyWith(
-                  color: AppColors.primaryPurple,
+                  color: context.appPrimary,
                 ),
               ),
             ),
             const SizedBox(height: AppSpacing.spaceLG),
-            Text('First pregnancy?', style: AppTypography.bodyTextMedium),
+            Text('First pregnancy?', style: AppTypography.bodyTextMedium.copyWith(color: context.appInk)),
             const SizedBox(height: AppSpacing.spaceSM),
             _buildChoiceChip(
               label: 'Yes, my first',
@@ -437,43 +407,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               selected: _isFirstPregnancy == false,
               onTap: () => setState(() => _isFirstPregnancy = false),
             ),
-          ] else if (stage == JourneyStage.postpartum) ...[
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Baby\'s birth date'),
-              subtitle: Text(
-                _babyBirthDate == null
-                    ? 'Tap to choose'
-                    : DateFormat.yMMMd().format(_babyBirthDate!),
-              ),
-              trailing: const Icon(Icons.calendar_today_outlined),
-              onTap: _pickBabyBirthDate,
-            ),
-            Text(
-              'We\'ll focus on your recovery, healing, and emotional wellbeing — not just baby care.',
-              style: AppTypography.caption.copyWith(color: AppColors.textLight),
-            ),
-          ] else if (stage == JourneyStage.miscarriage) ...[
-            Text(
-              'We\'re so sorry for your loss. There\'s no right way to feel, and this space is still yours.',
-              style: AppTypography.bodyText.copyWith(color: AppColors.textDark),
-            ),
-            const SizedBox(height: AppSpacing.spaceMD),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Date of loss (optional)'),
-              subtitle: Text(
-                _lossDate == null
-                    ? 'Add only if you\'d like'
-                    : DateFormat.yMMMd().format(_lossDate!),
-              ),
-              trailing: const Icon(Icons.calendar_today_outlined),
-              onTap: _pickLossDate,
-            ),
           ] else ...[
             Text(
               'We\'ll tailor support to your TTC journey — cycles, fertility questions, and the emotional side of waiting.',
-              style: AppTypography.bodyText.copyWith(color: AppColors.textDark),
+              style: AppTypography.bodyText.copyWith(color: context.appInk),
             ),
           ],
         ],
@@ -485,12 +422,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     switch (stage) {
       case JourneyStage.pregnant:
         return 'This helps us give stage-appropriate guidance.';
-      case JourneyStage.postpartum:
-        return 'Tell us when your baby arrived so we can support your recovery.';
-      case JourneyStage.miscarriage:
-        return 'Share only what feels comfortable.';
       case JourneyStage.ttc:
       case null:
+        return 'Help us personalize your experience.';
+      case JourneyStage.postpartum:
+      case JourneyStage.miscarriage:
         return 'Help us personalize your experience.';
     }
   }
@@ -534,11 +470,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Anything on your mind?', style: AppTypography.headingMedium),
+          Text('Anything on your mind?', style: AppTypography.headingMedium.copyWith(color: context.appInk)),
           const SizedBox(height: AppSpacing.spaceSM),
           Text(
             'Optional — we\'ll keep learning more as you chat.',
-            style: AppTypography.caption.copyWith(color: AppColors.textLight),
+            style: AppTypography.caption.copyWith(color: context.appInkMuted),
           ),
           const SizedBox(height: AppSpacing.spaceMD),
           Wrap(
@@ -546,7 +482,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             runSpacing: AppSpacing.spaceSM,
             children: _concernSuggestions.map((concern) {
               final selected = _concernController.text == concern;
-              return FilterChip(
+              return SolidFilterChip(
                 label: Text(concern),
                 selected: selected,
                 onSelected: (_) {
@@ -554,8 +490,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     _concernController.text = selected ? '' : concern;
                   });
                 },
-                selectedColor: AppColors.primaryPink.withValues(alpha: 0.2),
-                checkmarkColor: AppColors.primaryPurple,
               );
             }).toList(),
           ),

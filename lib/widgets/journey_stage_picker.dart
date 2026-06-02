@@ -80,7 +80,7 @@ class _StageOption extends StatelessWidget {
               style: AppTypography.caption.copyWith(
                 color: selected
                     ? context.appOnPrimary.withValues(alpha: 0.85)
-                    : AppColors.textLight,
+                    : context.appInkMuted,
               ),
             ),
           ],

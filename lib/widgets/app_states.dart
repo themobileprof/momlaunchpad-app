@@ -33,13 +33,13 @@ class EmptyState extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                color: context.appPrimary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
                 size: 40,
-                color: AppColors.primaryPurple.withValues(alpha: 0.6),
+                color: context.appPrimary.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: AppSpacing.spaceLG),
@@ -53,7 +53,7 @@ class EmptyState extends StatelessWidget {
               Text(
                 description!,
                 style: AppTypography.caption.copyWith(
-                  color: AppColors.textLight,
+                  color: context.appInkSubtle,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -121,7 +121,7 @@ class ErrorState extends StatelessWidget {
               Text(
                 description!,
                 style: AppTypography.caption.copyWith(
-                  color: AppColors.textLight,
+                  color: context.appInkSubtle,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -155,15 +155,15 @@ class LoadingState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation(AppColors.primaryPink),
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(context.appAccent),
           ),
           if (message != null) ...[
             const SizedBox(height: AppSpacing.spaceMD),
             Text(
               message!,
               style: AppTypography.caption.copyWith(
-                color: AppColors.textLight,
+                color: context.appInkSubtle,
               ),
             ),
           ],

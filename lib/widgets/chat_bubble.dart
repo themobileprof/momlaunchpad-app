@@ -49,7 +49,7 @@ class ChatBubble extends StatelessWidget {
                 border: isUser
                     ? null
                     : Border.all(
-                        color: AppColors.plum.withValues(alpha: 0.08),
+                        color: context.appPrimary.withValues(alpha: 0.08),
                       ),
                 boxShadow: isUser
                     ? [
@@ -173,7 +173,7 @@ class _StreamingIndicatorState extends State<_StreamingIndicator>
               width: 4,
               height: 4,
               decoration: BoxDecoration(
-                color: (widget.isUser ? AppColors.white : AppColors.primaryPink)
+                color: (widget.isUser ? AppColors.white : context.appAccent)
                     .withValues(alpha: _animations[index].value),
                 shape: BoxShape.circle,
               ),
@@ -268,7 +268,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryPink.withValues(
+                        color: context.appAccent.withValues(
                           alpha: 0.4 + 0.6 * _animations[index].value,
                         ),
                         shape: BoxShape.circle,

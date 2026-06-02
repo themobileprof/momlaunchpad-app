@@ -59,7 +59,7 @@ class AppTextField extends StatelessWidget {
             label!,
             style: AppTypography.caption.copyWith(
               fontWeight: FontWeight.w600,
-              color: AppColors.textDark,
+              color: context.appInk,
             ),
           ),
           const SizedBox(height: AppSpacing.spaceSM),
@@ -84,26 +84,26 @@ class AppTextField extends StatelessWidget {
             hintText: hint,
             errorText: errorText,
             prefixIcon: prefixIcon != null
-                ? Icon(prefixIcon, color: AppColors.textLight, size: 20)
+                ? Icon(prefixIcon, color: context.appInkSubtle, size: 20)
                 : null,
             suffixIcon: suffix,
             filled: true,
             fillColor: enabled ? AppColors.white : AppColors.backgroundLight,
             contentPadding: const EdgeInsets.all(AppSpacing.spaceMD),
             hintStyle: AppTypography.bodyText.copyWith(
-              color: AppColors.textLight.withValues(alpha: 0.6),
+              color: context.appInkSubtle.withValues(alpha: 0.6),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
-              borderSide: BorderSide(color: AppColors.textLight.withValues(alpha: 0.2)),
+              borderSide: BorderSide(color: context.appInkSubtle.withValues(alpha: 0.2)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
-              borderSide: BorderSide(color: AppColors.textLight.withValues(alpha: 0.2)),
+              borderSide: BorderSide(color: context.appInkSubtle.withValues(alpha: 0.2)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
-              borderSide: const BorderSide(color: AppColors.primaryPink, width: 2),
+              borderSide: BorderSide(color: context.appAccent, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
@@ -115,7 +115,7 @@ class AppTextField extends StatelessWidget {
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
-              borderSide: BorderSide(color: AppColors.textLight.withValues(alpha: 0.1)),
+              borderSide: BorderSide(color: context.appInkSubtle.withValues(alpha: 0.1)),
             ),
           ),
         ),
@@ -167,7 +167,7 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
       suffix: IconButton(
         icon: Icon(
           _isVisible ? Icons.visibility_off : Icons.visibility,
-          color: AppColors.textLight,
+          color: context.appInkSubtle,
           size: 20,
         ),
         onPressed: () => setState(() => _isVisible = !_isVisible),
@@ -214,16 +214,16 @@ class AppSearchBar extends StatelessWidget {
         style: AppTypography.bodyText,
         decoration: InputDecoration(
           hintText: hint,
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.search,
-            color: AppColors.textLight,
+            color: context.appInkSubtle,
             size: 20,
           ),
           suffixIcon: controller?.text.isNotEmpty == true
               ? IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.clear,
-                    color: AppColors.textLight,
+                    color: context.appInkSubtle,
                     size: 20,
                   ),
                   onPressed: () {
@@ -238,7 +238,7 @@ class AppSearchBar extends StatelessWidget {
             vertical: AppSpacing.spaceMD,
           ),
           hintStyle: AppTypography.bodyText.copyWith(
-            color: AppColors.textLight.withValues(alpha: 0.6),
+            color: context.appInkSubtle.withValues(alpha: 0.6),
           ),
         ),
       ),

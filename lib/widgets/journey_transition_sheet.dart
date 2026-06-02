@@ -118,22 +118,25 @@ class _JourneyTransitionSheetState extends State<JourneyTransitionSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Update your journey', style: AppTypography.headingMedium),
+            Text(
+              'Update your journey',
+              style: AppTypography.headingMedium.copyWith(color: context.appInk),
+            ),
             const SizedBox(height: AppSpacing.spaceSM),
             Text(
               stage == JourneyStage.miscarriage
                   ? 'We\'re so sorry for your loss. This space is still yours — we\'ll meet you with gentleness.'
                   : 'Moving to: ${stage.label}',
-              style: AppTypography.bodyText.copyWith(color: AppColors.textLight),
+              style: AppTypography.caption.copyWith(color: context.appInkMuted),
             ),
             const SizedBox(height: AppSpacing.spaceLG),
             if (JourneyHelpers.needsPregnancyWeek(stage)) ...[
-              Text('How far along are you?', style: AppTypography.bodyTextMedium),
+              Text('How far along are you?', style: AppTypography.bodyTextMedium.copyWith(color: context.appInk)),
               Center(
                 child: Text(
                   'Week $_pregnancyWeek',
                   style: AppTypography.headingMedium.copyWith(
-                    color: AppColors.primaryPurple,
+                    color: context.appPrimary,
                   ),
                 ),
               ),
@@ -162,7 +165,7 @@ class _JourneyTransitionSheetState extends State<JourneyTransitionSheet> {
                       : MaterialLocalizations.of(context)
                           .formatMediumDate(_babyBirthDate!),
                 ),
-                trailing: const Icon(Icons.calendar_today_outlined),
+                trailing: Icon(Icons.calendar_today_outlined),
                 onTap: _pickBabyBirthDate,
               ),
             if (stage == JourneyStage.miscarriage)
@@ -175,13 +178,13 @@ class _JourneyTransitionSheetState extends State<JourneyTransitionSheet> {
                       : MaterialLocalizations.of(context)
                           .formatMediumDate(_lossDate!),
                 ),
-                trailing: const Icon(Icons.calendar_today_outlined),
+                trailing: Icon(Icons.calendar_today_outlined),
                 onTap: _pickLossDate,
               ),
             if (stage == JourneyStage.ttc)
               Text(
                 'We\'ll focus on your TTC journey and emotional wellbeing.',
-                style: AppTypography.caption.copyWith(color: AppColors.textLight),
+                style: AppTypography.caption.copyWith(color: context.appInkMuted),
               ),
             const SizedBox(height: AppSpacing.spaceLG),
             FilledButton(
@@ -215,11 +218,14 @@ Future<ProfileSavePayload?> showJourneyTransitionPicker(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Update my journey', style: AppTypography.headingMedium),
+            Text(
+              'Update my journey',
+              style: AppTypography.headingMedium.copyWith(color: context.appInk),
+            ),
             const SizedBox(height: AppSpacing.spaceSM),
             Text(
               current.transitionHint,
-              style: AppTypography.caption.copyWith(color: AppColors.textLight),
+              style: AppTypography.caption.copyWith(color: context.appInkMuted),
             ),
             const SizedBox(height: AppSpacing.spaceMD),
             JourneyStagePicker(

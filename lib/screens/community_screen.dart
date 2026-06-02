@@ -60,7 +60,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.flag_outlined),
+              leading: Icon(Icons.flag_outlined),
               title: const Text('Report'),
               onTap: () async {
                 Navigator.pop(context);
@@ -75,7 +75,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.visibility_off_outlined),
+              leading: Icon(Icons.visibility_off_outlined),
               title: const Text('Hide post'),
               onTap: () {
                 Navigator.pop(context);
@@ -98,7 +98,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
         pageTitle: 'Community',
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
+            icon: Icon(Icons.notifications_outlined),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CommunityNotificationsScreen()),

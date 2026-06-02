@@ -73,7 +73,7 @@ class AppAvatar extends StatelessWidget {
           width: _size,
           height: _size,
           decoration: BoxDecoration(
-            color: backgroundColor ?? AppColors.primaryPurple.withValues(alpha: 0.15),
+            color: backgroundColor ?? context.appPrimary.withValues(alpha: 0.15),
             shape: BoxShape.circle,
             image: resolvedUrl != null
                 ? DecorationImage(
@@ -89,7 +89,7 @@ class AppAvatar extends StatelessWidget {
                     _initials,
                     style: AppTypography.headingMedium.copyWith(
                       fontSize: _fontSize,
-                      color: textColor ?? AppColors.primaryPurple,
+                      color: textColor ?? context.appPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -104,7 +104,7 @@ class AppAvatar extends StatelessWidget {
               width: _size * 0.3,
               height: _size * 0.3,
               decoration: BoxDecoration(
-                color: isOnline ? AppColors.success : AppColors.textLight,
+                color: isOnline ? AppColors.success : context.appInkSubtle,
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.white, width: 2),
               ),

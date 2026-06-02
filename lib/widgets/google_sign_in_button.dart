@@ -27,7 +27,7 @@ class GoogleSignInButton extends StatelessWidget {
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
             border: Border.all(
-              color: AppColors.plum.withValues(alpha: 0.14),
+              color: context.appPrimary.withValues(alpha: 0.14),
             ),
             boxShadow: [
               BoxShadow(
@@ -52,20 +52,23 @@ class GoogleSignInButton extends StatelessWidget {
                       width: 28,
                       height: 28,
                       decoration: BoxDecoration(
-                        color: AppColors.roseSoft,
+                        color: context.appSurface,
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: context.appPrimary.withValues(alpha: 0.25),
+                        ),
                       ),
                       child: Icon(
                         Icons.g_mobiledata_rounded,
                         size: 26,
-                        color: AppColors.plum,
+                        color: context.appPrimary,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.spaceSM),
                     Text(
                       'Continue with Google',
                       style: AppTypography.button.copyWith(
-                        color: AppColors.ink,
+                        color: context.appInk,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

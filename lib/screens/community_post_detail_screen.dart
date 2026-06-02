@@ -159,7 +159,7 @@ class _CommunityPostDetailScreenState
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.flag_outlined),
+              leading: Icon(Icons.flag_outlined),
               title: const Text('Report post'),
               onTap: () {
                 Navigator.pop(context);
@@ -167,7 +167,7 @@ class _CommunityPostDetailScreenState
               },
             ),
             ListTile(
-              leading: const Icon(Icons.visibility_off_outlined),
+              leading: Icon(Icons.visibility_off_outlined),
               title: const Text('Hide post'),
               onTap: () async {
                 Navigator.pop(context);
@@ -178,7 +178,7 @@ class _CommunityPostDetailScreenState
             ),
             if (_post?.author.id != null)
               ListTile(
-                leading: const Icon(Icons.block_outlined),
+                leading: Icon(Icons.block_outlined),
                 title: const Text('Block user'),
                 onTap: () async {
                   Navigator.pop(context);
@@ -216,7 +216,7 @@ class _CommunityPostDetailScreenState
         pageTitle: 'Post',
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_horiz_rounded),
+            icon: Icon(Icons.more_horiz_rounded),
             onPressed: _post == null ? null : _showPostActions,
           ),
         ],
@@ -266,7 +266,7 @@ class _CommunityPostDetailScreenState
                     onPressed: _togglePostLike,
                     icon: Icon(
                       post.likedByMe ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                      color: post.likedByMe ? AppColors.primaryPurple : AppColors.textLight,
+                      color: post.likedByMe ? context.appPrimary : context.appInkSubtle,
                     ),
                   ),
                   Text('${post.likeCount}'),
@@ -284,7 +284,7 @@ class _CommunityPostDetailScreenState
                       const SizedBox(height: AppSpacing.spaceXS),
                       Text(
                         dateFormat.format(_event!.startsAt.toLocal()),
-                        style: AppTypography.caption.copyWith(color: AppColors.textLight),
+                        style: AppTypography.caption.copyWith(color: context.appInkSubtle),
                       ),
                       if (_event!.venue != null) ...[
                         const SizedBox(height: AppSpacing.spaceXS),
@@ -383,8 +383,8 @@ class _CommunityPostDetailScreenState
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.send_rounded),
-                    color: AppColors.primaryPurple,
+                        : Icon(Icons.send_rounded),
+                    color: context.appPrimary,
                   ),
                 ],
               ),

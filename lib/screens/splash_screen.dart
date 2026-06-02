@@ -46,11 +46,14 @@ class SplashScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.spaceLG),
-              Text('MomLaunchpad', style: AppTypography.brandTitle),
+              Text(
+                'MomLaunchpad',
+                style: AppTypography.brandTitle.copyWith(color: context.appPrimary),
+              ),
               const SizedBox(height: AppSpacing.spaceSM),
               Text(
                 'Launching your journey…',
-                style: AppTypography.caption,
+                style: AppTypography.caption.copyWith(color: context.appInkMuted),
               ),
               const SizedBox(height: AppSpacing.spaceXXL),
               SizedBox(
@@ -58,7 +61,7 @@ class SplashScreen extends StatelessWidget {
                 height: 28,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation(AppColors.rose),
+                  valueColor: AlwaysStoppedAnimation(context.appAccent),
                 ),
               ),
             ],

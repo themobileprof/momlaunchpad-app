@@ -38,7 +38,7 @@ class SymptomSourceChatLink extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: TextButton.icon(
         onPressed: () => openSymptomSourceChat(context, symptom),
-        icon: const Icon(Icons.chat_bubble_outline, size: 16),
+        icon: Icon(Icons.chat_bubble_outline, size: 16),
         label: const Text('View source chat'),
         style: TextButton.styleFrom(
           visualDensity: VisualDensity.compact,

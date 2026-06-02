@@ -70,7 +70,7 @@ class _SymptomStatsScreenState extends ConsumerState<SymptomStatsScreen>
         actions: [
           if (_tabController.index == 0)
             IconButton(
-              icon: const Icon(Icons.history),
+              icon: Icon(Icons.history),
               tooltip: 'Symptom history',
               onPressed: () {
                 Navigator.push(
@@ -95,8 +95,8 @@ class _SymptomStatsScreenState extends ConsumerState<SymptomStatsScreen>
               padding: const EdgeInsets.only(bottom: 80),
               child: FloatingActionButton.extended(
                 onPressed: _openLogVitals,
-                backgroundColor: AppColors.primaryPink,
-                icon: const Icon(Icons.add),
+                backgroundColor: context.appAccent,
+                icon: Icon(Icons.add),
                 label: const Text('Log vitals'),
               ),
             )
@@ -125,7 +125,7 @@ class _SymptomsTab extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             statsAsync.when(
-              data: (stats) => _SymptomsTabContent.buildStatsSection(stats),
+              data: (stats) => _SymptomsTabContent.buildStatsSection(context, stats),
               loading: () => const Center(
                 child: Padding(
                   padding: EdgeInsets.all(32),
@@ -198,7 +198,7 @@ class _VitalsTab extends ConsumerWidget {
               children: [
                 Text(
                   'Track blood pressure, weight, and other measurements over time.',
-                  style: AppTypography.caption.copyWith(color: AppColors.textLight),
+                  style: AppTypography.caption.copyWith(color: context.appInkSubtle),
                 ),
                 const SizedBox(height: 16),
                 if (state.latest != null) ...[
@@ -324,7 +324,7 @@ class _VitalChip extends StatelessWidget {
           children: [
             Text(
               label,
-              style: AppTypography.caption.copyWith(color: AppColors.textLight),
+              style: AppTypography.caption.copyWith(color: context.appInkSubtle),
             ),
             Text(value, style: AppTypography.bodyTextMedium),
           ],
@@ -352,8 +352,8 @@ class _VitalReadingCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: AppColors.primaryPink.withValues(alpha: 0.12),
-          child: const Icon(Icons.monitor_heart_outlined, color: AppColors.primaryPink),
+          backgroundColor: context.appAccent.withValues(alpha: 0.12),
+          child: Icon(Icons.monitor_heart_outlined, color: context.appAccent),
         ),
         title: Text(
           dateFormat.format(reading.recordedAt.toLocal()),
@@ -377,7 +377,7 @@ class _VitalReadingCard extends StatelessWidget {
           ],
         ),
         trailing: IconButton(
-          icon: const Icon(Icons.delete_outline, size: 20),
+          icon: Icon(Icons.delete_outline, size: 20),
           onPressed: onDelete,
         ),
       ),
@@ -414,7 +414,7 @@ class _VitalsEmpty extends StatelessWidget {
               ElevatedButton(
                 onPressed: onLog,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryPink,
+                  backgroundColor: context.appAccent,
                   foregroundColor: Colors.white,
                 ),
                 child: const Text('Log vitals'),
@@ -452,7 +452,7 @@ class _VitalsError extends StatelessWidget {
 
 /// Symptom tab UI helpers (stats, charts, recent list).
 class _SymptomsTabContent {
-  static Widget buildStatsSection(SymptomStats stats) {
+  static Widget buildStatsSection(BuildContext context, SymptomStats stats) {
     return Column(
       children: [
         Row(
@@ -462,7 +462,7 @@ class _SymptomsTabContent {
                 'Total',
                 stats.totalSymptoms.toString(),
                 Icons.health_and_safety,
-                AppColors.primaryPink,
+                context.appAccent,
               ),
             ),
             const SizedBox(width: 12),
@@ -489,7 +489,7 @@ class _SymptomsTabContent {
         if (stats.byType.isNotEmpty) ...[
           _buildSectionTitle('By Type'),
           const SizedBox(height: 12),
-          _buildTypeBreakdown(stats.byType),
+          _buildTypeBreakdown(context, stats.byType),
           const SizedBox(height: 24),
         ],
         if (stats.bySeverity.isNotEmpty) ...[
@@ -538,7 +538,7 @@ class _SymptomsTabContent {
     );
   }
 
-  static Widget _buildTypeBreakdown(Map<String, int> byType) {
+  static Widget _buildTypeBreakdown(BuildContext context, Map<String, int> byType) {
     final sortedEntries = byType.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
@@ -581,7 +581,7 @@ class _SymptomsTabContent {
                           child: Container(
                             height: 24,
                             decoration: BoxDecoration(
-                              color: AppColors.primaryPink.withValues(alpha: 0.7),
+                              color: context.appAccent.withValues(alpha: 0.7),
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
@@ -729,7 +729,7 @@ class _SymptomsTabContent {
                     overflow: TextOverflow.ellipsis,
                   ),
                   trailing: symptom.isResolved
-                      ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+                      ? Icon(Icons.check_circle, color: Colors.green, size: 20)
                       : Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
@@ -756,7 +756,7 @@ class _SymptomsTabContent {
                     child: TextButton.icon(
                       onPressed: () =>
                           markSymptomResolved(context, ref, symptom.id),
-                      icon: const Icon(Icons.check_circle_outline, size: 16),
+                      icon: Icon(Icons.check_circle_outline, size: 16),
                       label: const Text('Mark resolved'),
                       style: TextButton.styleFrom(
                         visualDensity: VisualDensity.compact,
@@ -815,7 +815,7 @@ class _SymptomsTabContent {
         child: Center(
           child: Column(
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              Icon(Icons.error_outline, size: 48, color: Colors.red),
               const SizedBox(height: 16),
               Text(
                 'Failed to load data',

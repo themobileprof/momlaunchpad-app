@@ -22,12 +22,12 @@ class PremiumUpsellDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppSpacing.spaceMD),
             decoration: BoxDecoration(
-              color: AppColors.primaryPurple.withValues(alpha: 0.1),
+              color: context.appPrimary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.star_rounded,
-              color: AppColors.primaryPurple,
+              color: context.appPrimary,
               size: 32,
             ),
           ),
@@ -69,7 +69,7 @@ class PremiumUpsellDialog extends StatelessWidget {
             );
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryPurple,
+            backgroundColor: context.appPrimary,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadius.radiusMedium),

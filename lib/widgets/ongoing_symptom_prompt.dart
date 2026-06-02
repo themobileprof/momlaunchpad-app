@@ -53,7 +53,7 @@ class _OngoingSymptomPromptState extends ConsumerState<OngoingSymptomPrompt> {
                   children: [
                     Icon(
                       Icons.health_and_safety_outlined,
-                      color: AppColors.primaryPink,
+                      color: context.appAccent,
                       size: 22,
                     ),
                     const SizedBox(width: AppSpacing.spaceSM),

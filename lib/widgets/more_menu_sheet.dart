@@ -51,7 +51,7 @@ class MoreMenuSheet extends StatelessWidget {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: AppSpacing.spaceMD),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryPurple.withValues(alpha: 0.2),
+                    color: context.appPrimary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -125,17 +125,17 @@ class _MoreMenuItem extends StatelessWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: AppColors.primaryPurple.withValues(alpha: 0.1),
+          color: context.appPrimary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: AppColors.primaryPurple),
+        child: Icon(icon, color: context.appPrimary),
       ),
       title: Text(title, style: AppTypography.bodyTextMedium),
       subtitle: Text(
         subtitle,
-        style: AppTypography.caption.copyWith(color: AppColors.textLight),
+        style: AppTypography.caption.copyWith(color: context.appInkSubtle),
       ),
-      trailing: const Icon(Icons.chevron_right_rounded),
+      trailing: Icon(Icons.chevron_right_rounded),
       onTap: onTap,
     );
   }

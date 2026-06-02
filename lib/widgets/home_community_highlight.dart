@@ -196,7 +196,7 @@ class _NearbyPulseCard extends StatelessWidget {
             Text(
               'Be the first to post or host a meetup in your area.',
               style: AppTypography.bodyText.copyWith(
-                color: AppColors.textLight,
+                color: context.appInkSubtle,
                 height: 1.45,
               ),
             ),
@@ -280,7 +280,7 @@ class _HighlightTile extends StatelessWidget {
           Text(
             title,
             style: AppTypography.caption.copyWith(
-              color: AppColors.primaryPurple,
+              color: context.appPrimary,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.3,
             ),
@@ -295,7 +295,7 @@ class _HighlightTile extends StatelessWidget {
           const SizedBox(height: AppSpacing.spaceSM),
           Text(
             meta,
-            style: AppTypography.caption.copyWith(color: AppColors.textLight),
+            style: AppTypography.caption.copyWith(color: context.appInkSubtle),
           ),
         ],
       ),

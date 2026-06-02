@@ -18,13 +18,13 @@ class CommunityBadgeChip extends StatelessWidget {
       margin: const EdgeInsets.only(right: AppSpacing.spaceXS),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.primaryPurple.withValues(alpha: 0.12),
+        color: context.appPrimary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         display,
         style: AppTypography.caption.copyWith(
-          color: AppColors.primaryPurple,
+          color: context.appPrimary,
           fontWeight: FontWeight.w600,
           fontSize: 10,
         ),
@@ -54,15 +54,15 @@ class CommunityAuthorRow extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 18,
-          backgroundColor: AppColors.primaryPurple.withValues(alpha: 0.15),
+          backgroundColor: context.appPrimary.withValues(alpha: 0.15),
           backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
           child: photoUrl == null
               ? Text(
                   author.displayName.isNotEmpty
                       ? author.displayName[0].toUpperCase()
                       : 'M',
-                  style: const TextStyle(
-                    color: AppColors.primaryPurple,
+                  style: TextStyle(
+                    color: context.appPrimary,
                     fontWeight: FontWeight.w700,
                   ),
                 )
@@ -96,7 +96,7 @@ class CommunityAuthorRow extends StatelessWidget {
                     if (subtitle != null) subtitle!,
                     if (timestamp != null) _formatTime(timestamp!),
                   ].join(' · '),
-                  style: AppTypography.caption.copyWith(color: AppColors.textLight),
+                  style: AppTypography.caption.copyWith(color: context.appInkSubtle),
                 ),
             ],
           ),

@@ -183,7 +183,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               fontSize: 12,
               color: chatState.isConnected
                   ? AppColors.success
-                  : AppColors.textLight,
+                  : context.appInkSubtle,
             ),
           ),
         ],
@@ -217,7 +217,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       color: AppColors.error.withValues(alpha: 0.1),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: AppColors.error, size: 18),
+          Icon(Icons.error_outline, color: AppColors.error, size: 18),
           const SizedBox(width: AppSpacing.spaceSM),
           Expanded(
             child: Text(
@@ -226,7 +226,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close, size: 18),
+            icon: Icon(Icons.close, size: 18),
             onPressed: () {
               // Could add a way to dismiss error
             },
@@ -261,13 +261,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                color: context.appPrimary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.chat_bubble_outline_rounded,
                 size: 40,
-                color: AppColors.primaryPurple.withValues(alpha: 0.6),
+                color: context.appPrimary.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: AppSpacing.spaceLG),
@@ -279,7 +279,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             const SizedBox(height: AppSpacing.spaceSM),
             Text(
               'Ask about symptoms, nutrition, or anything pregnancy-related.',
-              style: AppTypography.caption.copyWith(color: AppColors.textLight),
+              style: AppTypography.caption.copyWith(color: context.appInkSubtle),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.spaceLG),
@@ -353,7 +353,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.timer, size: 14, color: AppColors.warning),
+                    Icon(Icons.timer, size: 14, color: AppColors.warning),
                     const SizedBox(width: 4),
                     Text(
                       'Sending too fast. Please wait a moment.',
@@ -387,7 +387,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           vertical: AppSpacing.spaceSM + 4,
                         ),
                         hintStyle: AppTypography.bodyText.copyWith(
-                          color: AppColors.textLight.withValues(alpha: 0.6),
+                          color: context.appInkSubtle.withValues(alpha: 0.6),
                         ),
                       ),
                       style: AppTypography.bodyText,
@@ -424,12 +424,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.primaryPink.withValues(alpha: 0.1),
+                color: context.appAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.calendar_today_rounded,
-                color: AppColors.primaryPink,
+                color: context.appAccent,
                 size: 20,
               ),
             ),
@@ -590,7 +590,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               Expanded(
                 child: Container(
                   height: 1,
-                  color: AppColors.textLight.withValues(alpha: 0.1),
+                  color: context.appInkSubtle.withValues(alpha: 0.1),
                 ),
               ),
               Padding(
@@ -600,7 +600,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 child: Text(
                   group.dateHeader,
                   style: AppTypography.caption.copyWith(
-                    color: AppColors.textLight,
+                    color: context.appInkSubtle,
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
@@ -609,7 +609,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               Expanded(
                 child: Container(
                   height: 1,
-                  color: AppColors.textLight.withValues(alpha: 0.1),
+                  color: context.appInkSubtle.withValues(alpha: 0.1),
                 ),
               ),
             ],
@@ -622,13 +622,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               vertical: 4,
             ),
             decoration: BoxDecoration(
-              color: AppColors.primaryPink.withValues(alpha: 0.08),
+              color: context.appAccent.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(AppRadius.radiusSmall),
             ),
             child: Text(
               'Started at ${group.timeHeader}',
               style: AppTypography.caption.copyWith(
-                color: AppColors.primaryPink,
+                color: context.appAccent,
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),

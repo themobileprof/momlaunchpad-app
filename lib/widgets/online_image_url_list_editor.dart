@@ -90,7 +90,7 @@ class _OnlineImageUrlListEditorState extends State<OnlineImageUrlListEditor> {
         Text(
           'Paste https:// links to images hosted elsewhere (up to ${widget.maxImages}). '
           'We do not upload files to MomLaunchpad servers.',
-          style: AppTypography.caption.copyWith(color: AppColors.textLight),
+          style: AppTypography.caption.copyWith(color: context.appInkSubtle),
         ),
         const SizedBox(height: AppSpacing.spaceSM),
         for (var i = 0; i < _controllers.length; i++) ...[
@@ -106,7 +106,7 @@ class _OnlineImageUrlListEditorState extends State<OnlineImageUrlListEditor> {
               IconButton(
                 tooltip: 'Remove',
                 onPressed: () => _removeField(i),
-                icon: const Icon(Icons.close_rounded),
+                icon: Icon(Icons.close_rounded),
               ),
             ],
           ),
@@ -117,7 +117,7 @@ class _OnlineImageUrlListEditorState extends State<OnlineImageUrlListEditor> {
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               onPressed: _addField,
-              icon: const Icon(Icons.add_photo_alternate_outlined),
+              icon: Icon(Icons.add_photo_alternate_outlined),
               label: const Text('Add another photo'),
             ),
           ),

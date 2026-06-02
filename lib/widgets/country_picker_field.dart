@@ -48,12 +48,12 @@ class CountryPickerField extends StatelessWidget {
           filled: true,
           fillColor: context.appSurface,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-          suffixIcon: const Icon(Icons.arrow_drop_down_rounded),
+          suffixIcon: Icon(Icons.arrow_drop_down_rounded),
         ),
         child: Text(
           _selectedName ?? 'Select country',
           style: AppTypography.bodyText.copyWith(
-            color: _selectedName == null ? AppColors.textLight : null,
+            color: _selectedName == null ? context.appInkSubtle : null,
           ),
         ),
       ),

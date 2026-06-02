@@ -49,7 +49,7 @@ enum AppThemePreference {
       case 'dark':
         return AppThemePreference.dark;
       default:
-        return AppThemePreference.system;
+        return AppThemePreference.light;
     }
   }
 }
@@ -58,7 +58,7 @@ class ThemeNotifier extends Notifier<AppThemePreference> {
   @override
   AppThemePreference build() {
     _load();
-    return AppThemePreference.system;
+    return AppThemePreference.light;
   }
 
   Future<void> _load() async {

@@ -49,16 +49,16 @@ class _DoctorVisitsScreenState extends ConsumerState<DoctorVisitsScreen> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 80),
         child: NeumorphicButton(
+          filled: true,
           borderRadius: 30,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          color: AppColors.blushPrimary,
           onPressed: () => _openForm(),
-          child: Row(
+          child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.add_rounded, color: AppColors.textDark),
-              const SizedBox(width: 8),
-              Text('Add visit', style: AppTypography.button),
+              Icon(Icons.add_rounded),
+              SizedBox(width: 8),
+              Text('Add visit'),
             ],
           ),
         ),
@@ -209,7 +209,7 @@ class _VisitCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.spaceXS),
           Text(
             dateFormat.format(visit.visitDate.toLocal()),
-            style: AppTypography.caption.copyWith(color: AppColors.textLight),
+            style: AppTypography.caption.copyWith(color: context.appInkSubtle),
           ),
           if (visit.providerName != null && visit.providerName!.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.spaceXS),
@@ -282,7 +282,7 @@ class _VisitDetailSheet extends StatelessWidget {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: AppSpacing.spaceMD),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryPurple.withValues(alpha: 0.2),
+                    color: context.appPrimary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -291,7 +291,7 @@ class _VisitDetailSheet extends StatelessWidget {
               const SizedBox(height: AppSpacing.spaceXS),
               Text(
                 dateFormat.format(visit.visitDate.toLocal()),
-                style: AppTypography.caption.copyWith(color: AppColors.textLight),
+                style: AppTypography.caption.copyWith(color: context.appInkSubtle),
               ),
               const SizedBox(height: AppSpacing.spaceLG),
               _DetailSection(

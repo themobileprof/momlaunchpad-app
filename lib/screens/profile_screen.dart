@@ -445,7 +445,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         Text(
                           'Your photo appears on community posts when you are not anonymous.',
                           style: AppTypography.caption.copyWith(
-                            color: AppColors.textLight,
+                            color: context.appInkSubtle,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -457,7 +457,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 onPressed: _isUploadingPhoto || _isSaving
                                     ? null
                                     : _pickProfilePhoto,
-                                icon: const Icon(Icons.photo_library_outlined),
+                                icon: Icon(Icons.photo_library_outlined),
                                 label: const Text('Upload photo'),
                               ),
                             ),
@@ -468,7 +468,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 onPressed: _isUploadingPhoto || _isSaving
                                     ? null
                                     : _removeProfilePhoto,
-                                icon: const Icon(Icons.delete_outline_rounded),
+                                icon: Icon(Icons.delete_outline_rounded),
                               ),
                             ],
                           ],
@@ -546,7 +546,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           child: Text(
                             'Start typing state or city to see suggestions.',
                             style: AppTypography.caption.copyWith(
-                              color: AppColors.textLight,
+                              color: context.appInkSubtle,
                             ),
                           ),
                         ),
@@ -563,7 +563,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         Text(
                           _journeyStage?.label ?? 'Not set',
                           style: AppTypography.headingMedium.copyWith(
-                            color: AppColors.primaryPurple,
+                            color: context.appPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -572,7 +572,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               ? ''
                               : JourneyHelpers.profileSummary(profile),
                           style: AppTypography.caption.copyWith(
-                            color: AppColors.textLight,
+                            color: context.appInkSubtle,
                           ),
                         ),
                         if (_journeyStage != null) ...[
@@ -580,14 +580,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           Text(
                             _journeyStage!.transitionHint,
                             style: AppTypography.caption.copyWith(
-                              color: AppColors.textLight,
+                              color: context.appInkSubtle,
                             ),
                           ),
                         ],
                         const SizedBox(height: AppSpacing.spaceMD),
                         OutlinedButton.icon(
                           onPressed: _isSaving ? null : _updateJourney,
-                          icon: const Icon(Icons.swap_horiz_rounded),
+                          icon: Icon(Icons.swap_horiz_rounded),
                           label: const Text('Update my journey'),
                         ),
                       ],
@@ -605,7 +605,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             child: Text(
                               'Week $_pregnancyWeek',
                               style: AppTypography.headingMedium.copyWith(
-                                color: AppColors.primaryPurple,
+                                color: context.appPrimary,
                               ),
                             ),
                           ),
@@ -614,7 +614,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             min: 4,
                             max: 42,
                             divisions: 38,
-                            activeColor: AppColors.primaryPink,
+                            activeColor: context.appAccent,
                             onChanged: (value) {
                               _onPregnancyWeekChanged(value.round());
                             },
@@ -637,12 +637,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       ? 'Custom date · week adjusted to match'
                                       : 'Calculated from pregnancy week',
                                   style: AppTypography.caption.copyWith(
-                                    color: AppColors.textLight,
+                                    color: context.appInkSubtle,
                                   ),
                                 ),
                               ],
                             ),
-                            trailing: const Icon(Icons.calendar_today_outlined),
+                            trailing: Icon(Icons.calendar_today_outlined),
                             onTap: _pickDueDate,
                           ),
                           if (_dueDateManuallySet)
@@ -701,13 +701,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   : MaterialLocalizations.of(context)
                                       .formatMediumDate(_babyBirthDate!),
                             ),
-                            trailing: const Icon(Icons.calendar_today_outlined),
+                            trailing: Icon(Icons.calendar_today_outlined),
                             onTap: _pickBabyBirthDate,
                           ),
                           Text(
                             'We focus on your recovery and wellbeing in this stage.',
                             style: AppTypography.caption.copyWith(
-                              color: AppColors.textLight,
+                              color: context.appInkSubtle,
                             ),
                           ),
                         ],
@@ -728,7 +728,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               : MaterialLocalizations.of(context)
                                   .formatMediumDate(_lossDate!),
                         ),
-                        trailing: const Icon(Icons.calendar_today_outlined),
+                        trailing: Icon(Icons.calendar_today_outlined),
                         onTap: _pickLossDate,
                       ),
                     ),
@@ -808,7 +808,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           Text(
                             'These details were picked up as you chatted and help personalize responses.',
                             style: AppTypography.caption.copyWith(
-                              color: AppColors.textLight,
+                              color: context.appInkSubtle,
                             ),
                           ),
                           const SizedBox(height: AppSpacing.spaceSM),
@@ -861,14 +861,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Text(
                 email ?? '',
                 style: AppTypography.caption.copyWith(
-                  color: AppColors.textLight,
+                  color: context.appInkSubtle,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'MomLaunchPad uses this to tailor support for women across TTC, pregnancy, postpartum, and loss. We keep learning more every time you chat.',
+                'MomLaunchPad supports women trying to conceive or currently pregnant. If your journey changes — after birth or loss — update it in your profile and we\'ll adapt with you.',
                 style: AppTypography.caption.copyWith(
-                  color: AppColors.textLight,
+                  color: context.appInkSubtle,
                 ),
               ),
             ],
@@ -888,7 +888,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         title,
         style: AppTypography.caption.copyWith(
           fontWeight: FontWeight.w600,
-          color: AppColors.textLight,
+          color: context.appInkSubtle,
           letterSpacing: 0.5,
         ),
       ),

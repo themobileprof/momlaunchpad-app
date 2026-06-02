@@ -53,7 +53,7 @@ class _SymptomHistoryScreenState extends ConsumerState<SymptomHistoryScreen> {
         pageTitle: 'Symptom History',
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list),
+            icon: Icon(Icons.filter_list),
             onPressed: _showFilterDialog,
           ),
         ],
@@ -128,13 +128,13 @@ class _SymptomHistoryScreenState extends ConsumerState<SymptomHistoryScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryPink.withValues(alpha: 0.1),
+                    color: context.appAccent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     symptom.symptomTypeName,
-                    style: const TextStyle(
-                      color: AppColors.primaryPink,
+                    style: TextStyle(
+                      color: context.appAccent,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),
@@ -352,7 +352,7 @@ class _SymptomHistoryScreenState extends ConsumerState<SymptomHistoryScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          Icon(Icons.error_outline, size: 48, color: Colors.red),
           const SizedBox(height: 16),
           Text(
             'Failed to load symptoms',

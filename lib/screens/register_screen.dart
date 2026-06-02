@@ -100,8 +100,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  color: AppColors.plum,
+                  icon: Icon(Icons.arrow_back_rounded),
+                  color: context.appPrimary,
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
@@ -118,7 +118,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     children: [
                       const AuthLogoHeader(
                         title: 'Join MomLaunchpad',
-                        subtitle: 'Start your journey with support that grows with you.',
+                        subtitle: 'For women trying to conceive or currently pregnant.',
                         logoSize: 80,
                       ),
                       const SizedBox(height: AppSpacing.spaceXL),
@@ -136,7 +136,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               Text(
                                 'Create with email',
                                 style: AppTypography.label.copyWith(
-                                  color: AppColors.plum,
+                                  color: context.appPrimary,
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.spaceMD),
@@ -185,7 +185,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   labelText: 'Password',
                                   hintText: '••••••••',
                                   prefixIcon:
-                                      const Icon(Icons.lock_outline_rounded),
+                                      Icon(Icons.lock_outline_rounded),
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       _isPasswordVisible
@@ -216,7 +216,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   labelText: 'Confirm password',
                                   hintText: '••••••••',
                                   prefixIcon:
-                                      const Icon(Icons.lock_outline_rounded),
+                                      Icon(Icons.lock_outline_rounded),
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       _isConfirmPasswordVisible

@@ -21,12 +21,12 @@ class AppBadge extends StatelessWidget {
     this.small = false,
   });
 
-  Color get _backgroundColor {
+  Color _backgroundColor(BuildContext context) {
     switch (variant) {
       case AppBadgeVariant.primary:
-        return AppColors.primaryPink.withValues(alpha: 0.15);
+        return context.appAccent.withValues(alpha: 0.15);
       case AppBadgeVariant.secondary:
-        return AppColors.primaryPurple.withValues(alpha: 0.15);
+        return context.appPrimary.withValues(alpha: 0.15);
       case AppBadgeVariant.success:
         return AppColors.success.withValues(alpha: 0.15);
       case AppBadgeVariant.warning:
@@ -38,12 +38,12 @@ class AppBadge extends StatelessWidget {
     }
   }
 
-  Color get _textColor {
+  Color _textColor(BuildContext context) {
     switch (variant) {
       case AppBadgeVariant.primary:
-        return AppColors.primaryPink;
+        return context.appAccent;
       case AppBadgeVariant.secondary:
-        return AppColors.primaryPurple;
+        return context.appPrimary;
       case AppBadgeVariant.success:
         return AppColors.success;
       case AppBadgeVariant.warning:
@@ -63,7 +63,7 @@ class AppBadge extends StatelessWidget {
         vertical: small ? AppSpacing.spaceXS : AppSpacing.spaceSM,
       ),
       decoration: BoxDecoration(
-        color: _backgroundColor,
+        color: _backgroundColor(context),
         borderRadius: BorderRadius.circular(AppRadius.radiusCircle),
       ),
       child: Row(
@@ -73,14 +73,14 @@ class AppBadge extends StatelessWidget {
             Icon(
               icon,
               size: small ? 12 : 14,
-              color: _textColor,
+              color: _textColor(context),
             ),
             const SizedBox(width: AppSpacing.spaceXS),
           ],
           Text(
             label,
             style: (small ? AppTypography.caption : AppTypography.bodyText).copyWith(
-              color: _textColor,
+              color: _textColor(context),
               fontWeight: FontWeight.w600,
               fontSize: small ? 11 : 13,
             ),
@@ -112,7 +112,7 @@ class StatusDot extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = isActive
         ? (activeColor ?? AppColors.success)
-        : (inactiveColor ?? AppColors.textLight);
+        : (inactiveColor ?? context.appInkSubtle);
 
     if (pulse && isActive) {
       return _PulsingDot(size: size, color: color);

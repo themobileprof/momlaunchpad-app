@@ -36,7 +36,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
         pageTitle: 'Savings',
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
+            icon: Icon(Icons.settings_outlined),
             onPressed: () => _showSettingsDialog(context),
           ),
         ],
@@ -48,7 +48,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.error_outline,
                         size: 64,
                         color: AppColors.error,
@@ -62,7 +62,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                       Text(
                         savingsState.error!,
                         style: AppTypography.caption.copyWith(
-                          color: AppColors.textLight,
+                          color: context.appInkSubtle,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -75,20 +75,20 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                               builder: (context) => const PremiumUpsellDialog(featureName: 'Savings Tracker'),
                             );
                           },
-                          icon: const Icon(Icons.star),
+                          icon: Icon(Icons.star),
                           label: const Text('Upgrade'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryPurple,
+                            backgroundColor: context.appPrimary,
                             foregroundColor: Colors.white,
                           ),
                         )
                       else
                         ElevatedButton.icon(
                           onPressed: () => ref.read(savingsProvider.notifier).fetchSavingsData(),
-                          icon: const Icon(Icons.refresh),
+                          icon: Icon(Icons.refresh),
                           label: const Text('Retry'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryPink,
+                            backgroundColor: context.appAccent,
                             foregroundColor: Colors.white,
                           ),
                         ),
@@ -118,10 +118,10 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                               Text('Recent Entries', style: AppTypography.headingMedium),
                               TextButton.icon(
                                 onPressed: () => _showAddEntryDialog(context),
-                                icon: const Icon(Icons.add),
+                                icon: Icon(Icons.add),
                                 label: const Text('Add'),
                                 style: TextButton.styleFrom(
-                                  foregroundColor: AppColors.primaryPink,
+                                  foregroundColor: context.appAccent,
                                 ),
                               ),
                             ],
@@ -147,13 +147,14 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           ? Padding(
               padding: const EdgeInsets.only(bottom: 80.0), // Raise above updated nav
               child: NeumorphicButton(
+                filled: true,
                 onPressed: () => _showAddEntryDialog(context),
                 height: 56,
                 width: 56,
                 borderRadius: 28,
-                color: AppColors.primaryPink,
+                color: context.appPrimary,
                 padding: EdgeInsets.zero,
-                child: const Icon(Icons.add_rounded, color: Colors.white),
+                child: const Icon(Icons.add_rounded),
               ),
             )
           : null,
@@ -180,7 +181,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                     CircularProgressIndicator(
                       value: summary.progressPercentage / 100,
                       strokeWidth: 12,
-                      backgroundColor: AppColors.textLight.withValues(alpha: 0.2),
+                      backgroundColor: context.appInkSubtle.withValues(alpha: 0.2),
                       valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
                     ),
                     Center(
@@ -190,7 +191,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                           Text(
                             '${summary.progressPercentage.toStringAsFixed(1)}%',
                             style: AppTypography.headingLarge.copyWith(
-                              color: AppColors.primaryPurple,
+                              color: context.appPrimary,
                             ),
                           ),
                           Text(
@@ -220,7 +221,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
               Text(
                 'EDD: ${DateFormat('MMM dd, yyyy').format(summary.expectedDeliveryDate!)}',
                 style: AppTypography.caption.copyWith(
-                  color: AppColors.textLight,
+                  color: context.appInkSubtle,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -240,7 +241,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           value,
           style: AppTypography.bodyText.copyWith(
             fontWeight: FontWeight.w600,
-            color: AppColors.primaryPurple,
+            color: context.appPrimary,
           ),
         ),
       ],
@@ -352,7 +353,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryPink,
+              backgroundColor: context.appAccent,
               foregroundColor: Colors.white,
             ),
             child: const Text('Add'),
@@ -426,7 +427,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                       setState(() => selectedDate = date);
                     }
                   },
-                  icon: const Icon(Icons.calendar_today),
+                  icon: Icon(Icons.calendar_today),
                   label: Text(selectedDate != null 
                     ? 'EDD: ${DateFormat('MMM dd, yyyy').format(selectedDate!)}'
                     : 'Set Expected Delivery Date'
@@ -466,7 +467,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryPink,
+                backgroundColor: context.appAccent,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Save'),

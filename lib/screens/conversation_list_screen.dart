@@ -60,7 +60,7 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
         actions: [
           TextButton.icon(
             onPressed: state.isLoading ? null : _createNewConversation,
-            icon: const Icon(Icons.add_rounded, size: 20),
+            icon: Icon(Icons.add_rounded, size: 20),
             label: const Text('New topic'),
           ),
         ],
@@ -225,7 +225,7 @@ class _ContinueChatCard extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.chat_bubble_rounded,
                       color: Colors.white,
                       size: 22,
@@ -279,7 +279,7 @@ class _ContinueChatCard extends StatelessWidget {
                           BorderRadius.circular(AppRadius.radiusMedium),
                     ),
                   ),
-                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                  icon: Icon(Icons.arrow_forward_rounded, size: 18),
                   label: Text(
                     'Open conversation',
                     style: AppTypography.button.copyWith(color: Colors.white),
@@ -303,7 +303,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: AppTypography.label.copyWith(color: AppColors.plum),
+      style: AppTypography.label.copyWith(color: context.appPrimary),
     );
   }
 }
@@ -333,7 +333,7 @@ class _ConversationTile extends StatelessWidget {
           color: AppColors.errorSoft,
           borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
         ),
-        child: const Icon(Icons.delete_outline, color: AppColors.error),
+        child: Icon(Icons.delete_outline, color: AppColors.error),
       ),
       confirmDismiss: (_) async {
         onDelete();
@@ -349,7 +349,7 @@ class _ConversationTile extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
               border: Border.all(
-                color: AppColors.plum.withValues(alpha: 0.08),
+                color: context.appPrimary.withValues(alpha: 0.08),
               ),
             ),
             padding: const EdgeInsets.symmetric(
@@ -362,17 +362,22 @@ class _ConversationTile extends StatelessWidget {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: conversation.isStarred
-                        ? AppColors.orchidSoft
-                        : AppColors.roseSoft,
+                        ? context.appPrimary
+                        : context.appSurface,
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: context.appPrimary.withValues(
+                        alpha: conversation.isStarred ? 0 : 0.2,
+                      ),
+                    ),
                   ),
                   child: Icon(
                     conversation.isStarred
                         ? Icons.push_pin_rounded
                         : Icons.chat_bubble_outline_rounded,
                     color: conversation.isStarred
-                        ? AppColors.plum
-                        : AppColors.rose,
+                        ? context.appOnPrimary
+                        : context.appPrimary,
                     size: 20,
                   ),
                 ),
@@ -396,7 +401,7 @@ class _ConversationTile extends StatelessWidget {
                   ),
                 ),
                 PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert_rounded, color: AppColors.inkLight),
+                  icon: Icon(Icons.more_vert_rounded, color: context.appInkSubtle),
                   onSelected: (value) {
                     if (value == 'pin') onTogglePin();
                     if (value == 'delete') onDelete();
@@ -411,7 +416,7 @@ class _ConversationTile extends StatelessWidget {
                                 ? Icons.push_pin_outlined
                                 : Icons.push_pin_rounded,
                             size: 20,
-                            color: AppColors.plum,
+                            color: context.appPrimary,
                           ),
                           const SizedBox(width: 8),
                           Text(

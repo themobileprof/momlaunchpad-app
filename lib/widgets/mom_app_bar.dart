@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 
@@ -35,13 +36,13 @@ class MomAppBarTitle extends StatelessWidget {
             children: [
               Text(
                 'MomLaunchPad',
-                style: AppTypography.appBarBrand,
+                style: AppTypography.appBarBrand.copyWith(color: context.appPrimary),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
                 pageTitle,
-                style: AppTypography.pageTitle,
+                style: AppTypography.pageTitle.copyWith(color: context.appInkMuted),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

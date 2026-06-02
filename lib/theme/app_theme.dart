@@ -9,7 +9,7 @@ ThemeData buildAppLightTheme() => _buildTheme(Brightness.light);
 
 ThemeData buildAppDarkTheme() => _buildTheme(Brightness.dark);
 
-/// MomLaunchpad theme — solid plum primary, light and dark variants.
+/// MomLaunchpad theme — mint greens and soft teals, solid button fills.
 ThemeData _buildTheme(Brightness brightness) {
   final isDark = brightness == Brightness.dark;
 
@@ -18,11 +18,11 @@ ThemeData _buildTheme(Brightness brightness) {
   final onSurface = isDark ? AppColors.inkDarkMode : AppColors.inkLightMode;
   final onSurfaceMuted =
       isDark ? AppColors.inkMutedDark : AppColors.inkMutedLight;
-  final primary = isDark ? AppColors.plumLight : AppColors.plum;
+  final primary = isDark ? AppColors.tealLight : AppColors.teal;
   final primaryContainer =
-      isDark ? AppColors.plumDark : AppColors.orchidSoft;
+      isDark ? AppColors.tealDark : AppColors.tealSoft;
   final secondaryContainer =
-      isDark ? AppColors.surfaceMutedDark : AppColors.roseSoft;
+      isDark ? AppColors.surfaceMutedDark : AppColors.mintSoft;
 
   final colorScheme = isDark
       ? ColorScheme.dark(
@@ -30,8 +30,8 @@ ThemeData _buildTheme(Brightness brightness) {
           onPrimary: AppColors.surfaceLight,
           primaryContainer: primaryContainer,
           onPrimaryContainer: AppColors.inkDarkMode,
-          secondary: AppColors.plumLight,
-          onSecondary: AppColors.surfaceLight,
+          secondary: AppColors.mintLight,
+          onSecondary: AppColors.tealDark,
           secondaryContainer: secondaryContainer,
           onSecondaryContainer: AppColors.inkDarkMode,
           surface: surface,
@@ -44,11 +44,11 @@ ThemeData _buildTheme(Brightness brightness) {
           primary: primary,
           onPrimary: AppColors.surfaceLight,
           primaryContainer: primaryContainer,
-          onPrimaryContainer: AppColors.plumDark,
-          secondary: AppColors.plum,
-          onSecondary: AppColors.surfaceLight,
+          onPrimaryContainer: AppColors.tealDark,
+          secondary: AppColors.mint,
+          onSecondary: AppColors.tealDark,
           secondaryContainer: secondaryContainer,
-          onSecondaryContainer: AppColors.plumDark,
+          onSecondaryContainer: AppColors.tealDark,
           surface: surface,
           onSurface: onSurface,
           error: AppColors.error,
@@ -120,6 +120,7 @@ ThemeData _buildTheme(Brightness brightness) {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: primary,
+        backgroundColor: surface,
         side: BorderSide(color: primary, width: 1.5),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
@@ -205,9 +206,12 @@ ThemeData _buildTheme(Brightness brightness) {
       elevation: 12,
     ),
     chipTheme: ChipThemeData(
-      backgroundColor: isDark ? AppColors.surfaceMutedDark : AppColors.orchidSoft,
+      backgroundColor: isDark ? AppColors.surfaceMutedDark : AppColors.surfaceLight,
+      selectedColor: primary,
+      secondarySelectedColor: primary,
       labelStyle: AppTypography.label.copyWith(color: onSurface),
-      side: BorderSide.none,
+      secondaryLabelStyle: AppTypography.label.copyWith(color: onSurface),
+      side: BorderSide(color: primary.withValues(alpha: isDark ? 0.2 : 0.12)),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.spaceMD,
         vertical: AppSpacing.spaceSM,
@@ -222,7 +226,7 @@ ThemeData _buildTheme(Brightness brightness) {
       space: AppSpacing.spaceMD,
     ),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: isDark ? AppColors.surfaceMutedDark : AppColors.plumDark,
+      backgroundColor: isDark ? AppColors.tealDark : AppColors.tealDark,
       contentTextStyle: AppTypography.bodyTextMedium.copyWith(
         color: AppColors.surfaceLight,
       ),

@@ -3,7 +3,7 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 
-/// Primary CTA — solid plum background.
+/// Primary CTA — solid teal background.
 class GradientButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;

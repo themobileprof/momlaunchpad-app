@@ -27,6 +27,12 @@ enum JourneyStage {
   final String label;
   final String description;
 
+  /// Stages shown during signup. Postpartum and loss are reached via profile journey updates.
+  static const List<JourneyStage> signupStages = [
+    JourneyStage.ttc,
+    JourneyStage.pregnant,
+  ];
+
   static JourneyStage? fromApi(String? value) {
     if (value == null || value.isEmpty) return null;
     for (final stage in JourneyStage.values) {

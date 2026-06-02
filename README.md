@@ -1,26 +1,26 @@
 # MomLaunchpad
 
-**Your pocket companion for every chapter of motherhood — not just the highlight reel.**
+**Your pocket companion while you're trying to conceive or expecting.**
 
-Trying to conceive. Pregnant. Postpartum. Healing after loss. Each stage asks different questions, and you shouldn't have to hunt for answers across ten apps and a dozen group chats.
+The wait between cycles. The questions at 2 a.m. The appointments, the symptoms, the excitement and the worry. MomLaunchpad is a calm, private space built for those chapters — personalized chat, local community, and gentle tools that remember what matters to you.
 
-MomLaunchpad is a calm, private space where support meets your real life: a conversation when you need one, a community when you want company, and gentle tools that keep the practical stuff from slipping through the cracks.
+If your path changes after you join — you give birth or experience a loss — you can update your journey in the app and support adapts with you.
 
 ---
 
 ## Why moms reach for it
 
 **Talk it through, not type it into a search bar.**  
-Chat with an AI companion that knows your journey stage, remembers what you've shared, and responds like a thoughtful friend — not a medical alarm bell. Streaming replies feel natural; you can vent, ask, or just check in.
+Chat with an AI companion that knows whether you're TTC or pregnant, remembers what you've shared, and responds like a thoughtful friend — not a medical alarm bell.
 
 **You're not doing this alone.**  
-The community feed surfaces local posts and events near you — playdates, meetups, questions from moms who actually get it. Mark interest in an event and it lands on your calendar. Your profile photo and location help you show up as yourself (or stay anonymous when you prefer).
+The community feed surfaces local posts and events near you — questions, meetups, and support from women on similar paths. Mark interest in an event and it lands on your calendar.
 
 **One place for the stuff you keep forgetting.**  
 Reminders and appointments live on your calendar. Log vitals and doctor visits. Track symptoms over time. The app learns from your chats to personalize nudges — without turning your phone into another chore list.
 
-**Built for the whole journey.**  
-Whether you're counting cycles, counting kicks, counting sleepless nights, or navigating grief, MomLaunchpad adapts its tone and focus to where you are — TTC, pregnancy, postpartum, or after loss.
+**Built for where you are now — ready when life changes.**  
+Start as trying to conceive or currently pregnant. Update your journey from your profile when you give birth or need support after loss, and MomLaunchpad adjusts with you.
 
 ---
 
@@ -122,4 +122,4 @@ MomLaunchpad offers **support and organization**, not diagnosis or emergency car
 
 ---
 
-*Built with care for moms who deserve software that meets them where they are.*
+*Built with care for women trying to conceive and moms-to-be.*

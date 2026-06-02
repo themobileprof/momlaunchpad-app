@@ -12,12 +12,13 @@ class SimpleFormattedText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseStyle = style ?? AppTypography.bodyText.copyWith(color: AppColors.textDark);
-    final spans = _parseInline(text, baseStyle);
+    final baseStyle = style ?? AppTypography.bodyText.copyWith(color: context.appInk);
+    final linkColor = context.appPrimary;
+    final spans = _parseInline(text, baseStyle, linkColor);
     return RichText(text: TextSpan(children: spans));
   }
 
-  List<InlineSpan> _parseInline(String input, TextStyle base) {
+  List<InlineSpan> _parseInline(String input, TextStyle base, Color linkColor) {
     final lines = input.split('\n');
     final spans = <InlineSpan>[];
 
@@ -25,9 +26,9 @@ class SimpleFormattedText extends StatelessWidget {
       final line = lines[i];
       if (line.trimLeft().startsWith('- ') || line.trimLeft().startsWith('• ')) {
         spans.add(TextSpan(text: '  • ', style: base));
-        spans.addAll(_parseLine(line.replaceFirst(RegExp(r'^\s*[-•]\s*'), ''), base));
+        spans.addAll(_parseLine(line.replaceFirst(RegExp(r'^\s*[-•]\s*'), ''), base, linkColor));
       } else {
-        spans.addAll(_parseLine(line, base));
+        spans.addAll(_parseLine(line, base, linkColor));
       }
       if (i < lines.length - 1) {
         spans.add(const TextSpan(text: '\n'));
@@ -36,7 +37,7 @@ class SimpleFormattedText extends StatelessWidget {
     return spans;
   }
 
-  List<InlineSpan> _parseLine(String line, TextStyle base) {
+  List<InlineSpan> _parseLine(String line, TextStyle base, Color linkColor) {
     final pattern = RegExp(r'(\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\))');
     final spans = <InlineSpan>[];
     var start = 0;
@@ -64,7 +65,7 @@ class SimpleFormattedText extends StatelessWidget {
           spans.add(TextSpan(
             text: label,
             style: base.copyWith(
-              color: AppColors.primaryPurple,
+              color: linkColor,
               decoration: TextDecoration.underline,
             ),
             recognizer: TapGestureRecognizer()

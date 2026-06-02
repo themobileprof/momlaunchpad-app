@@ -64,15 +64,15 @@ class AuthOrDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: Divider(color: AppColors.plum.withValues(alpha: 0.12))),
+        Expanded(child: Divider(color: context.appPrimary.withValues(alpha: 0.12))),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceMD),
           child: Text(
             'OR',
-            style: AppTypography.label.copyWith(color: AppColors.inkLight),
+            style: AppTypography.label.copyWith(color: context.appInkSubtle),
           ),
         ),
-        Expanded(child: Divider(color: AppColors.plum.withValues(alpha: 0.12))),
+        Expanded(child: Divider(color: context.appPrimary.withValues(alpha: 0.12))),
       ],
     );
   }

@@ -8,7 +8,7 @@ import '../theme/typography.dart';
 import '../widgets/country_picker_field.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/location_suggest_field.dart';
-import '../widgets/widgets.dart';
+import '../widgets/solid_filter_chip.dart';
 
 /// First-time community setup: location + up to 5 interests.
 class CommunityOnboardingScreen extends ConsumerStatefulWidget {
@@ -139,10 +139,10 @@ class _CommunityOnboardingScreenState
           Text(
             'Your location helps us show nearby discussions and events. '
             'Pick a few topics so we can personalize your feed.',
-            style: AppTypography.bodyText.copyWith(color: AppColors.textLight),
+            style: AppTypography.bodyText.copyWith(color: context.appInkMuted),
           ),
           const SizedBox(height: AppSpacing.spaceLG),
-          Text('Where are you?', style: AppTypography.bodyTextMedium),
+          Text('Where are you?', style: AppTypography.bodyTextMedium.copyWith(color: context.appInk)),
           const SizedBox(height: AppSpacing.spaceSM),
           CountryPickerField(
             countryCode: _countryCode,
@@ -167,17 +167,17 @@ class _CommunityOnboardingScreenState
             padding: const EdgeInsets.only(top: AppSpacing.spaceXS),
             child: Text(
               'Start typing to see suggestions. You can always enter your own.',
-              style: AppTypography.caption.copyWith(color: AppColors.textLight),
+              style: AppTypography.caption.copyWith(color: context.appInkMuted),
             ),
           ),
           const SizedBox(height: AppSpacing.spaceLG),
           Row(
             children: [
-              Text('Your interests', style: AppTypography.bodyTextMedium),
+              Text('Your interests', style: AppTypography.bodyTextMedium.copyWith(color: context.appInk)),
               const Spacer(),
               Text(
                 '${_selected.length}/5',
-                style: AppTypography.caption.copyWith(color: AppColors.textLight),
+                style: AppTypography.caption.copyWith(color: context.appInkMuted),
               ),
             ],
           ),
@@ -188,7 +188,7 @@ class _CommunityOnboardingScreenState
               child: Text(
                 group.label,
                 style: AppTypography.caption.copyWith(
-                  color: AppColors.primaryPurple,
+                  color: context.appPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -198,12 +198,10 @@ class _CommunityOnboardingScreenState
               runSpacing: AppSpacing.spaceSM,
               children: group.items.map((item) {
                 final selected = _selected.contains(item.key);
-                return FilterChip(
+                return SolidFilterChip(
                   label: Text(item.label),
                   selected: selected,
                   onSelected: (_) => _toggleInterest(item.key),
-                  selectedColor: AppColors.primaryPurple.withValues(alpha: 0.15),
-                  checkmarkColor: AppColors.primaryPurple,
                 );
               }).toList(),
             ),

@@ -95,7 +95,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     child: Text(
                       '${remindersForSelectedDay.length} items',
                       style: AppTypography.caption.copyWith(
-                          color: AppColors.textDark, fontWeight: FontWeight.bold),
+                          color: context.appInk, fontWeight: FontWeight.bold),
                     ),
                   ),
               ],
@@ -110,19 +110,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 80.0), // Raise above floating navbar
         child: NeumorphicButton(
+          filled: true,
           borderRadius: 30,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          color: AppColors.blushPrimary,
           onPressed: () => _showReminderDialog(initialDate: _selectedDay),
-          child: Row(
+          child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.add_rounded, color: AppColors.textDark),
-              const SizedBox(width: 8),
-              Text(
-                'Add Reminder',
-                style: AppTypography.button.copyWith(color: AppColors.textDark),
-              ),
+              Icon(Icons.add_rounded),
+              SizedBox(width: 8),
+              Text('Add Reminder'),
             ],
           ),
         ),
@@ -410,14 +407,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       Icon(
                         Icons.access_time_rounded,
                         size: 14,
-                        color: AppColors.textLight,
+                        color: context.appInkSubtle,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         _formatTime(reminder.scheduledTime),
                         style: AppTypography.caption.copyWith(
                           fontSize: 12,
-                          color: AppColors.textLight,
+                          color: context.appInkSubtle,
                         ),
                       ),
                     ],
@@ -460,9 +457,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       case 'high':
         return AppColors.warning;
       case 'medium':
-        return AppColors.primaryPink;
+        return context.appAccent;
       default:
-        return AppColors.textLight;
+        return context.appInkSubtle;
     }
   }
 
@@ -563,7 +560,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('${selectedDate.day}/${selectedDate.month}/${selectedDate.year} ${_formatTime(selectedDate)}'),
-                        const Icon(Icons.calendar_today, size: 20),
+                        Icon(Icons.calendar_today, size: 20),
                       ],
                     ),
                   ),
@@ -623,7 +620,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryPink,
+                backgroundColor: context.appAccent,
                 foregroundColor: Colors.white,
               ),
               child: Text(isEditing ? 'Save' : 'Add'),
@@ -684,7 +681,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               padding: const EdgeInsets.all(AppSpacing.spaceMD),
               child: Row(
                 children: [
-                  const Icon(Icons.schedule_rounded, color: AppColors.primaryPurple),
+                  Icon(Icons.schedule_rounded, color: context.appPrimary),
                   const SizedBox(width: AppSpacing.spaceMD),
                   Text(
                     '${reminder.scheduledTime.day}/${reminder.scheduledTime.month}/${reminder.scheduledTime.year} • ${_formatTime(reminder.scheduledTime)}',

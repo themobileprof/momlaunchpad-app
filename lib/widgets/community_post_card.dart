@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/community.dart';
 import '../providers/community_provider.dart';
+import 'solid_filter_chip.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -45,9 +46,9 @@ class CommunityPostCard extends ConsumerWidget {
               ),
               if (onMore != null)
                 IconButton(
-                  icon: const Icon(Icons.more_horiz_rounded, size: 20),
+                  icon: Icon(Icons.more_horiz_rounded, size: 20),
                   onPressed: onMore,
-                  color: AppColors.textLight,
+                  color: context.appInkSubtle,
                 ),
             ],
           ),
@@ -56,13 +57,13 @@ class CommunityPostCard extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.primaryPurple.withValues(alpha: 0.1),
+                color: context.appPrimary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 'Local event',
                 style: AppTypography.caption.copyWith(
-                  color: AppColors.primaryPurple,
+                  color: context.appPrimary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -109,7 +110,7 @@ class _ActionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? AppColors.primaryPurple : AppColors.textLight;
+    final color = active ? context.appPrimary : context.appInkSubtle;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -148,16 +149,10 @@ class CommunityFilterBar extends StatelessWidget {
           final isSelected = filter == selected;
           return Padding(
             padding: const EdgeInsets.only(right: AppSpacing.spaceSM),
-            child: FilterChip(
+            child: SolidFilterChip(
               label: Text(filter.label),
               selected: isSelected,
               onSelected: (_) => onSelected(filter),
-              selectedColor: AppColors.primaryPurple.withValues(alpha: 0.15),
-              checkmarkColor: AppColors.primaryPurple,
-              labelStyle: TextStyle(
-                color: isSelected ? AppColors.primaryPurple : AppColors.textLight,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              ),
             ),
           );
         }).toList(),

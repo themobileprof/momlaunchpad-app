@@ -88,7 +88,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: AppSpacing.spaceLG),
                 AuthLogoHeader(
                   title: 'Welcome back',
-                  subtitle: 'A safe space for women — TTC, pregnancy, postpartum, and beyond.',
+                  subtitle: 'Support for women trying to conceive or currently pregnant.',
                   logoSize: 96,
                 ),
                 const SizedBox(height: AppSpacing.spaceXL),
@@ -105,7 +105,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Text(
                           'Sign in with email',
                           style: AppTypography.label.copyWith(
-                            color: AppColors.plum,
+                            color: context.appPrimary,
                           ),
                         ),
                         const SizedBox(height: AppSpacing.spaceMD),
@@ -137,7 +137,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           decoration: InputDecoration(
                             labelText: 'Password',
                             hintText: '••••••••',
-                            prefixIcon: const Icon(Icons.lock_outline_rounded),
+                            prefixIcon: Icon(Icons.lock_outline_rounded),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _isPasswordVisible
@@ -191,7 +191,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     textAlign: TextAlign.center,
                     text: TextSpan(
                       style: AppTypography.bodyTextMedium.copyWith(
-                        color: AppColors.inkMuted,
+                        color: context.appInkMuted,
                       ),
                       children: [
                         const TextSpan(text: 'New here? '),

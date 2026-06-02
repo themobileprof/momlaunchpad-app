@@ -32,7 +32,7 @@ class RecentSymptomsWidget extends ConsumerWidget {
                       children: [
                         Icon(
                           Icons.health_and_safety,
-                          color: AppColors.primaryPink,
+                          color: context.appAccent,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
@@ -110,7 +110,7 @@ class RecentSymptomsWidget extends ConsumerWidget {
             ),
           ),
           if (symptom.isResolved)
-            const Icon(
+            Icon(
               Icons.check_circle,
               color: Colors.green,
               size: 16,

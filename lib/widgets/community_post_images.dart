@@ -65,15 +65,15 @@ class _NetworkImageTile extends StatelessWidget {
         fit: BoxFit.cover,
         errorBuilder: (_, _, _) => Container(
           height: height,
-          color: AppColors.primaryPurple.withValues(alpha: 0.08),
+          color: context.appPrimary.withValues(alpha: 0.08),
           alignment: Alignment.center,
-          child: const Icon(Icons.broken_image_outlined, color: AppColors.textLight),
+          child: Icon(Icons.broken_image_outlined, color: context.appInkSubtle),
         ),
         loadingBuilder: (context, child, progress) {
           if (progress == null) return child;
           return Container(
             height: height,
-            color: AppColors.primaryPurple.withValues(alpha: 0.08),
+            color: context.appPrimary.withValues(alpha: 0.08),
             alignment: Alignment.center,
             child: const SizedBox(
               width: 24,

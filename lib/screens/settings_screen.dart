@@ -31,10 +31,10 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: AppSpacing.spaceLG),
 
-          _buildSectionHeader('Premium'),
+          _buildSectionHeader(context, 'Premium'),
           AppListTileCard(
             leadingIcon: Icons.phone_in_talk_rounded,
-            iconColor: AppColors.primaryPurple,
+            iconColor: context.appPrimary,
             title: 'Live calls',
             subtitle: 'Coming soon for Premium members',
             trailing: const AppBadge(
@@ -47,7 +47,7 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: AppSpacing.spaceLG),
 
-          _buildSectionHeader('Preferences'),
+          _buildSectionHeader(context, 'Preferences'),
           AppListTileCard(
             leadingIcon: Icons.language_rounded,
             title: 'Language',
@@ -69,7 +69,7 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: AppSpacing.spaceLG),
 
-          _buildSectionHeader('Support'),
+          _buildSectionHeader(context, 'Support'),
           AppListTileCard(
             leadingIcon: Icons.help_outline_rounded,
             iconColor: AppColors.info,
@@ -94,10 +94,10 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: AppSpacing.spaceLG),
 
-          _buildSectionHeader('Legal'),
+          _buildSectionHeader(context, 'Legal'),
           AppListTileCard(
             leadingIcon: Icons.privacy_tip_rounded,
-            iconColor: AppColors.textLight,
+            iconColor: context.appInkSubtle,
             title: 'Privacy Policy',
             subtitle: 'How we handle your data',
             onTap: () => _showComingSoon(context, 'Privacy policy'),
@@ -105,7 +105,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           AppListTileCard(
             leadingIcon: Icons.description_rounded,
-            iconColor: AppColors.textLight,
+            iconColor: context.appInkSubtle,
             title: 'Terms of Service',
             subtitle: 'App usage guidelines',
             onTap: () => _showComingSoon(context, 'Terms of service'),
@@ -128,7 +128,7 @@ class SettingsScreen extends ConsumerWidget {
             child: Text(
               'Version 1.0.0',
               style: AppTypography.caption.copyWith(
-                color: AppColors.textLight.withValues(alpha: 0.5),
+                color: context.appInkSubtle.withValues(alpha: 0.5),
               ),
             ),
           ),
@@ -176,7 +176,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.only(
         left: AppSpacing.spaceSM,
@@ -186,7 +186,7 @@ class SettingsScreen extends ConsumerWidget {
         title,
         style: AppTypography.caption.copyWith(
           fontWeight: FontWeight.w600,
-          color: AppColors.textLight,
+          color: context.appInkSubtle,
           letterSpacing: 0.5,
         ),
       ),
@@ -245,7 +245,7 @@ class SettingsScreen extends ConsumerWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        backgroundColor: AppColors.primaryPurple,
+        backgroundColor: context.appPrimary,
       ),
     );
   }

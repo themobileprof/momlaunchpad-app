@@ -105,7 +105,7 @@ class _CommunityNotificationsScreenState
                 height: 8,
                 margin: const EdgeInsets.only(top: 6, right: AppSpacing.spaceSM),
                 decoration: BoxDecoration(
-                  color: unread ? AppColors.primaryPurple : Colors.transparent,
+                  color: unread ? context.appPrimary : Colors.transparent,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -117,7 +117,7 @@ class _CommunityNotificationsScreenState
                     const SizedBox(height: 4),
                     Text(
                       item.body,
-                      style: AppTypography.caption.copyWith(color: AppColors.textLight),
+                      style: AppTypography.caption.copyWith(color: context.appInkSubtle),
                     ),
                   ],
                 ),

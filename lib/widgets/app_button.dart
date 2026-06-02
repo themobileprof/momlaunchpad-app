@@ -49,7 +49,7 @@ class AppButton extends StatelessWidget {
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
       height: _height,
-      child: _buildButton(),
+      child: _buildButton(context),
     );
   }
 
@@ -95,14 +95,14 @@ class AppButton extends StatelessWidget {
     }
   }
 
-  Widget _buildButton() {
+  Widget _buildButton(BuildContext context) {
     final child = isLoading
         ? SizedBox(
             height: 20,
             width: 20,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation(_foregroundColor),
+              valueColor: AlwaysStoppedAnimation(_foregroundColor(context)),
             ),
           )
         : Row(
@@ -127,7 +127,7 @@ class AppButton extends StatelessWidget {
         return ElevatedButton(
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.plum,
+            backgroundColor: context.appPrimary,
             foregroundColor: AppColors.white,
             padding: _padding,
             shape: RoundedRectangleBorder(
@@ -141,9 +141,9 @@ class AppButton extends StatelessWidget {
         return OutlinedButton(
           onPressed: isLoading ? null : onPressed,
           style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.plum,
+            foregroundColor: context.appPrimary,
             padding: _padding,
-            side: const BorderSide(color: AppColors.plum, width: 1.5),
+            side: BorderSide(color: context.appPrimary, width: 1.5),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
             ),
@@ -154,7 +154,7 @@ class AppButton extends StatelessWidget {
         return TextButton(
           onPressed: isLoading ? null : onPressed,
           style: TextButton.styleFrom(
-            foregroundColor: AppColors.plum,
+            foregroundColor: context.appPrimary,
             padding: _padding,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
@@ -179,7 +179,7 @@ class AppButton extends StatelessWidget {
     }
   }
 
-  Color get _foregroundColor {
+  Color _foregroundColor(BuildContext context) {
     switch (variant) {
       case AppButtonVariant.primary:
       case AppButtonVariant.secondary:
@@ -187,7 +187,7 @@ class AppButton extends StatelessWidget {
         return AppColors.white;
       case AppButtonVariant.outline:
       case AppButtonVariant.ghost:
-        return AppColors.plum;
+        return context.appPrimary;
     }
   }
 }
@@ -217,18 +217,18 @@ class AppIconButton extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: backgroundColor ?? AppColors.surface,
+        color: backgroundColor ?? context.appSurface,
         borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowTint,
+            color: AppColors.shadowTintFor(context.appBrightness),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: IconButton(
-        icon: Icon(icon, color: color ?? AppColors.ink),
+        icon: Icon(icon, color: color ?? context.appInk),
         onPressed: onPressed,
         iconSize: size * 0.5,
       ),

@@ -69,7 +69,7 @@ class _OnlineImageUrlFieldState extends State<OnlineImageUrlField> {
             suffixIcon: IconButton(
               tooltip: 'Paste link',
               onPressed: _pasteFromClipboard,
-              icon: const Icon(Icons.content_paste_outlined),
+              icon: Icon(Icons.content_paste_outlined),
             ),
           ),
           validator: httpsImageUrlValidator,
@@ -87,7 +87,7 @@ class _OnlineImageUrlFieldState extends State<OnlineImageUrlField> {
                 loadingBuilder: (context, child, progress) {
                   if (progress == null) return child;
                   return Container(
-                    color: AppColors.primaryPurple.withValues(alpha: 0.08),
+                    color: context.appPrimary.withValues(alpha: 0.08),
                     alignment: Alignment.center,
                     child: const SizedBox(
                       width: 24,
@@ -106,12 +106,12 @@ class _OnlineImageUrlFieldState extends State<OnlineImageUrlField> {
 
   Widget _previewError() {
     return Container(
-      color: AppColors.primaryPurple.withValues(alpha: 0.08),
+      color: context.appPrimary.withValues(alpha: 0.08),
       alignment: Alignment.center,
       padding: const EdgeInsets.all(AppSpacing.spaceMD),
       child: Text(
         'Could not load preview — check the link is public and uses https://',
-        style: AppTypography.caption.copyWith(color: AppColors.textLight),
+        style: AppTypography.caption.copyWith(color: context.appInkSubtle),
         textAlign: TextAlign.center,
       ),
     );

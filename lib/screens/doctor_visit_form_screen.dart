@@ -441,7 +441,7 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
             Expanded(child: _sectionTitle('Medications')),
             TextButton.icon(
               onPressed: () => setState(() => _medications.add(_MedicationEntry.empty())),
-              icon: const Icon(Icons.add),
+              icon: Icon(Icons.add),
               label: const Text('Add'),
             ),
           ],
@@ -449,7 +449,7 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
         if (_medications.isEmpty)
           Text(
             'No medications recorded',
-            style: AppTypography.caption.copyWith(color: AppColors.textLight),
+            style: AppTypography.caption.copyWith(color: context.appInkSubtle),
           ),
         ..._medications.asMap().entries.map((entry) {
           final index = entry.key;
@@ -486,7 +486,7 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                    icon: Icon(Icons.delete_outline, color: AppColors.error),
                     onPressed: () {
                       setState(() {
                         med.dispose();
@@ -512,7 +512,7 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
             Expanded(child: _sectionTitle('Lab results')),
             TextButton.icon(
               onPressed: () => setState(() => _labResults.add(_LabEntry.empty())),
-              icon: const Icon(Icons.add),
+              icon: Icon(Icons.add),
               label: const Text('Add'),
             ),
           ],
@@ -520,7 +520,7 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
         if (_labResults.isEmpty)
           Text(
             'No lab results recorded',
-            style: AppTypography.caption.copyWith(color: AppColors.textLight),
+            style: AppTypography.caption.copyWith(color: context.appInkSubtle),
           ),
         ..._labResults.asMap().entries.map((entry) {
           final index = entry.key;
@@ -557,7 +557,7 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                    icon: Icon(Icons.delete_outline, color: AppColors.error),
                     onPressed: () {
                       setState(() {
                         lab.dispose();

@@ -2,7 +2,7 @@
 
 Product: MomLaunchpad Mobile
 Platform: Flutter (Android-first)
-Audience: Pregnant users
+Audience: Women trying to conceive or currently pregnant (primary signup). Existing users can update their journey to postpartum or pregnancy loss from profile when life changes.
 Repo: momlaunchpad-mobile
 
 1. Purpose & Scope

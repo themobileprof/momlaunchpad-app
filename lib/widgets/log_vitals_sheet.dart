@@ -159,7 +159,7 @@ class _LogVitalsSheetState extends ConsumerState<LogVitalsSheet> {
                     height: 4,
                     margin: const EdgeInsets.only(bottom: AppSpacing.spaceMD),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryPurple.withValues(alpha: 0.2),
+                      color: context.appPrimary.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -168,7 +168,7 @@ class _LogVitalsSheetState extends ConsumerState<LogVitalsSheet> {
                 const SizedBox(height: AppSpacing.spaceSM),
                 Text(
                   'Record what you measured at home or at a visit.',
-                  style: AppTypography.caption.copyWith(color: AppColors.textLight),
+                  style: AppTypography.caption.copyWith(color: context.appInkSubtle),
                 ),
                 const SizedBox(height: AppSpacing.spaceMD),
                 InkWell(

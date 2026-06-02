@@ -150,7 +150,7 @@ class _CommunityCreatePostScreenState
                     'Use the description for details moms should know before joining.'
                 : 'Use **bold**, *italic*, - bullets, and [links](https://example.com). '
                     'AI will categorize your post automatically.',
-            style: AppTypography.caption.copyWith(color: AppColors.textLight),
+            style: AppTypography.caption.copyWith(color: context.appInkSubtle),
           ),
           const SizedBox(height: AppSpacing.spaceMD),
           if (_isEventMode) ...[
@@ -182,7 +182,7 @@ class _CommunityCreatePostScreenState
                     ? 'Pick start date & time'
                     : _eventStartsAt!.toLocal().toString(),
               ),
-              trailing: const Icon(Icons.calendar_today_outlined),
+              trailing: Icon(Icons.calendar_today_outlined),
               onTap: _pickEventDate,
             ),
             const SizedBox(height: AppSpacing.spaceMD),
