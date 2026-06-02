@@ -3,28 +3,75 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Environment configuration
 class AppConfig {
-  // Initialize environment variables
+  static const productionApiUrl = 'https://api.momlaunchpad.com';
+  static const productionWsUrl = 'wss://api.momlaunchpad.com';
+
+  /// Initialize environment variables from the bundled `.env` asset.
   static Future<void> initialize() async {
-    await dotenv.load(fileName: ".env");
+    try {
+      await dotenv.load(fileName: '.env');
+    } catch (_) {
+      // Missing or unreadable .env — fallbacks below apply.
+    }
   }
-  
-  // Detect if running in debug mode
+
   static bool get isProduction => kReleaseMode;
-  
-  // Base URLs from .env with fallbacks
-  static String get baseUrl => 
-      dotenv.env['API_BASE_URL'] ?? 
-      (isProduction ? 'https://api.momlaunchpad.com' : 'http://localhost:8080');
-  
-  static String get wsUrl => 
-      dotenv.env['WS_BASE_URL'] ?? 
-      (isProduction ? 'wss://api.momlaunchpad.com' : 'ws://localhost:8080');
-  
-  // WebSocket endpoint
+
+  static String get baseUrl => _resolveHttpBaseUrl();
+
+  static String get wsUrl => _resolveWsUrl(baseUrl);
+
+  /// WebSocket endpoint
   static String get chatWsUrl => '$wsUrl/ws/chat';
 
   /// OAuth 2.0 Web client ID (must match backend token verification).
   static String get googleWebClientId =>
       dotenv.env['GOOGLE_WEB_CLIENT_ID'] ??
       '334708442168-hpfd6etf2qurl5vd2i3oihno28cfpllv.apps.googleusercontent.com';
+
+  static String _resolveHttpBaseUrl() {
+    final fromEnv = dotenv.env['API_BASE_URL']?.trim();
+    if (fromEnv != null && fromEnv.isNotEmpty) {
+      if (kReleaseMode && _isLocalDevUrl(fromEnv)) {
+        return productionApiUrl;
+      }
+      return fromEnv;
+    }
+    return kReleaseMode ? productionApiUrl : 'http://localhost:8080';
+  }
+
+  static String _resolveWsUrl(String httpBaseUrl) {
+    final fromEnv = dotenv.env['WS_BASE_URL']?.trim();
+    String url;
+    if (fromEnv != null && fromEnv.isNotEmpty) {
+      url = kReleaseMode && _isLocalDevUrl(fromEnv) ? productionWsUrl : fromEnv;
+    } else {
+      url = kReleaseMode ? productionWsUrl : 'ws://localhost:8080';
+    }
+    return _upgradeWsToMatchHttp(url, httpBaseUrl);
+  }
+
+  /// Release builds must not call localhost / LAN IPs from a bundled dev `.env`.
+  static bool _isLocalDevUrl(String url) {
+    final host = Uri.tryParse(url)?.host.toLowerCase();
+    if (host == null || host.isEmpty) return false;
+    if (host == 'localhost' || host == '127.0.0.1' || host == '10.0.2.2') {
+      return true;
+    }
+    if (host.startsWith('192.168.') ||
+        host.startsWith('10.') ||
+        host.startsWith('172.')) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Use TLS for WebSockets when the REST API uses HTTPS.
+  static String _upgradeWsToMatchHttp(String wsUrl, String httpBaseUrl) {
+    final httpScheme = Uri.tryParse(httpBaseUrl)?.scheme;
+    if (httpScheme == 'https' && wsUrl.startsWith('ws://')) {
+      return wsUrl.replaceFirst('ws://', 'wss://');
+    }
+    return wsUrl;
+  }
 }
