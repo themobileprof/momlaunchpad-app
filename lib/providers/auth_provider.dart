@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../config/app_config.dart';
 import '../models/user.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
+import '../utils/google_sign_in_errors.dart';
 import 'service_providers.dart';
 
 /// Auth state
@@ -200,7 +202,11 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await _googleSignIn.signOut();
+      try {
+        await _googleSignIn.signOut();
+      } catch (e) {
+        debugPrint('Google sign-out before sign-in (ignored): $e');
+      }
 
       final googleUser = await _googleSignIn.signIn();
 
@@ -215,7 +221,7 @@ class AuthNotifier extends Notifier<AuthState> {
       final googleAuth = await googleUser.authentication;
 
       if (googleAuth.idToken == null) {
-        throw Exception('Failed to get ID token from Google');
+        throw StateError('Failed to get ID token from Google');
       }
 
       final authResponse = await _apiService.googleSignIn(
@@ -228,16 +234,23 @@ class AuthNotifier extends Notifier<AuthState> {
         isLoading: false,
       );
     } on ApiException catch (e) {
+      final errorMsg = e.statusCode == 503
+          ? e.message
+          : e.statusCode == 401
+              ? 'Server rejected the Google sign-in token. If this persists, '
+                  'confirm the API has GOOGLE_ALLOWED_CLIENT_IDS configured.'
+              : e.message;
       state = state.copyWith(
         isLoading: false,
-        error: e.message,
+        error: errorMsg,
       );
       debugPrint('Google Sign-In API error: ${e.message}');
       rethrow;
     } catch (e) {
-      final errorMsg = _looksLikeConnectionFailure(e)
-          ? 'Unable to connect to server. Please check your internet connection.'
-          : 'Google sign-in failed. Please try again.';
+      final errorMsg = googleSignInErrorMessage(
+        e,
+        apiBaseUrl: AppConfig.baseUrl,
+      );
       state = state.copyWith(
         isLoading: false,
         error: errorMsg,

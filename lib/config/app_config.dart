@@ -25,9 +25,13 @@ class AppConfig {
   static String get chatWsUrl => '$wsUrl/ws/chat';
 
   /// OAuth 2.0 Web client ID (must match backend token verification).
-  static String get googleWebClientId =>
-      dotenv.env['GOOGLE_WEB_CLIENT_ID'] ??
-      '334708442168-hpfd6etf2qurl5vd2i3oihno28cfpllv.apps.googleusercontent.com';
+  static String get googleWebClientId {
+    final fromEnv = dotenv.env['GOOGLE_WEB_CLIENT_ID']?.trim();
+    if (fromEnv != null && fromEnv.isNotEmpty && !fromEnv.startsWith('your-')) {
+      return fromEnv;
+    }
+    return '334708442168-hpfd6etf2qurl5vd2i3oihno28cfpllv.apps.googleusercontent.com';
+  }
 
   static String _resolveHttpBaseUrl() {
     final fromEnv = dotenv.env['API_BASE_URL']?.trim();
