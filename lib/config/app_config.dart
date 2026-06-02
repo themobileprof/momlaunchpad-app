@@ -30,7 +30,7 @@ class AppConfig {
     if (fromEnv != null && fromEnv.isNotEmpty && !fromEnv.startsWith('your-')) {
       return fromEnv;
     }
-    return '334708442168-hpfd6etf2qurl5vd2i3oihno28cfpllv.apps.googleusercontent.com';
+    return '270509978456-ul2htboa4prh6g7ci7rje4q0vbpofeko.apps.googleusercontent.com';
   }
 
   static String _resolveHttpBaseUrl() {

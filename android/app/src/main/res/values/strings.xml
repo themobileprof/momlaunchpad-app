@@ -2,5 +2,5 @@
 <resources>
     <!-- Google Sign-In OAuth Client ID -->
     <!-- Replace with your actual Web Client ID from Google Cloud Console -->
-    <string name="default_web_client_id">334708442168-hpfd6etf2qurl5vd2i3oihno28cfpllv.apps.googleusercontent.com</string>
+    <string name="default_web_client_id">270509978456-ul2htboa4prh6g7ci7rje4q0vbpofeko.apps.googleusercontent.com</string>
 </resources>
