@@ -4,6 +4,8 @@ import 'package:momlaunchpad_mobile/models/doctor_visit.dart';
 void main() {
   group('DoctorVisit', () {
     test('fromJson parses visit with nested medications and labs', () {
+      final nextAppointment =
+          DateTime.now().toUtc().add(const Duration(days: 30));
       final visit = DoctorVisit.fromJson({
         'id': 'visit-1',
         'user_id': 'user-1',
@@ -27,7 +29,7 @@ void main() {
             'unit': 'g/dL',
           },
         ],
-        'next_appointment_at': '2026-06-01T09:00:00Z',
+        'next_appointment_at': nextAppointment.toIso8601String(),
         'recorded_by': 'user',
         'created_at': '2026-05-01T10:35:00Z',
         'updated_at': '2026-05-01T10:35:00Z',
