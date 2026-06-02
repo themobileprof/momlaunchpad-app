@@ -27,11 +27,12 @@ class AuthState {
     bool? isLoading,
     String? error,
     bool? isLoggedIn,
+    bool clearError = false,
   }) {
     return AuthState(
       user: user ?? this.user,
       isLoading: isLoading ?? this.isLoading,
-      error: error,
+      error: clearError ? null : (error ?? this.error),
       isLoggedIn: isLoggedIn ?? this.isLoggedIn,
     );
   }
@@ -45,7 +46,27 @@ class AuthNotifier extends Notifier<AuthState> {
 
   static bool _looksLikeConnectionFailure(Object e) {
     final s = e.toString();
-    return s.contains('Failed host lookup') || s.contains('Connection refused');
+    return s.contains('Failed host lookup') ||
+        s.contains('Connection refused') ||
+        s.contains('SocketException') ||
+        s.contains('ClientException') ||
+        s.contains('Network is unreachable');
+  }
+
+  static String _connectionErrorMessage() {
+    final host = Uri.tryParse(AppConfig.baseUrl)?.host ?? '';
+    if (host == 'localhost' || host == '127.0.0.1') {
+      return 'Cannot reach the API at localhost from this device. '
+          'Use http://10.0.2.2:8080 on the Android emulator, or your '
+          'computer\'s LAN IP in .env for a physical device.';
+    }
+    return 'Unable to connect to the server. Check your network and try again.';
+  }
+
+  void clearError() {
+    if (state.error != null) {
+      state = state.copyWith(clearError: true);
+    }
   }
 
   @override
@@ -120,7 +141,7 @@ class AuthNotifier extends Notifier<AuthState> {
     required String name,
     required String language,
   }) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true, clearError: true);
     
     try {
       final authResponse = await _apiService.register(
@@ -144,7 +165,7 @@ class AuthNotifier extends Notifier<AuthState> {
       rethrow;
     } catch (e) {
       final errorMsg = _looksLikeConnectionFailure(e)
-          ? 'Unable to connect to server. Please check your internet connection.'
+          ? _connectionErrorMessage()
           : 'Registration failed. Please try again.';
       state = state.copyWith(
         isLoading: false,
@@ -162,7 +183,7 @@ class AuthNotifier extends Notifier<AuthState> {
   }) async {
     if (state.isLoading) return;
 
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true, clearError: true);
     
     try {
       final authResponse = await _apiService.login(
@@ -184,7 +205,7 @@ class AuthNotifier extends Notifier<AuthState> {
       rethrow;
     } catch (e) {
       final errorMsg = _looksLikeConnectionFailure(e)
-          ? 'Unable to connect to server. Please check your internet connection.'
+          ? _connectionErrorMessage()
           : 'Login failed. Please check your credentials.';
       state = state.copyWith(
         isLoading: false,
@@ -199,7 +220,7 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> signInWithGoogle() async {
     if (state.isLoading) return;
 
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       try {
@@ -211,10 +232,7 @@ class AuthNotifier extends Notifier<AuthState> {
       final googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
-        state = state.copyWith(
-          isLoading: false,
-          error: 'Sign-in cancelled',
-        );
+        state = state.copyWith(isLoading: false);
         return;
       }
 

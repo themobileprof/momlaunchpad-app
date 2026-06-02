@@ -8,6 +8,7 @@ import '../widgets/app_background.dart';
 import '../widgets/glass_container.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/google_sign_in_button.dart';
+import '../widgets/auth_error_banner.dart';
 import '../providers/auth_provider.dart';
 import 'register_screen.dart';
 
@@ -42,13 +43,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             password: _passwordController.text,
           );
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(ref.read(authProvider).error ?? 'Login failed'),
-          ),
-        );
-      }
+      // Error message is shown via [AuthErrorBanner] from auth state.
     }
   }
 
@@ -57,15 +52,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       await ref.read(authProvider.notifier).signInWithGoogle();
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              ref.read(authProvider).error ?? 'Google sign-in failed',
-            ),
-          ),
-        );
-      }
+      // Error message is shown via [AuthErrorBanner] from auth state.
     } finally {
       if (mounted) setState(() => _googleSignInInProgress = false);
     }
@@ -92,6 +79,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   logoSize: 96,
                 ),
                 const SizedBox(height: AppSpacing.spaceXL),
+                if (authState.error != null)
+                  AuthErrorBanner(
+                    message: authState.error!,
+                    onDismiss: () =>
+                        ref.read(authProvider.notifier).clearError(),
+                  ),
                 GlassContainer(
                   blur: 18,
                   opacity: 0.92,

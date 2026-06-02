@@ -9,6 +9,7 @@ import '../widgets/auth_screen_widgets.dart';
 import '../widgets/glass_container.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/google_sign_in_button.dart';
+import '../widgets/auth_error_banner.dart';
 
 /// Registration screen — email/password + Google Sign-In
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -52,15 +53,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              ref.read(authProvider).error ?? 'Registration failed',
-            ),
-          ),
-        );
-      }
+      // Error message is shown via [AuthErrorBanner] from auth state.
     }
   }
 
@@ -72,15 +65,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              ref.read(authProvider).error ?? 'Google sign-in failed',
-            ),
-          ),
-        );
-      }
+      // Error message is shown via [AuthErrorBanner] from auth state.
     } finally {
       if (mounted) setState(() => _googleSignInInProgress = false);
     }
@@ -122,6 +107,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         logoSize: 80,
                       ),
                       const SizedBox(height: AppSpacing.spaceXL),
+                      if (authState.error != null)
+                        AuthErrorBanner(
+                          message: authState.error!,
+                          onDismiss: () =>
+                              ref.read(authProvider.notifier).clearError(),
+                        ),
                       GlassContainer(
                         blur: 18,
                         opacity: 0.92,
