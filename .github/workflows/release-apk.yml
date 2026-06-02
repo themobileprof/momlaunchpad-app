@@ -35,16 +35,20 @@ jobs:
       - name: Build release APK
         run: flutter build apk --release
 
+      - name: Rename APK for distribution
+        run: cp build/app/outputs/flutter-apk/app-release.apk momlaunchpad.apk
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: momlaunchpad-${{ github.event.release.tag_name }}
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: momlaunchpad
+          path: momlaunchpad.apk
           retention-days: 90
 
       - name: Attach APK to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: momlaunchpad.apk
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
