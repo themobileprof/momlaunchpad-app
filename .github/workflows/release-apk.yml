@@ -39,7 +39,19 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+          set -euo pipefail
+          for var in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!var:-}" ]; then
+              echo "::error::GitHub secret $var is missing or empty."
+              exit 1
+            fi
+          done
+          # Strip whitespace/newlines (common when pasting base64 into GitHub Secrets).
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '[:space:]' | base64 --decode > android/app/upload-keystore.jks
+          if [ ! -s android/app/upload-keystore.jks ]; then
+            echo "::error::Decoded keystore is empty. Re-create ANDROID_KEYSTORE_BASE64 with: base64 -w 0 android/app/upload-keystore.jks"
+            exit 1
+          fi
           cat > android/key.properties <<EOF
           storePassword=$ANDROID_KEYSTORE_PASSWORD
           keyPassword=$ANDROID_KEY_PASSWORD

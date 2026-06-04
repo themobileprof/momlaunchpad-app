@@ -10,6 +10,8 @@ import '../widgets/glass_container.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/google_sign_in_button.dart';
 import '../widgets/auth_error_banner.dart';
+import '../providers/service_providers.dart';
+import '../utils/referral_helpers.dart';
 
 /// Registration screen — email/password + Google Sign-In
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -25,9 +27,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _referralController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _googleSignInInProgress = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadPendingReferral());
+  }
+
+  Future<void> _loadPendingReferral() async {
+    final pending =
+        await ref.read(storageServiceProvider).getPendingReferralCode();
+    if (pending != null && pending.isNotEmpty && mounted) {
+      _referralController.text = pending;
+    }
+  }
+
+  Future<void> _persistReferralInput() async {
+    final code = referralCodeFromInput(_referralController.text);
+    await ref.read(storageServiceProvider).savePendingReferralCode(code ?? '');
+  }
 
   @override
   void dispose() {
@@ -35,11 +57,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _referralController.dispose();
     super.dispose();
   }
 
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
+    await _persistReferralInput();
 
     try {
       await ref.read(authProvider.notifier).register(
@@ -47,6 +71,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             email: _emailController.text.trim(),
             password: _passwordController.text,
             language: 'en',
+            referralCode: referralCodeFromInput(_referralController.text),
           );
 
       if (mounted) {
@@ -58,6 +83,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _handleGoogleSignIn() async {
+    await _persistReferralInput();
     setState(() => _googleSignInInProgress = true);
     try {
       await ref.read(authProvider.notifier).signInWithGoogle();
@@ -167,6 +193,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   }
                                   return null;
                                 },
+                              ),
+                              const SizedBox(height: AppSpacing.spaceMD),
+                              TextFormField(
+                                controller: _referralController,
+                                textCapitalization: TextCapitalization.characters,
+                                decoration: const InputDecoration(
+                                  labelText: 'Referral code (optional)',
+                                  hintText: 'Paste code or invite link',
+                                  prefixIcon:
+                                      Icon(Icons.card_giftcard_outlined),
+                                ),
+                                onChanged: (_) => _persistReferralInput(),
                               ),
                               const SizedBox(height: AppSpacing.spaceMD),
                               TextFormField(

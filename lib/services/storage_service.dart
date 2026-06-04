@@ -10,6 +10,7 @@ class StorageService {
   static const String _userIdKey = 'user_id';
   static const String _languageKey = 'language';
   static const String _cachedUserKey = 'cached_user';
+  static const String _pendingReferralCodeKey = 'pending_referral_code';
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage(
     aOptions: AndroidOptions(),
@@ -67,6 +68,24 @@ class StorageService {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Pending referral code captured before sign-up (from link or manual entry).
+  Future<void> savePendingReferralCode(String code) async {
+    final trimmed = code.trim().toUpperCase();
+    if (trimmed.isEmpty) {
+      await _storage.delete(key: _pendingReferralCodeKey);
+      return;
+    }
+    await _storage.write(key: _pendingReferralCodeKey, value: trimmed);
+  }
+
+  Future<String?> getPendingReferralCode() async {
+    return _storage.read(key: _pendingReferralCodeKey);
+  }
+
+  Future<void> clearPendingReferralCode() async {
+    await _storage.delete(key: _pendingReferralCodeKey);
   }
 
   /// Clear all stored data (logout)

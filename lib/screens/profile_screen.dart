@@ -17,6 +17,7 @@ import '../widgets/location_suggest_field.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
+import '../widgets/referral_profile_section.dart';
 import '../widgets/widgets.dart';
 
 /// Profile page — view and edit pregnancy context used to personalize chat.
@@ -407,6 +408,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 children: [
                   _buildHeader(user?.email),
                   const SizedBox(height: AppSpacing.spaceLG),
+                  if (profile != null) ...[
+                    ReferralProfileSection(profile: profile),
+                    const SizedBox(height: AppSpacing.spaceLG),
+                  ],
                   _buildSectionTitle('Profile photo'),
                   AppCard(
                     padding: const EdgeInsets.all(AppSpacing.spaceMD),

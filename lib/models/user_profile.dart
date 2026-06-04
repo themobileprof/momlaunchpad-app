@@ -24,6 +24,10 @@ class UserProfile {
   final String? city;
   final bool communityOnboardingCompleted;
   final List<String> communityInterests;
+  final String referralCode;
+  final String referralLink;
+  final int referralRewardPoints;
+  final int totalReferrals;
 
   UserProfile({
     required this.name,
@@ -48,6 +52,10 @@ class UserProfile {
     this.city,
     this.communityOnboardingCompleted = false,
     this.communityInterests = const [],
+    this.referralCode = '',
+    this.referralLink = '',
+    this.referralRewardPoints = 0,
+    this.totalReferrals = 0,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -77,6 +85,10 @@ class UserProfile {
       communityInterests: (json['community_interests'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
           .toList(),
+      referralCode: json['referral_code']?.toString() ?? '',
+      referralLink: json['referral_link']?.toString() ?? '',
+      referralRewardPoints: json['referral_reward_points'] as int? ?? 0,
+      totalReferrals: json['total_referrals'] as int? ?? 0,
     );
   }
 

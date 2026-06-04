@@ -12,6 +12,7 @@ import '../models/vital_reading.dart';
 import '../models/savings_summary.dart';
 import '../models/savings_entry.dart';
 import '../models/community.dart';
+import '../models/referral.dart';
 import 'storage_service.dart';
 
 /// HTTP service for REST API calls
@@ -68,16 +69,21 @@ class ApiService {
     required String password,
     required String name,
     required String language,
+    String? referralCode,
   }) async {
+    final body = <String, dynamic>{
+      'email': email,
+      'password': password,
+      'name': name,
+      'language': language,
+    };
+    if (referralCode != null && referralCode.trim().isNotEmpty) {
+      body['referral_code'] = referralCode.trim().toUpperCase();
+    }
     final response = await _http.post(
       Uri.parse('$baseUrl/api/auth/register'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-        'name': name,
-        'language': language,
-      }),
+      body: jsonEncode(body),
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -121,13 +127,16 @@ class ApiService {
   /// Google Sign-In
   Future<AuthResponse> googleSignIn({
     required String idToken,
+    String? referralCode,
   }) async {
+    final body = <String, dynamic>{'id_token': idToken};
+    if (referralCode != null && referralCode.trim().isNotEmpty) {
+      body['referral_code'] = referralCode.trim().toUpperCase();
+    }
     final response = await _http.post(
       Uri.parse('$baseUrl/api/auth/google/token'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'id_token': idToken,
-      }),
+      body: jsonEncode(body),
     );
 
     if (response.statusCode == 200) {
@@ -1096,6 +1105,29 @@ class ApiService {
       );
     }
   }
+
+  // ============ REFERRAL ENDPOINTS ============
+
+  Future<List<ReferralRewardRecord>> getMyReferralRewards() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/users/me/referral-rewards'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final list = data['rewards'] as List<dynamic>? ?? [];
+      return list
+          .map((e) => ReferralRewardRecord.fromJson(
+                Map<String, dynamic>.from(e as Map),
+              ))
+          .toList();
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to load referral rewards'),
+    );
+  }
+
 }
 
 /// Exception specifically for premium feature restrictions

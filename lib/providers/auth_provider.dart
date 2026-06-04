@@ -140,6 +140,7 @@ class AuthNotifier extends Notifier<AuthState> {
     required String password,
     required String name,
     required String language,
+    String? referralCode,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     
@@ -149,7 +150,9 @@ class AuthNotifier extends Notifier<AuthState> {
         password: password,
         name: name,
         language: language,
+        referralCode: referralCode,
       );
+      await _storageService.clearPendingReferralCode();
       
       state = AuthState(
         user: authResponse.user,
@@ -242,9 +245,13 @@ class AuthNotifier extends Notifier<AuthState> {
         throw StateError('Failed to get ID token from Google');
       }
 
+      final pendingReferral =
+          await _storageService.getPendingReferralCode();
       final authResponse = await _apiService.googleSignIn(
         idToken: googleAuth.idToken!,
+        referralCode: pendingReferral,
       );
+      await _storageService.clearPendingReferralCode();
 
       state = AuthState(
         user: authResponse.user,
