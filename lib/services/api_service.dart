@@ -12,6 +12,7 @@ import '../models/vital_reading.dart';
 import '../models/savings_summary.dart';
 import '../models/savings_entry.dart';
 import '../models/community.dart';
+import '../models/community_badge_request.dart';
 import '../models/referral.dart';
 import '../config/app_config.dart';
 import 'storage_service.dart';
@@ -1104,6 +1105,49 @@ class ApiService {
         message: _errorMessageFromBody(response, 'Failed to submit report'),
       );
     }
+  }
+
+  // ============ COMMUNITY BADGE REQUESTS ============
+
+  Future<MyCommunityBadges> getMyCommunityBadges() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/community/me/badges'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load badges'),
+      );
+    }
+    return MyCommunityBadges.fromJson(
+      Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+    );
+  }
+
+  Future<CommunityBadgeRequest> createCommunityBadgeRequest({
+    required String badgeType,
+    String? message,
+  }) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/community/me/badge-requests'),
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        'badge_type': badgeType,
+        if (message != null && message.trim().isNotEmpty)
+          'message': message.trim(),
+      }),
+    );
+    if (response.statusCode == 201) {
+      final data = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+      return CommunityBadgeRequest.fromJson(
+        Map<String, dynamic>.from(data['request'] as Map),
+      );
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to submit badge request'),
+    );
   }
 
   // ============ REFERRAL ENDPOINTS ============

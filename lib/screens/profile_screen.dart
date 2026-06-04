@@ -18,6 +18,7 @@ import '../widgets/location_suggest_field.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
+import '../widgets/community_badge_profile_section.dart';
 import '../widgets/referral_profile_section.dart';
 import '../widgets/widgets.dart';
 
@@ -404,6 +405,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   const SizedBox(height: AppSpacing.spaceLG),
                   if (profile != null) ...[
                     ReferralProfileSection(profile: profile),
+                    const SizedBox(height: AppSpacing.spaceLG),
+                    const CommunityBadgeProfileSection(),
                     const SizedBox(height: AppSpacing.spaceLG),
                   ],
                   _buildSectionTitle('Profile photo'),
