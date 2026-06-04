@@ -129,7 +129,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     children: [
                       const AuthLogoHeader(
                         title: 'Join MomLaunchpad',
-                        subtitle: 'For women trying to conceive or currently pregnant.',
+                        subtitle: 'Your pregnancy companion — also here if you\'re trying to conceive.',
                         logoSize: 80,
                       ),
                       const SizedBox(height: AppSpacing.spaceXL),

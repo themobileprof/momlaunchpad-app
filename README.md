@@ -1,6 +1,6 @@
 # MomLaunchpad
 
-**Your pocket companion while you're trying to conceive or expecting.**
+**Your pocket companion through pregnancy — with support if you're trying to conceive.**
 
 The wait between cycles. The questions at 2 a.m. The appointments, the symptoms, the excitement and the worry. MomLaunchpad is a calm, private space built for those chapters — personalized chat, local community, and gentle tools that remember what matters to you.
 
@@ -20,7 +20,7 @@ The community feed surfaces local posts and events near you — questions, meetu
 Reminders and appointments live on your calendar. Log vitals and doctor visits. Track symptoms over time. The app learns from your chats to personalize nudges — without turning your phone into another chore list.
 
 **Built for where you are now — ready when life changes.**  
-Start as trying to conceive or currently pregnant. Update your journey from your profile when you give birth or need support after loss, and MomLaunchpad adjusts with you.
+Start while pregnant or trying to conceive. Update your journey from your profile when life changes — birth, loss, or trying again — and MomLaunchpad adjusts with you.
 
 ---
 

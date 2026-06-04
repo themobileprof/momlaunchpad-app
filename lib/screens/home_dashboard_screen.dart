@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../utils/journey_helpers.dart';
+import '../models/user_profile.dart';
 import '../providers/profile_provider.dart';
 import '../providers/symptom_provider.dart';
 import '../providers/welcome_provider.dart';
@@ -11,6 +12,7 @@ import '../theme/typography.dart';
 import '../widgets/widgets.dart';
 import '../widgets/ongoing_symptom_prompt.dart';
 import '../widgets/home_community_highlight.dart';
+import '../widgets/ttc_home_hero.dart';
 import 'calendar_screen.dart';
 import 'conversation_list_screen.dart';
 import 'symptom_stats_screen.dart';
@@ -38,6 +40,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
   Widget build(BuildContext context) {
     final welcomeState = ref.watch(welcomeProvider);
     final profile = ref.watch(profileProvider).profile;
+    final isTtc = JourneyHelpers.isTtc(profile);
 
     return Scaffold(
       backgroundColor: context.appCanvas,
@@ -73,10 +76,26 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                 ),
               ),
             ),
+            if (isTtc)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.spaceMD,
+                    AppSpacing.spaceMD,
+                    AppSpacing.spaceMD,
+                    0,
+                  ),
+                  child: TtcHomeHero(
+                    onTalk: () => _open(context, const ConversationListScreen()),
+                    onLogSymptoms: () =>
+                        _open(context, const SymptomStatsScreen()),
+                  ),
+                ),
+              ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceMD),
-                child: _buildWelcomeSection(welcomeState),
+                child: _buildWelcomeSection(welcomeState, profile),
               ),
             ),
             const SliverToBoxAdapter(
@@ -111,28 +130,9 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                   crossAxisSpacing: AppSpacing.spaceSM,
                   childAspectRatio: 1.6,
                 ),
-                delegate: SliverChildListDelegate([
-                  _QuickLinkCard(
-                    icon: Icons.chat_bubble_rounded,
-                    label: 'Chat',
-                    onTap: () => _open(context, const ConversationListScreen()),
-                  ),
-                  _QuickLinkCard(
-                    icon: Icons.calendar_today_rounded,
-                    label: 'Calendar',
-                    onTap: () => _open(context, const CalendarScreen()),
-                  ),
-                  _QuickLinkCard(
-                    icon: Icons.monitor_heart_outlined,
-                    label: 'Health tracker',
-                    onTap: () => _open(context, const SymptomStatsScreen()),
-                  ),
-                  _QuickLinkCard(
-                    icon: Icons.auto_awesome_rounded,
-                    label: 'New chat',
-                    onTap: () => _open(context, const ConversationListScreen()),
-                  ),
-                ]),
+                delegate: SliverChildListDelegate(
+                  _quickLinks(context, isTtc),
+                ),
               ),
             ),
           ],
@@ -141,7 +141,56 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     );
   }
 
-  Widget _buildWelcomeSection(WelcomeState welcomeState) {
+  List<Widget> _quickLinks(BuildContext context, bool isTtc) {
+    if (isTtc) {
+      return [
+        _QuickLinkCard(
+          icon: Icons.chat_bubble_rounded,
+          label: 'Talk it through',
+          onTap: () => _open(context, const ConversationListScreen()),
+        ),
+        _QuickLinkCard(
+          icon: Icons.calendar_today_rounded,
+          label: 'Reminders',
+          onTap: () => _open(context, const CalendarScreen()),
+        ),
+        _QuickLinkCard(
+          icon: Icons.monitor_heart_outlined,
+          label: 'Log symptoms',
+          onTap: () => _open(context, const SymptomStatsScreen()),
+        ),
+        _QuickLinkCard(
+          icon: Icons.auto_awesome_rounded,
+          label: 'New topic',
+          onTap: () => _open(context, const ConversationListScreen()),
+        ),
+      ];
+    }
+    return [
+      _QuickLinkCard(
+        icon: Icons.chat_bubble_rounded,
+        label: 'Chat',
+        onTap: () => _open(context, const ConversationListScreen()),
+      ),
+      _QuickLinkCard(
+        icon: Icons.calendar_today_rounded,
+        label: 'Calendar',
+        onTap: () => _open(context, const CalendarScreen()),
+      ),
+      _QuickLinkCard(
+        icon: Icons.monitor_heart_outlined,
+        label: 'Health tracker',
+        onTap: () => _open(context, const SymptomStatsScreen()),
+      ),
+      _QuickLinkCard(
+        icon: Icons.auto_awesome_rounded,
+        label: 'New chat',
+        onTap: () => _open(context, const ConversationListScreen()),
+      ),
+    ];
+  }
+
+  Widget _buildWelcomeSection(WelcomeState welcomeState, UserProfile? profile) {
     if (welcomeState.isLoading && welcomeState.message == null) {
       return const SizedBox.shrink();
     }
@@ -151,7 +200,10 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
       );
     }
     if (welcomeState.message != null) {
-      return _WelcomeCard(message: welcomeState.message!.message);
+      return _WelcomeCard(
+        message: welcomeState.message!.message,
+        title: JourneyHelpers.homeWelcomeTitle(profile),
+      );
     }
     return const SizedBox.shrink();
   }
@@ -166,8 +218,9 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
 
 class _WelcomeCard extends StatelessWidget {
   final String message;
+  final String title;
 
-  const _WelcomeCard({required this.message});
+  const _WelcomeCard({required this.message, required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -181,7 +234,7 @@ class _WelcomeCard extends StatelessWidget {
             children: [
               Icon(Icons.waving_hand_rounded, color: context.appPrimary, size: 22),
               const SizedBox(width: AppSpacing.spaceSM),
-              Text('This week\'s note for you', style: AppTypography.bodyTextMedium),
+              Text(title, style: AppTypography.bodyTextMedium),
             ],
           ),
           const SizedBox(height: AppSpacing.spaceMD),

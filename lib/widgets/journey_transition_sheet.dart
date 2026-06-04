@@ -183,7 +183,7 @@ class _JourneyTransitionSheetState extends State<JourneyTransitionSheet> {
               ),
             if (stage == JourneyStage.ttc)
               Text(
-                'We\'ll focus on your TTC journey and emotional wellbeing.',
+                'We\'ll support you while you\'re trying — update again when you\'re pregnant.',
                 style: AppTypography.caption.copyWith(color: context.appInkMuted),
               ),
             const SizedBox(height: AppSpacing.spaceLG),

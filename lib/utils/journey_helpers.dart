@@ -6,6 +6,23 @@ import 'pregnancy_timing.dart';
 class JourneyHelpers {
   JourneyHelpers._();
 
+  static const ttcConcernSuggestions = [
+    'Fertility',
+    'Two-week wait',
+    'Ovulation timing',
+    'Cycle tracking',
+    'Anxiety',
+    'Emotional support',
+  ];
+
+  static const pregnantConcernSuggestions = [
+    'Morning sickness',
+    'Nutrition',
+    'Sleep',
+    'Cramping',
+    'Anxiety',
+  ];
+
   static JourneyStage? stageOf(UserProfile? profile) {
     if (profile == null) return null;
     return profile.journeyStage ??
@@ -69,6 +86,51 @@ class JourneyHelpers {
       case null:
         return profile.pregnancySummary;
     }
+  }
+
+  static bool isTtc(UserProfile? profile) =>
+      stageOf(profile) == JourneyStage.ttc;
+
+  static List<String> concernSuggestionsFor(JourneyStage? stage) {
+    switch (stage) {
+      case JourneyStage.ttc:
+        return ttcConcernSuggestions;
+      case JourneyStage.pregnant:
+      case null:
+        return pregnantConcernSuggestions;
+      case JourneyStage.postpartum:
+      case JourneyStage.miscarriage:
+        return const [
+          'Recovery',
+          'Sleep',
+          'Anxiety',
+          'Nutrition',
+          'Emotional support',
+        ];
+    }
+  }
+
+  static String homeWelcomeTitle(UserProfile? profile) {
+    return 'This week\'s note for you';
+  }
+
+  static String chatEmptyTitle(UserProfile? profile) {
+    if (isTtc(profile)) {
+      return 'Ask anything while you\'re trying to conceive';
+    }
+    return 'Ask anything about your pregnancy';
+  }
+
+  static String chatEmptyDescription(UserProfile? profile) {
+    if (isTtc(profile)) {
+      return 'Fertility questions, cycles, the two-week wait, or how you\'re feeling — same caring support until you\'re pregnant.';
+    }
+    return 'Start a conversation about symptoms, nutrition, appointments, or how you\'re feeling today.';
+  }
+
+  static String symptomSectionTitle(UserProfile? profile) {
+    if (isTtc(profile)) return 'How you\'re feeling';
+    return 'Ongoing symptom';
   }
 
   static bool needsPregnancyWeek(JourneyStage stage) => stage == JourneyStage.pregnant;

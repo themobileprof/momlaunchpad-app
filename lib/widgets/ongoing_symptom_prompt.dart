@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/symptom.dart';
+import '../providers/profile_provider.dart';
 import '../providers/symptom_provider.dart';
+import '../utils/journey_helpers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -28,6 +30,7 @@ class _OngoingSymptomPromptState extends ConsumerState<OngoingSymptomPrompt> {
   @override
   Widget build(BuildContext context) {
     final recentAsync = ref.watch(recentSymptomsProvider(20));
+    final profile = ref.watch(profileProvider).profile;
 
     return recentAsync.when(
       data: (symptoms) {
@@ -59,7 +62,9 @@ class _OngoingSymptomPromptState extends ConsumerState<OngoingSymptomPrompt> {
                     const SizedBox(width: AppSpacing.spaceSM),
                     Expanded(
                       child: Text(
-                        'Ongoing symptom check-in',
+                        JourneyHelpers.isTtc(profile)
+                            ? 'How you\'re feeling today'
+                            : 'Ongoing symptom check-in',
                         style: AppTypography.bodyTextMedium,
                       ),
                     ),

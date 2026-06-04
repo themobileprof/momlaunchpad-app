@@ -60,13 +60,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     'kosher',
   ];
 
-  static const _concernSuggestions = [
-    'Morning sickness',
-    'Nutrition',
-    'Sleep',
-    'Cramping',
-    'Anxiety',
-  ];
+  List<String> get _concernSuggestions =>
+      JourneyHelpers.concernSuggestionsFor(_journeyStage);
 
   @override
   void initState() {
@@ -589,6 +584,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ),
                           ),
                         ],
+                        if (_journeyStage == JourneyStage.ttc) ...[
+                          const SizedBox(height: AppSpacing.spaceMD),
+                          Text(
+                            'MomLaunchpad is pregnancy-first. While you\'re trying to conceive, '
+                            'chat focuses on fertility and the wait — update your journey when you\'re pregnant.',
+                            style: AppTypography.caption.copyWith(
+                              color: context.appInkSubtle,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: AppSpacing.spaceMD),
                         OutlinedButton.icon(
                           onPressed: _isSaving ? null : _updateJourney,
@@ -794,9 +799,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         TextFormField(
                           controller: _concernController,
                           textCapitalization: TextCapitalization.sentences,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'What would you like help with?',
-                            hintText: 'e.g. morning sickness, nutrition',
+                            hintText: _journeyStage == JourneyStage.ttc
+                                ? 'e.g. ovulation timing, two-week wait'
+                                : 'e.g. morning sickness, nutrition',
                           ),
                         ),
                       ],
@@ -871,7 +878,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'MomLaunchPad supports women trying to conceive or currently pregnant. If your journey changes — after birth or loss — update it in your profile and we\'ll adapt with you.',
+                'MomLaunchPad is built for pregnancy. We also support trying to conceive, postpartum, and loss — update your journey in profile when life changes.',
                 style: AppTypography.caption.copyWith(
                   color: context.appInkSubtle,
                 ),

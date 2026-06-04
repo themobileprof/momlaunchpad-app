@@ -75,7 +75,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: AppSpacing.spaceLG),
                 AuthLogoHeader(
                   title: 'Welcome back',
-                  subtitle: 'Support for women trying to conceive or currently pregnant.',
+                  subtitle: 'Your pregnancy companion — also here if you\'re trying to conceive.',
                   logoSize: 96,
                 ),
                 const SizedBox(height: AppSpacing.spaceXL),

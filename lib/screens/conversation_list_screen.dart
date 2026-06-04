@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/conversation.dart';
+import '../models/user_profile.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../theme/spacing.dart';
 import '../providers/conversation_provider.dart';
+import '../providers/profile_provider.dart';
+import '../utils/journey_helpers.dart';
 import '../utils/conversation_list_utils.dart';
 import '../widgets/widgets.dart';
 import 'chat_screen.dart';
@@ -52,6 +55,7 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(conversationProvider);
+    final profile = ref.watch(profileProvider).profile;
 
     return Scaffold(
       backgroundColor: context.appCanvas,
@@ -65,11 +69,11 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
           ),
         ],
       ),
-      body: _buildBody(state),
+      body: _buildBody(state, profile),
     );
   }
 
-  Widget _buildBody(ConversationState state) {
+  Widget _buildBody(ConversationState state, UserProfile? profile) {
     if (state.isLoading && state.conversations.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -77,9 +81,8 @@ class _ConversationListScreenState extends ConsumerState<ConversationListScreen>
     if (state.conversations.isEmpty) {
       return EmptyState(
         icon: Icons.auto_awesome_rounded,
-        title: 'Ask anything about your pregnancy',
-        description:
-            'Start a conversation about symptoms, nutrition, appointments, or how you\'re feeling today.',
+        title: JourneyHelpers.chatEmptyTitle(profile),
+        description: JourneyHelpers.chatEmptyDescription(profile),
         actionLabel: 'Start chatting',
         onAction: _createNewConversation,
       );

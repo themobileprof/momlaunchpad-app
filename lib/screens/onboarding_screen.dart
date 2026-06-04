@@ -16,7 +16,7 @@ import '../widgets/gradient_button.dart';
 import '../widgets/journey_stage_picker.dart';
 import '../widgets/solid_filter_chip.dart';
 
-/// First-time walkthrough for women trying to conceive or currently pregnant.
+/// First-time walkthrough — pregnancy-first, with TTC support at signup.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -37,14 +37,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   static const _stepCount = 5;
 
-  static const _concernSuggestions = [
-    'Fertility',
-    'Morning sickness',
-    'Nutrition',
-    'Sleep',
-    'Cramping',
-    'Anxiety',
-  ];
+  List<String> get _concernSuggestions =>
+      JourneyHelpers.concernSuggestionsFor(_journeyStage);
 
   @override
   void initState() {
@@ -273,11 +267,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
           const SizedBox(height: AppSpacing.spaceMD),
           Text(
-            'MomLaunchPad is built for women who are trying to conceive or currently pregnant — personalized chat, community, and gentle tools that remember what matters to you.',
+            'MomLaunchPad is your pregnancy companion — personalized chat, community, and gentle tools. We also support you if you\'re trying to conceive.',
             style: AppTypography.bodyText.copyWith(color: context.appInkMuted),
           ),
           const SizedBox(height: AppSpacing.spaceLG),
-          _buildHighlight(Icons.favorite_outline_rounded, 'Trying to conceive or expecting'),
+          _buildHighlight(Icons.favorite_outline_rounded, 'Pregnancy support, plus trying to conceive'),
           const SizedBox(height: AppSpacing.spaceSM),
           _buildHighlight(Icons.health_and_safety_outlined, 'Support that grows with your journey'),
           const SizedBox(height: AppSpacing.spaceSM),
@@ -335,7 +329,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           Text('Where are you today?', style: AppTypography.headingMedium.copyWith(color: context.appInk)),
           const SizedBox(height: AppSpacing.spaceSM),
           Text(
-            'Choose trying to conceive or currently pregnant. You can update your journey later if life changes.',
+            'Most moms join while pregnant; choose trying to conceive if that\'s where you are today. You can update your journey anytime.',
             style: AppTypography.caption.copyWith(color: context.appInkMuted),
           ),
           const SizedBox(height: AppSpacing.spaceLG),
@@ -497,9 +491,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           TextField(
             controller: _concernController,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Or describe in your own words',
-              hintText: 'e.g. worried about swelling',
+              hintText: _journeyStage == JourneyStage.ttc
+                  ? 'e.g. anxious during the two-week wait'
+                  : 'e.g. worried about swelling',
             ),
           ),
         ],

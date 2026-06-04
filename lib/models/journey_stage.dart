@@ -28,9 +28,10 @@ enum JourneyStage {
   final String description;
 
   /// Stages shown during signup. Postpartum and loss are reached via profile journey updates.
+  /// Pregnancy-first ordering at signup; TTC is fully supported.
   static const List<JourneyStage> signupStages = [
-    JourneyStage.ttc,
     JourneyStage.pregnant,
+    JourneyStage.ttc,
   ];
 
   static JourneyStage? fromApi(String? value) {
