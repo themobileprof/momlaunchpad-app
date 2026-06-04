@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/journey_stage.dart';
 import '../models/community.dart';
 import '../models/user_profile.dart';
+import '../config/app_config.dart';
 import '../providers/auth_provider.dart';
 import '../providers/community_provider.dart';
 import '../providers/profile_provider.dart';
@@ -44,7 +45,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _dueDateManuallySet = false;
   bool? _isFirstPregnancy;
   JourneyStage? _journeyStage;
-  String _language = 'en';
   String? _dietPreference;
   bool _isSaving = false;
   bool _isUploadingPhoto = false;
@@ -140,7 +140,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (_initialized && !force) return;
     _initialized = true;
     _nameController.text = profile.name;
-    _language = profile.language;
     _pregnancyWeek = profile.pregnancyWeek ?? 20;
     final storedDueDate = profile.expectedDeliveryDate;
     if (storedDueDate != null &&
@@ -254,7 +253,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final saved = await ref.read(profileProvider.notifier).updateProfile(
             ProfileSavePayload(
               name: _nameController.text.trim(),
-              language: _language,
+              language: AppConfig.languageCode,
               journeyStage: _journeyStage,
               pregnancyWeek: _journeyStage == JourneyStage.pregnant &&
                       !_dueDateManuallySet
@@ -493,20 +492,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               return 'Name is required';
                             }
                             return null;
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.spaceMD),
-                        DropdownButtonFormField<String>(
-                          initialValue: _language,
-                          decoration: const InputDecoration(
-                            labelText: 'Language',
-                          ),
-                          items: const [
-                            DropdownMenuItem(value: 'en', child: Text('English')),
-                            DropdownMenuItem(value: 'es', child: Text('Spanish')),
-                          ],
-                          onChanged: (value) {
-                            if (value != null) setState(() => _language = value);
                           },
                         ),
                       ],

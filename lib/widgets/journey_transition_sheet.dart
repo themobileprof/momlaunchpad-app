@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/app_config.dart';
 import '../models/journey_stage.dart';
 import '../models/user_profile.dart';
 import '../theme/colors.dart';
@@ -90,7 +91,7 @@ class _JourneyTransitionSheetState extends State<JourneyTransitionSheet> {
       context,
       ProfileSavePayload(
         name: widget.profile.name,
-        language: widget.profile.language,
+        language: AppConfig.languageCode,
         journeyStage: stage,
         pregnancyWeek:
             JourneyHelpers.needsPregnancyWeek(stage) ? _pregnancyWeek : null,

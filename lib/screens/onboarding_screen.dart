@@ -5,6 +5,7 @@ import '../models/user_profile.dart';
 import '../providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
 import 'package:intl/intl.dart';
+import '../config/app_config.dart';
 import '../utils/journey_helpers.dart';
 import '../utils/pregnancy_timing.dart';
 import '../theme/colors.dart';
@@ -103,7 +104,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       await ref.read(profileProvider.notifier).completeOnboarding(
             ProfileSavePayload(
               name: _nameController.text.trim(),
-              language: 'en',
+              language: AppConfig.languageCode,
               journeyStage: stage,
               pregnancyWeek:
                   JourneyHelpers.needsPregnancyWeek(stage) ? _pregnancyWeek : null,

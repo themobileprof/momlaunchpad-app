@@ -70,7 +70,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             name: _nameController.text.trim(),
             email: _emailController.text.trim(),
             password: _passwordController.text,
-            language: 'en',
             referralCode: referralCodeFromInput(_referralController.text),
           );
 

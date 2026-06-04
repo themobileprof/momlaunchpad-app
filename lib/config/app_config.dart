@@ -6,6 +6,9 @@ class AppConfig {
   static const productionApiUrl = 'https://api.momlaunchpad.com';
   static const productionWsUrl = 'wss://api.momlaunchpad.com';
 
+  /// App UI and API language (English only for now).
+  static const String languageCode = 'en';
+
   /// Initialize environment variables from the bundled `.env` asset.
   static Future<void> initialize() async {
     try {

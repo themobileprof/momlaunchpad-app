@@ -26,9 +26,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   google_fonts: ^6.2.1
   
-  # Language Detection (for local language handling)
-  google_mlkit_language_id: ^0.13.0
-  
   # Network Monitoring
   connectivity_plus: ^7.0.0
   

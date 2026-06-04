@@ -13,6 +13,7 @@ import '../models/savings_summary.dart';
 import '../models/savings_entry.dart';
 import '../models/community.dart';
 import '../models/referral.dart';
+import '../config/app_config.dart';
 import 'storage_service.dart';
 
 /// HTTP service for REST API calls
@@ -68,14 +69,13 @@ class ApiService {
     required String email,
     required String password,
     required String name,
-    required String language,
     String? referralCode,
   }) async {
     final body = <String, dynamic>{
       'email': email,
       'password': password,
       'name': name,
-      'language': language,
+      'language': AppConfig.languageCode,
     };
     if (referralCode != null && referralCode.trim().isNotEmpty) {
       body['referral_code'] = referralCode.trim().toUpperCase();

@@ -49,12 +49,6 @@ class SettingsScreen extends ConsumerWidget {
 
           _buildSectionHeader(context, 'Preferences'),
           AppListTileCard(
-            leadingIcon: Icons.language_rounded,
-            title: 'Language',
-            subtitle: user?.language.toUpperCase() ?? 'EN',
-            onTap: () => _showComingSoon(context, 'Language settings'),
-          ),
-          AppListTileCard(
             leadingIcon: Icons.notifications_rounded,
             title: 'Notifications',
             subtitle: 'Manage reminders & alerts',
