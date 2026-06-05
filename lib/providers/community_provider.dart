@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/community.dart';
 import '../services/api_service.dart';
+import '../services/analytics_service.dart';
 import 'service_providers.dart';
 
 class CommunityState {
@@ -173,6 +174,10 @@ class CommunityNotifier extends Notifier<CommunityState> {
   Future<CommunityPost?> createPost(CreatePostPayload payload) async {
     try {
       final post = await _api.createCommunityPost(payload);
+      ref.read(analyticsServiceProvider).logEvent(
+        AnalyticsEvents.featureUsed,
+        {AnalyticsParams.featureName: 'community_post'},
+      );
       if (state.filter == CommunityFeedFilter.myPosts ||
           state.filter == CommunityFeedFilter.forYou) {
         state = state.copyWith(posts: [post, ...state.posts]);

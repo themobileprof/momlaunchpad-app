@@ -6,6 +6,7 @@ import '../models/user.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import '../utils/google_sign_in_errors.dart';
+import '../utils/analytics_user.dart';
 import 'service_providers.dart';
 
 /// Auth state
@@ -96,6 +97,7 @@ class AuthNotifier extends Notifier<AuthState> {
           user: authResponse.user,
           isLoggedIn: true,
         );
+        await bindAnalyticsUser(ref, userId: authResponse.user.id);
         return;
       } on ApiException catch (e) {
         if (e.isUnauthorized) {
@@ -110,6 +112,7 @@ class AuthNotifier extends Notifier<AuthState> {
       final cachedUser = await _storageService.getCachedUser();
       if (cachedUser != null) {
         state = AuthState(user: cachedUser, isLoggedIn: true);
+        await bindAnalyticsUser(ref, userId: cachedUser.id);
         return;
       }
 
@@ -157,6 +160,12 @@ class AuthNotifier extends Notifier<AuthState> {
         isLoggedIn: true,
         isLoading: false,
       );
+      await bindAnalyticsUser(
+        ref,
+        userId: authResponse.user.id,
+        loginMethod: 'email',
+        isSignup: true,
+      );
     } on ApiException catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -196,6 +205,11 @@ class AuthNotifier extends Notifier<AuthState> {
         user: authResponse.user,
         isLoggedIn: true,
         isLoading: false,
+      );
+      await bindAnalyticsUser(
+        ref,
+        userId: authResponse.user.id,
+        loginMethod: 'email',
       );
     } on ApiException catch (e) {
       state = state.copyWith(
@@ -256,6 +270,11 @@ class AuthNotifier extends Notifier<AuthState> {
         isLoggedIn: true,
         isLoading: false,
       );
+      await bindAnalyticsUser(
+        ref,
+        userId: authResponse.user.id,
+        loginMethod: 'google',
+      );
     } on ApiException catch (e) {
       final errorMsg = e.statusCode == 503
           ? e.message
@@ -291,6 +310,7 @@ class AuthNotifier extends Notifier<AuthState> {
       debugPrint('Google sign-out error: $e');
     }
 
+    await clearAnalyticsUser(ref);
     await _storageService.clearAll();
     state = AuthState(isLoggedIn: false);
   }

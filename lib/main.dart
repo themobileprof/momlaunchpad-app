@@ -4,18 +4,24 @@ import 'providers/theme_provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/profile_provider.dart';
+import 'providers/service_providers.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/home_screen.dart';
 import 'config/app_config.dart';
+import 'widgets/analytics_route_observer.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppConfig.initialize();
-  
+
+  final container = ProviderContainer();
+  await container.read(analyticsServiceProvider).init();
+  container.dispose();
+
   runApp(
     const ProviderScope(
       child: MomLaunchpadApp(),
@@ -47,6 +53,7 @@ class _MomLaunchpadAppState extends ConsumerState<MomLaunchpadApp>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      ref.read(analyticsServiceProvider).logAppOpen();
       ref.read(authProvider.notifier).refreshSessionIfLoggedIn();
     }
   }
@@ -63,8 +70,11 @@ class _MomLaunchpadAppState extends ConsumerState<MomLaunchpadApp>
       }
     });
 
+    final analytics = ref.watch(analyticsServiceProvider);
+
     return MaterialApp(
       navigatorKey: rootNavigatorKey,
+      navigatorObservers: [AnalyticsRouteObserver(analytics)],
       title: 'MomLaunchpad',
       theme: applyGoogleFonts(buildAppLightTheme()),
       darkTheme: applyGoogleFonts(buildAppDarkTheme()),

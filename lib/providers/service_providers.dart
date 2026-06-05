@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import '../services/websocket_service.dart';
 import '../services/conversation_service.dart';
+import '../services/analytics_service.dart';
 import '../config/app_config.dart';
 
 /// Storage service provider (singleton)
@@ -35,4 +36,12 @@ final googleSignInProvider = Provider<GoogleSignIn>((ref) {
     scopes: const ['email', 'profile'],
     serverClientId: AppConfig.googleWebClientId,
   );
+});
+
+/// Product analytics (GA4). No-op until Firebase is configured.
+final analyticsServiceProvider = Provider<AnalyticsService>((ref) {
+  if (AppConfig.analyticsEnabled) {
+    return FirebaseAnalyticsService();
+  }
+  return NoOpAnalyticsService();
 });

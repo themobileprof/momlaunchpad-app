@@ -6,6 +6,7 @@ import '../theme/typography.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../models/user.dart';
+import '../widgets/feedback_sheet.dart';
 import '../widgets/widgets.dart';
 
 /// Settings screen - User preferences and account management
@@ -76,14 +77,14 @@ class SettingsScreen extends ConsumerWidget {
             iconColor: AppColors.info,
             title: 'Send Feedback',
             subtitle: 'Help us improve the app',
-            onTap: () => _showComingSoon(context, 'Feedback'),
+            onTap: () => FeedbackSheet.show(context),
           ),
           AppListTileCard(
             leadingIcon: Icons.star_rounded,
             iconColor: AppColors.warning,
             title: 'Rate the App',
             subtitle: 'Share your experience',
-            onTap: () => _showComingSoon(context, 'Rating'),
+            onTap: () => FeedbackSheet.show(context),
           ),
 
           const SizedBox(height: AppSpacing.spaceLG),

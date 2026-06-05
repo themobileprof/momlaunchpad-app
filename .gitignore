@@ -47,5 +47,9 @@ app.*.map.json
 # Environment variables
 .env
 
+# Firebase (use google-services.json.example; configure per environment)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
 # ADB rules
 tool/setup-android-udev.sh

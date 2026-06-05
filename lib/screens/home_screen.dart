@@ -8,6 +8,8 @@ import '../widgets/more_menu_sheet.dart';
 import '../widgets/community_compose_fab.dart';
 import '../providers/home_navigation_provider.dart';
 import '../providers/community_provider.dart';
+import '../providers/service_providers.dart';
+import '../services/analytics_service.dart';
 import '../utils/community_compose.dart';
 import 'conversation_list_screen.dart';
 import 'community_screen.dart';
@@ -68,6 +70,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _onNavTap(int index) {
     if (_currentIndex == index) return;
     HapticFeedback.lightImpact();
+    final tab = _primaryTabs[index].label;
+    ref.read(analyticsServiceProvider).logEvent(
+      AnalyticsEvents.tabSelected,
+      {AnalyticsParams.tabName: tab},
+    );
+    ref.read(analyticsServiceProvider).logEvent(
+      AnalyticsEvents.featureUsed,
+      {AnalyticsParams.featureName: tab.toLowerCase()},
+    );
     setState(() => _currentIndex = index);
     _pageController.animateToPage(
       index,

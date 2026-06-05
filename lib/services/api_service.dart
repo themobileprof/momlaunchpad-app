@@ -1150,6 +1150,29 @@ class ApiService {
     );
   }
 
+  // ============ USER FEEDBACK / TESTIMONIALS ============
+
+  Future<void> submitUserFeedback({
+    required int rating,
+    String? message,
+  }) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/users/me/feedback'),
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        'rating': rating,
+        if (message != null && message.trim().isNotEmpty)
+          'message': message.trim(),
+      }),
+    );
+    if (response.statusCode != 201) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to submit feedback'),
+      );
+    }
+  }
+
   // ============ REFERRAL ENDPOINTS ============
 
   Future<List<ReferralRewardRecord>> getMyReferralRewards() async {

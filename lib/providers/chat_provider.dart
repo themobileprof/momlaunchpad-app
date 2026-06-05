@@ -5,6 +5,8 @@ import '../models/message.dart';
 import '../models/reminder.dart';
 import '../services/websocket_service.dart';
 import '../services/conversation_service.dart';
+import '../services/analytics_service.dart';
+import '../utils/analytics_topic_classifier.dart';
 import 'service_providers.dart';
 import 'conversation_provider.dart';
 
@@ -222,6 +224,23 @@ class ChatNotifier extends Notifier<ChatState> {
       messages: [...state.messages, userMessage],
       currentResponse: '', 
       error: null,
+    );
+
+    final trimmed = content.trim();
+    ref.read(analyticsServiceProvider).logEvent(
+      AnalyticsEvents.aiQuestionSent,
+      {
+        AnalyticsParams.topicBucket:
+            AnalyticsTopicClassifier.topicBucket(trimmed),
+        AnalyticsParams.intentCategory:
+            AnalyticsTopicClassifier.intentCategory(trimmed),
+        AnalyticsParams.messageLengthBucket:
+            AnalyticsTopicClassifier.messageLengthBucket(trimmed.length),
+      },
+    );
+    ref.read(analyticsServiceProvider).logEvent(
+      AnalyticsEvents.featureUsed,
+      {AnalyticsParams.featureName: 'chat'},
     );
 
     // Send to backend via WebSocket

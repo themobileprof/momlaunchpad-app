@@ -20,6 +20,14 @@ class AppConfig {
 
   static bool get isProduction => kReleaseMode;
 
+  /// GA4 / Firebase Analytics — off in debug unless explicitly enabled in .env.
+  static bool get analyticsEnabled {
+    final flag = dotenv.env['FIREBASE_ANALYTICS_ENABLED']?.trim().toLowerCase();
+    if (flag == 'true') return true;
+    if (flag == 'false') return false;
+    return kReleaseMode;
+  }
+
   static String get baseUrl => _resolveHttpBaseUrl();
 
   static String get wsUrl => _resolveWsUrl(baseUrl);
