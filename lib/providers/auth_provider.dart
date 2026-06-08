@@ -7,6 +7,7 @@ import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import '../utils/google_sign_in_errors.dart';
 import '../utils/analytics_user.dart';
+import '../utils/session_errors.dart';
 import 'service_providers.dart';
 
 /// Auth state
@@ -100,13 +101,28 @@ class AuthNotifier extends Notifier<AuthState> {
         await bindAnalyticsUser(ref, userId: authResponse.user.id);
         return;
       } on ApiException catch (e) {
-        if (e.isUnauthorized) {
+        if (e.isUnauthorized || SessionErrors.isInvalidSession(e)) {
           await _storageService.clearAll();
           state = AuthState(isLoggedIn: false);
           return;
         }
       } catch (e) {
         debugPrint('Session refresh error: $e');
+      }
+
+      try {
+        final user = await _apiService.getCurrentUser();
+        state = AuthState(user: user, isLoggedIn: true);
+        await bindAnalyticsUser(ref, userId: user.id);
+        return;
+      } on ApiException catch (e) {
+        if (e.isUnauthorized || SessionErrors.isInvalidSession(e)) {
+          await _storageService.clearAll();
+          state = AuthState(isLoggedIn: false);
+          return;
+        }
+      } catch (e) {
+        debugPrint('Session validation error: $e');
       }
 
       final cachedUser = await _storageService.getCachedUser();
@@ -274,6 +290,7 @@ class AuthNotifier extends Notifier<AuthState> {
         ref,
         userId: authResponse.user.id,
         loginMethod: 'google',
+        isSignup: authResponse.isNewUser,
       );
     } on ApiException catch (e) {
       final errorMsg = e.statusCode == 503

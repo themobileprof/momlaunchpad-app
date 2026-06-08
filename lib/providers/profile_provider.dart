@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_profile.dart';
 import '../services/api_service.dart';
+import '../utils/session_errors.dart';
 import 'auth_provider.dart';
 import 'service_providers.dart';
 import 'welcome_provider.dart';
@@ -68,6 +69,10 @@ class ProfileNotifier extends Notifier<ProfileState> {
       state = ProfileState(profile: profile, isLoading: false);
     } catch (e) {
       debugPrint('Profile load error: $e');
+      if (e is ApiException && SessionErrors.isInvalidSession(e)) {
+        await ref.read(authProvider.notifier).logout();
+        return;
+      }
       final message = e is ApiException ? e.message : 'Failed to load profile';
       state = ProfileState(
         isLoading: false,

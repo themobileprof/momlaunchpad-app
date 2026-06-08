@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/community.dart';
 import '../services/api_service.dart';
 import '../services/analytics_service.dart';
+import '../utils/user_facing_errors.dart';
 import 'service_providers.dart';
 
 class CommunityState {
@@ -97,9 +98,15 @@ class CommunityNotifier extends Notifier<CommunityState> {
         state = state.copyWith(isLoading: false);
       }
     } on ApiException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
+      state = state.copyWith(
+        isLoading: false,
+        error: UserFacingErrors.communityLoad(e.message),
+      );
     } catch (_) {
-      state = state.copyWith(isLoading: false, error: 'Failed to load community');
+      state = state.copyWith(
+        isLoading: false,
+        error: UserFacingErrors.communityLoad(null),
+      );
     }
   }
 
@@ -120,7 +127,7 @@ class CommunityNotifier extends Notifier<CommunityState> {
       await loadFeed(refresh: true);
       return true;
     } on ApiException catch (e) {
-      state = state.copyWith(error: e.message);
+      state = state.copyWith(error: UserFacingErrors.communityLoad(e.message));
       return false;
     }
   }
@@ -152,7 +159,11 @@ class CommunityNotifier extends Notifier<CommunityState> {
         isLoadingMore: false,
       );
     } on ApiException catch (e) {
-      state = state.copyWith(isLoading: false, isLoadingMore: false, error: e.message);
+      state = state.copyWith(
+        isLoading: false,
+        isLoadingMore: false,
+        error: UserFacingErrors.communityLoad(e.message),
+      );
     }
   }
 
@@ -184,7 +195,7 @@ class CommunityNotifier extends Notifier<CommunityState> {
       }
       return post;
     } on ApiException catch (e) {
-      state = state.copyWith(error: e.message);
+      state = state.copyWith(error: UserFacingErrors.communityLoad(e.message));
       return null;
     }
   }

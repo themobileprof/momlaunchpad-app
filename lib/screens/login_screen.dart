@@ -10,6 +10,7 @@ import '../widgets/gradient_button.dart';
 import '../widgets/google_sign_in_button.dart';
 import '../widgets/auth_error_banner.dart';
 import '../providers/auth_provider.dart';
+import '../utils/password_validation.dart';
 import 'register_screen.dart';
 
 /// Login screen — email/password + Google Sign-In
@@ -130,6 +131,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           decoration: InputDecoration(
                             labelText: 'Password',
                             hintText: '••••••••',
+                            helperText:
+                                'At least $minPasswordLength characters',
                             prefixIcon: Icon(Icons.lock_outline_rounded),
                             suffixIcon: IconButton(
                               icon: Icon(
@@ -142,15 +145,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                             ),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your password';
-                            }
-                            if (value.length < 6) {
-                              return 'Password must be at least 6 characters';
-                            }
-                            return null;
-                          },
+                          validator: validateLoginPassword,
                         ),
                         const SizedBox(height: AppSpacing.spaceXL),
                         GradientButton(

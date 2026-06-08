@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../utils/generic_welcome.dart';
 import '../utils/journey_helpers.dart';
 import '../models/user_profile.dart';
 import '../providers/profile_provider.dart';
@@ -194,18 +195,12 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     if (welcomeState.isLoading && welcomeState.message == null) {
       return const SizedBox.shrink();
     }
-    if (welcomeState.error != null && welcomeState.message == null) {
-      return _WelcomeErrorCard(
-        onRetry: () => ref.read(welcomeProvider.notifier).refreshWelcome(),
-      );
-    }
-    if (welcomeState.message != null) {
-      return _WelcomeCard(
-        message: welcomeState.message!.message,
-        title: JourneyHelpers.homeWelcomeTitle(profile),
-      );
-    }
-    return const SizedBox.shrink();
+    final message =
+        welcomeState.message?.message ?? genericWelcomeMessage(profile);
+    return _WelcomeCard(
+      message: message,
+      title: JourneyHelpers.homeWelcomeTitle(profile),
+    );
   }
 
   void _open(BuildContext context, Widget screen) {
@@ -244,36 +239,6 @@ class _WelcomeCard extends StatelessWidget {
               fontSize: 16,
               height: 1.55,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WelcomeErrorCard extends StatelessWidget {
-  final VoidCallback onRetry;
-
-  const _WelcomeErrorCard({required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      child: Column(
-        children: [
-          Icon(Icons.error_outline, color: AppColors.error),
-          const SizedBox(height: AppSpacing.spaceSM),
-          Text(
-            'Could not load your welcome message',
-            style: AppTypography.bodyTextMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.spaceMD),
-          AppButton(
-            label: 'Retry',
-            isFullWidth: false,
-            size: AppButtonSize.small,
-            onPressed: onRetry,
           ),
         ],
       ),

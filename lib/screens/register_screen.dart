@@ -12,6 +12,7 @@ import '../widgets/google_sign_in_button.dart';
 import '../widgets/auth_error_banner.dart';
 import '../providers/service_providers.dart';
 import '../utils/referral_helpers.dart';
+import '../utils/password_validation.dart';
 
 /// Registration screen — email/password + Google Sign-In
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -212,6 +213,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 decoration: InputDecoration(
                                   labelText: 'Password',
                                   hintText: '••••••••',
+                                  helperText:
+                                      'At least $minPasswordLength characters',
                                   prefixIcon:
                                       Icon(Icons.lock_outline_rounded),
                                   suffixIcon: IconButton(
@@ -226,15 +229,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     ),
                                   ),
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter a password';
-                                  }
-                                  if (value.length < 6) {
-                                    return 'Password must be at least 6 characters';
-                                  }
-                                  return null;
-                                },
+                                validator: validateRegistrationPassword,
                               ),
                               const SizedBox(height: AppSpacing.spaceMD),
                               TextFormField(

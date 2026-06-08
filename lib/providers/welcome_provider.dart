@@ -108,17 +108,15 @@ class WelcomeNotifier extends Notifier<WelcomeState> {
       final message = await _apiService.getWelcomeMessage();
       state = WelcomeState(message: message, isLoading: false);
       await _persistToDisk(message);
-    } on ApiException catch (e) {
+    } on ApiException catch (_) {
       state = WelcomeState(
         message: state.message,
         isLoading: false,
-        error: e.message,
       );
     } catch (_) {
       state = WelcomeState(
         message: state.message,
         isLoading: false,
-        error: state.message == null ? 'Failed to load welcome message' : null,
       );
     } finally {
       _fetchInProgress = false;

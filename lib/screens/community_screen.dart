@@ -150,9 +150,12 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
       return ListView(
         children: [
           const SizedBox(height: 80),
-          ErrorState(
-            title: state.error!,
-            onRetry: () => ref.read(communityProvider.notifier).loadFeed(refresh: true),
+          EmptyState(
+            icon: Icons.cloud_off_outlined,
+            title: 'Community isn\'t available right now',
+            description: state.error,
+            actionLabel: 'Try again',
+            onAction: () => ref.read(communityProvider.notifier).bootstrap(),
           ),
         ],
       );

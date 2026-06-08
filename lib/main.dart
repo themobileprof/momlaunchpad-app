@@ -5,6 +5,7 @@ import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/profile_provider.dart';
 import 'providers/service_providers.dart';
+import 'screens/account_load_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -99,7 +100,16 @@ class AppInitializer extends ConsumerWidget {
     }
 
     if (authState.isLoggedIn && authState.user != null) {
-      if (profileState.profile != null && !profileState.profile!.onboardingCompleted) {
+      final profile = profileState.profile;
+
+      if (profile == null) {
+        return AccountLoadScreen(
+          errorMessage: profileState.error ??
+              'Check your connection and try again.',
+        );
+      }
+
+      if (!profile.onboardingCompleted) {
         return const OnboardingScreen();
       }
       return const HomeScreen();
