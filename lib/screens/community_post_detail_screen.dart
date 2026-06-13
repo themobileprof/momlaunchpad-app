@@ -13,6 +13,7 @@ import '../widgets/community_post_images.dart';
 import '../widgets/community_author_row.dart';
 import '../widgets/simple_formatted_text.dart';
 import '../widgets/widgets.dart';
+import '../utils/open_community_thread_chat.dart';
 
 class CommunityPostDetailScreen extends ConsumerStatefulWidget {
   final String postId;
@@ -259,6 +260,14 @@ class _CommunityPostDetailScreenState
               const SizedBox(height: AppSpacing.spaceMD),
               SimpleFormattedText(post.body),
               CommunityPostImages(imageUrls: post.imageUrls),
+              const SizedBox(height: AppSpacing.spaceSM),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: CommunityReviewDiscussionButton(
+                  postId: post.id,
+                  hasReplies: _replies.isNotEmpty,
+                ),
+              ),
               const SizedBox(height: AppSpacing.spaceMD),
               Row(
                 children: [
@@ -328,6 +337,10 @@ class _CommunityPostDetailScreenState
                       ),
                       const SizedBox(height: AppSpacing.spaceSM),
                       SimpleFormattedText(reply.body),
+                      CommunityReplyGoodForMeButton(
+                        postId: post.id,
+                        replyId: reply.id,
+                      ),
                     ],
                   ),
                 ),

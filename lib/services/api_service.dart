@@ -13,6 +13,7 @@ import '../models/savings_summary.dart';
 import '../models/savings_entry.dart';
 import '../models/community.dart';
 import '../models/community_badge_request.dart';
+import '../models/community_thread_evaluation.dart';
 import '../models/referral.dart';
 import '../config/app_config.dart';
 import 'storage_service.dart';
@@ -901,6 +902,32 @@ class ApiService {
     }
     return CommunityPost.fromJson(
       Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+    );
+  }
+
+  /// Personalized review of community content; seeds a chat conversation.
+  /// Pass [replyId] to evaluate one reply; omit for post-only or full discussion.
+  Future<CommunityThreadEvaluation> evaluateCommunityPostForMe(
+    String postId, {
+    String? replyId,
+  }) async {
+    final body = <String, dynamic>{};
+    if (replyId != null && replyId.isNotEmpty) {
+      body['reply_id'] = replyId;
+    }
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/community/posts/$postId/evaluate-for-me'),
+      headers: await _getHeaders(),
+      body: jsonEncode(body),
+    );
+    if (response.statusCode == 201) {
+      return CommunityThreadEvaluation.fromJson(
+        Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+      );
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to review thread'),
     );
   }
 
