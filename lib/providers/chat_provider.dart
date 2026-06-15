@@ -91,7 +91,7 @@ class ChatNotifier extends Notifier<ChatState> {
       final messages = await _conversationService.getMessages(conversationId);
       debugPrint('DEBUG: Loaded ${messages.length} messages.');
       state = state.copyWith(
-        messages: messages.reversed.toList(), // Assuming API returns newest first, or we adjust sort order
+        messages: messages,
         isLoading: false,
       );
 
