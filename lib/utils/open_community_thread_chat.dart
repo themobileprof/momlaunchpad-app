@@ -8,6 +8,31 @@ import '../services/analytics_service.dart';
 import '../services/api_service.dart';
 import '../widgets/premium_upsell_dialog.dart';
 
+/// Minimum time evaluation buttons stay disabled after a tap.
+const _kEvaluationButtonCooldown = Duration(seconds: 3);
+
+/// Prevents rapid repeat taps while a review is starting.
+mixin CommunityEvaluationTapGuard<T extends ConsumerStatefulWidget> on ConsumerState<T> {
+  bool _evaluationBusy = false;
+
+  bool get evaluationBusy => _evaluationBusy;
+
+  Future<void> guardEvaluationTap(Future<void> Function() action) async {
+    if (_evaluationBusy) return;
+    setState(() => _evaluationBusy = true);
+    final cooldownEnds = DateTime.now().add(_kEvaluationButtonCooldown);
+    try {
+      await action();
+    } finally {
+      final remaining = cooldownEnds.difference(DateTime.now());
+      if (remaining > Duration.zero) {
+        await Future.delayed(remaining);
+      }
+      if (mounted) setState(() => _evaluationBusy = false);
+    }
+  }
+}
+
 /// Opens a new chat seeded with a personalized community review.
 Future<void> openCommunityThreadEvaluation(
   BuildContext context,
@@ -88,29 +113,22 @@ class CommunityReviewDiscussionButton extends ConsumerStatefulWidget {
 }
 
 class _CommunityReviewDiscussionButtonState
-    extends ConsumerState<CommunityReviewDiscussionButton> {
-  bool _loading = false;
-
+    extends ConsumerState<CommunityReviewDiscussionButton>
+    with CommunityEvaluationTapGuard {
   Future<void> _onPressed() async {
-    if (_loading) return;
-    setState(() => _loading = true);
-    try {
-      await openCommunityThreadEvaluation(
-        context,
-        ref,
-        postId: widget.postId,
-      );
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
+    await guardEvaluationTap(() => openCommunityThreadEvaluation(
+          context,
+          ref,
+          postId: widget.postId,
+        ));
   }
 
   @override
   Widget build(BuildContext context) {
     final label = widget.hasReplies ? 'Review discussion' : 'Good for me?';
     return OutlinedButton.icon(
-      onPressed: _loading ? null : _onPressed,
-      icon: _loading
+      onPressed: evaluationBusy ? null : _onPressed,
+      icon: evaluationBusy
           ? SizedBox(
               width: 18,
               height: 18,
@@ -143,29 +161,22 @@ class CommunityReplyGoodForMeButton extends ConsumerStatefulWidget {
 }
 
 class _CommunityReplyGoodForMeButtonState
-    extends ConsumerState<CommunityReplyGoodForMeButton> {
-  bool _loading = false;
-
+    extends ConsumerState<CommunityReplyGoodForMeButton>
+    with CommunityEvaluationTapGuard {
   Future<void> _onPressed() async {
-    if (_loading) return;
-    setState(() => _loading = true);
-    try {
-      await openCommunityThreadEvaluation(
-        context,
-        ref,
-        postId: widget.postId,
-        replyId: widget.replyId,
-      );
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
+    await guardEvaluationTap(() => openCommunityThreadEvaluation(
+          context,
+          ref,
+          postId: widget.postId,
+          replyId: widget.replyId,
+        ));
   }
 
   @override
   Widget build(BuildContext context) {
     return TextButton.icon(
-      onPressed: _loading ? null : _onPressed,
-      icon: _loading
+      onPressed: evaluationBusy ? null : _onPressed,
+      icon: evaluationBusy
           ? SizedBox(
               width: 16,
               height: 16,
