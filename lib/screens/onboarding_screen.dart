@@ -15,7 +15,6 @@ import '../widgets/app_background.dart';
 import '../widgets/glass_container.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/journey_stage_picker.dart';
-import '../widgets/solid_filter_chip.dart';
 
 /// First-time walkthrough — pregnancy-first, with TTC support at signup.
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -28,7 +27,6 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
   final _nameController = TextEditingController();
-  final _concernController = TextEditingController();
 
   int _step = 0;
   JourneyStage? _journeyStage;
@@ -36,10 +34,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   bool? _isFirstPregnancy;
   bool _isSubmitting = false;
 
-  static const _stepCount = 5;
-
-  List<String> get _concernSuggestions =>
-      JourneyHelpers.concernSuggestionsFor(_journeyStage);
+  static const _stepCount = 4;
 
   @override
   void initState() {
@@ -54,7 +49,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void dispose() {
     _pageController.dispose();
     _nameController.dispose();
-    _concernController.dispose();
     super.dispose();
   }
 
@@ -111,9 +105,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               isFirstPregnancy: _journeyStage == JourneyStage.pregnant
                   ? (_isFirstPregnancy ?? true)
                   : null,
-              primaryConcern: _concernController.text.trim().isEmpty
-                  ? null
-                  : _concernController.text.trim(),
             ),
           );
     } catch (_) {
@@ -159,7 +150,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     _buildNameStep(),
                     _buildJourneyStep(),
                     _buildStageDetailsStep(),
-                    _buildConcernStep(),
                   ],
                 ),
               ),
@@ -456,50 +446,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildConcernStep() {
-    return _buildStepCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Anything on your mind?', style: AppTypography.headingMedium.copyWith(color: context.appInk)),
-          const SizedBox(height: AppSpacing.spaceSM),
-          Text(
-            'Optional — we\'ll keep learning more as you chat.',
-            style: AppTypography.caption.copyWith(color: context.appInkMuted),
-          ),
-          const SizedBox(height: AppSpacing.spaceMD),
-          Wrap(
-            spacing: AppSpacing.spaceSM,
-            runSpacing: AppSpacing.spaceSM,
-            children: _concernSuggestions.map((concern) {
-              final selected = _concernController.text == concern;
-              return SolidFilterChip(
-                label: Text(concern),
-                selected: selected,
-                onSelected: (_) {
-                  setState(() {
-                    _concernController.text = selected ? '' : concern;
-                  });
-                },
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: AppSpacing.spaceMD),
-          TextField(
-            controller: _concernController,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(
-              labelText: 'Or describe in your own words',
-              hintText: _journeyStage == JourneyStage.ttc
-                  ? 'e.g. anxious during the two-week wait'
-                  : 'e.g. worried about swelling',
-            ),
-          ),
-        ],
       ),
     );
   }

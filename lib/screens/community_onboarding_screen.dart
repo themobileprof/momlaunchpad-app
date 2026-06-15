@@ -6,9 +6,9 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../widgets/country_picker_field.dart';
+import '../widgets/community_interest_selector.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/location_suggest_field.dart';
-import '../widgets/solid_filter_chip.dart';
 
 /// First-time community setup: location + up to 5 interests.
 class CommunityOnboardingScreen extends ConsumerStatefulWidget {
@@ -86,10 +86,8 @@ class _CommunityOnboardingScreenState
     setState(() {
       if (_selected.contains(key)) {
         _selected.remove(key);
-      } else if (_selected.length < 5) {
-        _selected.add(key);
       } else {
-        _showSnack('You can select up to 5 interests.');
+        _selected.add(key);
       }
     });
   }
@@ -171,41 +169,14 @@ class _CommunityOnboardingScreenState
             ),
           ),
           const SizedBox(height: AppSpacing.spaceLG),
-          Row(
-            children: [
-              Text('Your interests', style: AppTypography.bodyTextMedium.copyWith(color: context.appInk)),
-              const Spacer(),
-              Text(
-                '${_selected.length}/5',
-                style: AppTypography.caption.copyWith(color: context.appInkMuted),
-              ),
-            ],
+          CommunityInterestSelector(
+            groups: groups,
+            selected: _selected,
+            onToggle: _toggleInterest,
+            onSelectionLimitReached: () {
+              _showSnack('You can select up to 5 interests.');
+            },
           ),
-          const SizedBox(height: AppSpacing.spaceSM),
-          for (final group in groups) ...[
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.spaceMD, bottom: AppSpacing.spaceSM),
-              child: Text(
-                group.label,
-                style: AppTypography.caption.copyWith(
-                  color: context.appPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            Wrap(
-              spacing: AppSpacing.spaceSM,
-              runSpacing: AppSpacing.spaceSM,
-              children: group.items.map((item) {
-                final selected = _selected.contains(item.key);
-                return SolidFilterChip(
-                  label: Text(item.label),
-                  selected: selected,
-                  onSelected: (_) => _toggleInterest(item.key),
-                );
-              }).toList(),
-            ),
-          ],
           const SizedBox(height: AppSpacing.spaceXL),
           GradientButton(
             onPressed: _submitting ? null : _submit,

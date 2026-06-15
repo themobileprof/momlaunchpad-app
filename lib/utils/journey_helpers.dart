@@ -6,23 +6,6 @@ import 'pregnancy_timing.dart';
 class JourneyHelpers {
   JourneyHelpers._();
 
-  static const ttcConcernSuggestions = [
-    'Fertility',
-    'Two-week wait',
-    'Ovulation timing',
-    'Cycle tracking',
-    'Anxiety',
-    'Emotional support',
-  ];
-
-  static const pregnantConcernSuggestions = [
-    'Morning sickness',
-    'Nutrition',
-    'Sleep',
-    'Cramping',
-    'Anxiety',
-  ];
-
   static JourneyStage? stageOf(UserProfile? profile) {
     if (profile == null) return null;
     return profile.journeyStage ??
@@ -90,25 +73,6 @@ class JourneyHelpers {
 
   static bool isTtc(UserProfile? profile) =>
       stageOf(profile) == JourneyStage.ttc;
-
-  static List<String> concernSuggestionsFor(JourneyStage? stage) {
-    switch (stage) {
-      case JourneyStage.ttc:
-        return ttcConcernSuggestions;
-      case JourneyStage.pregnant:
-      case null:
-        return pregnantConcernSuggestions;
-      case JourneyStage.postpartum:
-      case JourneyStage.miscarriage:
-        return const [
-          'Recovery',
-          'Sleep',
-          'Anxiety',
-          'Nutrition',
-          'Emotional support',
-        ];
-    }
-  }
 
   static String homeWelcomeTitle(UserProfile? profile) {
     return 'This week\'s note for you';

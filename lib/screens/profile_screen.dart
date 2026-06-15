@@ -9,6 +9,7 @@ import '../providers/auth_provider.dart';
 import '../providers/community_provider.dart';
 import '../providers/profile_provider.dart';
 import '../providers/service_providers.dart';
+import '../utils/community_interest_labels.dart';
 import '../utils/journey_helpers.dart';
 import '../utils/pregnancy_timing.dart';
 import '../services/api_service.dart';
@@ -21,6 +22,7 @@ import '../theme/typography.dart';
 import '../widgets/community_badge_profile_section.dart';
 import '../widgets/referral_profile_section.dart';
 import '../widgets/widgets.dart';
+import 'community_preferences_screen.dart';
 
 /// Profile page — view and edit pregnancy context used to personalize chat.
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -33,7 +35,6 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _concernController = TextEditingController();
   final _stateController = TextEditingController();
   final _cityController = TextEditingController();
 
@@ -61,15 +62,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     'kosher',
   ];
 
-  List<String> get _concernSuggestions =>
-      JourneyHelpers.concernSuggestionsFor(_journeyStage);
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = ref.read(communityProvider);
-      if (state.countries.isEmpty) {
+      if (state.countries.isEmpty || state.interestGroups.isEmpty) {
         ref.read(communityProvider.notifier).bootstrap();
       }
     });
@@ -78,7 +76,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _concernController.dispose();
     _stateController.dispose();
     _cityController.dispose();
     super.dispose();
@@ -155,11 +152,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _journeyStage = JourneyHelpers.stageOf(profile);
     _babyBirthDate = profile.babyBirthDate;
     _lossDate = profile.lossDate;
-    _concernController.text = profile.primaryConcern ?? '';
     _dietPreference = profile.dietPreference ?? profile.diet ?? '';
     _countryCode = profile.countryCode;
     _stateController.text = profile.stateProvince ?? '';
     _cityController.text = profile.city ?? '';
+  }
+
+  Future<void> _openCommunityFeedTopics() async {
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const CommunityPreferencesScreen()),
+    );
+    if (updated == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Community feed topics updated')),
+      );
+    }
   }
 
   Future<void> _pickProfilePhoto() async {
@@ -269,9 +277,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   : null,
               lossDate: _journeyStage == JourneyStage.miscarriage ? _lossDate : null,
               isFirstPregnancy: _isFirstPregnancy,
-              primaryConcern: _concernController.text.trim().isEmpty
-                  ? null
-                  : _concernController.text.trim(),
               dietPreference:
                   (_dietPreference == null || _dietPreference!.isEmpty)
                       ? null
@@ -542,6 +547,59 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.spaceLG),
+                  _buildSectionTitle('Community feed'),
+                  AppCard(
+                    padding: const EdgeInsets.all(AppSpacing.spaceMD),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Feed topics personalize your For You tab in Community.',
+                          style: AppTypography.caption.copyWith(
+                            color: context.appInkSubtle,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.spaceSM),
+                        if (profile != null &&
+                            profile.communityInterests.isNotEmpty) ...[
+                          Wrap(
+                            spacing: AppSpacing.spaceSM,
+                            runSpacing: AppSpacing.spaceSM,
+                            children: communityInterestLabels(
+                              profile.communityInterests,
+                              communityState.interestGroups,
+                            ).map((label) {
+                              return AppBadge(
+                                label: label,
+                                variant: AppBadgeVariant.secondary,
+                                small: true,
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: AppSpacing.spaceMD),
+                        ] else ...[
+                          Text(
+                            'No feed topics selected yet.',
+                            style: AppTypography.bodyText.copyWith(
+                              color: context.appInkMuted,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.spaceMD),
+                        ],
+                        OutlinedButton.icon(
+                          onPressed: _openCommunityFeedTopics,
+                          icon: Icon(Icons.tune_rounded),
+                          label: Text(
+                            profile != null &&
+                                    profile.communityInterests.isNotEmpty
+                                ? 'Edit feed topics'
+                                : 'Choose feed topics',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.spaceLG),
                   _buildSectionTitle('Your journey'),
                   AppCard(
                     padding: const EdgeInsets.all(AppSpacing.spaceMD),
@@ -758,41 +816,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           onChanged: (value) {
                             setState(() => _dietPreference = value);
                           },
-                        ),
-                        const SizedBox(height: AppSpacing.spaceMD),
-                        Text(
-                          'Current focus',
-                          style: AppTypography.bodyTextMedium,
-                        ),
-                        const SizedBox(height: AppSpacing.spaceSM),
-                        Wrap(
-                          spacing: AppSpacing.spaceSM,
-                          runSpacing: AppSpacing.spaceSM,
-                          children: _concernSuggestions.map((concern) {
-                            final selected =
-                                _concernController.text == concern;
-                            return FilterChip(
-                              label: Text(concern),
-                              selected: selected,
-                              onSelected: (_) {
-                                setState(() {
-                                  _concernController.text =
-                                      selected ? '' : concern;
-                                });
-                              },
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: AppSpacing.spaceSM),
-                        TextFormField(
-                          controller: _concernController,
-                          textCapitalization: TextCapitalization.sentences,
-                          decoration: InputDecoration(
-                            labelText: 'What would you like help with?',
-                            hintText: _journeyStage == JourneyStage.ttc
-                                ? 'e.g. ovulation timing, two-week wait'
-                                : 'e.g. morning sickness, nutrition',
-                          ),
                         ),
                       ],
                     ),
