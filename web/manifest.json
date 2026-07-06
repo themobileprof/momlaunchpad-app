@@ -1,11 +1,11 @@
 {
-    "name": "momlaunchpad_mobile",
-    "short_name": "momlaunchpad_mobile",
+    "name": "MomLaunchpad",
+    "short_name": "MomLaunchpad",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F0FDFA",
+    "theme_color": "#0F766E",
+    "description": "Pregnancy support companion app",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -8,6 +8,16 @@ This guide ensures visual consistency across the MomLaunchpad frontend, derived 
 
 The interface should feel like a gentle assistant - nurturing, modern, and friendly. Users are pregnant mothers seeking support, not power users navigating complex software.
 
+### App launcher icon
+
+Home-screen / store icons are generated from `assets/images/logo.png` (same asset as in-app branding). After updating the logo, regenerate platform icons:
+
+```bash
+dart run flutter_launcher_icons
+```
+
+Config lives in `pubspec.yaml` under `flutter_launcher_icons` (mint canvas `#F0FDFA`, adaptive Android foreground).
+
 ---
 
 ## Color Palette
