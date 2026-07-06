@@ -1,4 +1,4 @@
-// Helpers for external HTTPS image links (no server-side file storage).
+// Helpers for community post images (uploaded media paths and https links).
 import '../config/app_config.dart';
 
 bool isValidHttpsImageUrl(String? value) {

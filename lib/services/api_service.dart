@@ -872,6 +872,38 @@ class ApiService {
     );
   }
 
+  /// Uploads a JPEG/PNG/WebP image (max 5MB) for a community post.
+  /// Returns the public URL to pass in [CreatePostPayload.imageUrls].
+  Future<String> uploadCommunityPostImage(String filePath) async {
+    final token = await _storage.getToken();
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/api/community/uploads'),
+    );
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    request.files.add(await http.MultipartFile.fromPath('image', filePath));
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+
+    if (response.statusCode == 200) {
+      final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+      final url = body['url']?.toString().trim();
+      if (url != null && url.isNotEmpty) return url;
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: 'Invalid upload response',
+      );
+    }
+
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to upload image'),
+    );
+  }
+
   Future<CommunityPost> createCommunityPost(CreatePostPayload payload) async {
     final response = await _http.post(
       Uri.parse('$baseUrl/api/community/posts'),

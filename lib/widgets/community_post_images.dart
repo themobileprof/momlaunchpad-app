@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
+import '../utils/image_url.dart';
 
-/// Renders external image URLs attached to a community post.
+/// Renders image URLs attached to a community post (uploads or https links).
 class CommunityPostImages extends StatelessWidget {
   final List<String> imageUrls;
   final bool compact;
@@ -56,10 +57,12 @@ class _NetworkImageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolved = resolveMediaUrl(url) ?? url;
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Image.network(
-        url,
+        resolved,
         height: height,
         width: double.infinity,
         fit: BoxFit.cover,

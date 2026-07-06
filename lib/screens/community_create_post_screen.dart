@@ -6,7 +6,7 @@ import '../providers/service_providers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
-import '../widgets/online_image_url_list_editor.dart';
+import '../widgets/community_post_image_picker.dart';
 import '../widgets/widgets.dart';
 
 class CommunityCreatePostScreen extends ConsumerStatefulWidget {
@@ -32,6 +32,7 @@ class _CommunityCreatePostScreenState
   List<CommunityCatalogItem> _eventTypes = [];
   DateTime? _eventStartsAt;
   bool _submitting = false;
+  bool _uploadingImages = false;
   List<String> _imageUrls = [];
 
   bool get _isEventMode => widget.mode == CommunityComposeMode.event;
@@ -207,8 +208,10 @@ class _CommunityCreatePostScreenState
           ),
           if (!_isEventMode) ...[
             const SizedBox(height: AppSpacing.spaceMD),
-            OnlineImageUrlListEditor(
-              onChanged: (urls) => _imageUrls = urls,
+            CommunityPostImagePicker(
+              onChanged: (urls) => setState(() => _imageUrls = urls),
+              onUploadingChanged: (uploading) =>
+                  setState(() => _uploadingImages = uploading),
             ),
           ],
           const SizedBox(height: AppSpacing.spaceMD),
@@ -221,7 +224,7 @@ class _CommunityCreatePostScreenState
           ),
           const SizedBox(height: AppSpacing.spaceXL),
           GradientButton(
-            onPressed: _submitting ? null : _submit,
+            onPressed: (_submitting || _uploadingImages) ? null : _submit,
             isLoading: _submitting,
             label: _isEventMode ? 'Publish event' : 'Post',
           ),
