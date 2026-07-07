@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/notifications_provider.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../widgets/glass_container.dart';
+import '../screens/notifications_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/symptom_stats_screen.dart';
 import '../screens/profile_screen.dart';
 
 /// Bottom sheet listing secondary destinations (profile, settings, etc.).
-class MoreMenuSheet extends StatelessWidget {
+class MoreMenuSheet extends ConsumerWidget {
   const MoreMenuSheet({super.key});
 
   static Future<void> show(BuildContext context) {
@@ -21,7 +24,8 @@ class MoreMenuSheet extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unread = ref.watch(notificationsProvider).unread;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.spaceMD,
@@ -56,6 +60,13 @@ class MoreMenuSheet extends StatelessWidget {
               ),
               Text('More', style: AppTypography.headingMedium),
               const SizedBox(height: AppSpacing.spaceSM),
+              _MoreMenuItem(
+                icon: Icons.card_giftcard_outlined,
+                title: 'Rewards & updates',
+                subtitle: 'Top-up codes, discounts, and news',
+                badgeCount: unread,
+                onTap: () => _open(context, const NotificationsScreen()),
+              ),
               _MoreMenuItem(
                 icon: Icons.health_and_safety_outlined,
                 title: 'Health tracker',
@@ -95,26 +106,57 @@ class _MoreMenuItem extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final int badgeCount;
 
   const _MoreMenuItem({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.badgeCount = 0,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: context.appPrimary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(icon, color: context.appPrimary),
+      leading: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: context.appPrimary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: context.appPrimary),
+          ),
+          if (badgeCount > 0)
+            Positioned(
+              top: -4,
+              right: -4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                constraints: const BoxConstraints(minWidth: 18),
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  borderRadius: BorderRadius.circular(9),
+                  border: Border.all(color: context.appSurface, width: 1.5),
+                ),
+                child: Text(
+                  badgeCount > 99 ? '99+' : '$badgeCount',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.caption.copyWith(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
       title: Text(title, style: AppTypography.bodyTextMedium),
       subtitle: Text(

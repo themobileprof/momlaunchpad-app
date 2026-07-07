@@ -8,6 +8,7 @@ import '../widgets/more_menu_sheet.dart';
 import '../widgets/community_compose_fab.dart';
 import '../providers/home_navigation_provider.dart';
 import '../providers/community_provider.dart';
+import '../providers/notifications_provider.dart';
 import '../providers/service_providers.dart';
 import '../services/analytics_service.dart';
 import '../utils/community_compose.dart';
@@ -59,6 +60,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _currentIndex);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(notificationsProvider.notifier).refreshUnread();
+    });
   }
 
   @override
@@ -89,6 +93,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _onMoreTap() {
     HapticFeedback.lightImpact();
+    ref.read(notificationsProvider.notifier).refreshUnread();
     MoreMenuSheet.show(context);
   }
 
@@ -180,6 +185,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 activeIcon: Icons.apps_rounded,
                 label: 'More',
                 isSelected: false,
+                showBadge: ref.watch(notificationsProvider).unread > 0,
                 onTap: _onMoreTap,
               ),
             ),
@@ -210,6 +216,7 @@ class _NavBarItem extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
+  final bool showBadge;
 
   const _NavBarItem({
     required this.icon,
@@ -217,6 +224,7 @@ class _NavBarItem extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.onTap,
+    this.showBadge = false,
   });
 
   @override
@@ -250,10 +258,32 @@ class _NavBarItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isSelected ? activeIcon : icon,
-              color: isSelected ? onPrimary : muted,
-              size: 22,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  isSelected ? activeIcon : icon,
+                  color: isSelected ? onPrimary : muted,
+                  size: 22,
+                ),
+                if (showBadge)
+                  Positioned(
+                    top: -2,
+                    right: -3,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        color: AppColors.error,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: context.appSurface,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(

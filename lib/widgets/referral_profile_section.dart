@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/referral.dart';
 import '../models/user_profile.dart';
 import '../providers/service_providers.dart';
@@ -51,6 +52,17 @@ class _ReferralProfileSectionState extends ConsumerState<ReferralProfileSection>
     );
   }
 
+  Future<void> _share(String link, String code) async {
+    final message = link.isNotEmpty
+        ? 'Join me on MomLaunchpad — personalized pregnancy support. '
+            'Sign up with my link: $link'
+        : 'Join me on MomLaunchpad — personalized pregnancy support. '
+            'Use my referral code: $code';
+    await SharePlus.instance.share(
+      ShareParams(text: message, subject: 'Join me on MomLaunchpad'),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = widget.profile;
@@ -98,6 +110,17 @@ class _ReferralProfileSectionState extends ConsumerState<ReferralProfileSection>
             _CopyRow(
               value: link,
               onCopy: () => _copy(context, 'Referral link', link),
+            ),
+          ],
+          if (code.isNotEmpty || link.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.spaceMD),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => _share(link, code),
+                icon: const Icon(Icons.ios_share_rounded, size: 18),
+                label: const Text('Share invite'),
+              ),
             ),
           ],
           const SizedBox(height: AppSpacing.spaceMD),

@@ -15,6 +15,7 @@ import '../models/community.dart';
 import '../models/community_badge_request.dart';
 import '../models/community_thread_evaluation.dart';
 import '../models/referral.dart';
+import '../models/user_notification.dart';
 import '../config/app_config.dart';
 import 'storage_service.dart';
 
@@ -1187,6 +1188,68 @@ class ApiService {
       throw ApiException(
         statusCode: response.statusCode,
         message: _errorMessageFromBody(response, 'Failed to mark notification read'),
+      );
+    }
+  }
+
+  // ============ GENERAL NOTIFICATIONS (rewards & updates) ============
+
+  /// Rewards, referral rewards, and system messages (newest first).
+  Future<List<UserNotification>> getNotifications({int limit = 50}) async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/notifications?limit=$limit'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load notifications'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    return (body['notifications'] as List<dynamic>? ?? [])
+        .map((e) => UserNotification.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  /// Count of unread general notifications (for the More-menu badge).
+  Future<int> getUnreadNotificationCount() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/notifications/unread-count'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load unread count'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    return (body['unread'] as num?)?.toInt() ?? 0;
+  }
+
+  Future<void> markNotificationRead(String id) async {
+    final response = await _http.put(
+      Uri.parse('$baseUrl/api/notifications/$id/read'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to mark notification read'),
+      );
+    }
+  }
+
+  Future<void> markAllNotificationsRead() async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/notifications/read-all'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to mark all read'),
       );
     }
   }

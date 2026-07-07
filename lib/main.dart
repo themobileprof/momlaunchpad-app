@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers/theme_provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
+import 'providers/notifications_provider.dart';
 import 'providers/profile_provider.dart';
 import 'providers/service_providers.dart';
 import 'screens/account_load_screen.dart';
@@ -60,6 +61,7 @@ class _MomLaunchpadAppState extends ConsumerState<MomLaunchpadApp>
       // each day even if the home widget is never rebuilt (server dedups by day).
       if (ref.read(authProvider).isLoggedIn) {
         ref.read(apiServiceProvider).trackUsage('app_open');
+        ref.read(notificationsProvider.notifier).refreshUnread();
       }
     }
   }
