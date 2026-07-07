@@ -486,6 +486,26 @@ class ApiService {
     );
   }
 
+  /// Save post-visit debrief (pending tests, optional medications).
+  Future<DoctorVisit> debriefDoctorVisit({
+    required String id,
+    required VisitDebriefPayload payload,
+  }) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/doctor-visits/$id/debrief'),
+      headers: await _getHeaders(),
+      body: jsonEncode(payload.toJson()),
+    );
+
+    if (response.statusCode == 200) {
+      return DoctorVisit.fromJson(jsonDecode(response.body));
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to save visit debrief'),
+    );
+  }
+
   /// Delete a visit record
   Future<void> deleteDoctorVisit(String id) async {
     final response = await _http.delete(

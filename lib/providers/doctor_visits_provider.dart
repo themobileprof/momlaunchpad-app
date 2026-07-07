@@ -80,6 +80,24 @@ class DoctorVisitsNotifier extends Notifier<DoctorVisitsState> {
     }
   }
 
+  Future<DoctorVisit> debriefVisit({
+    required String id,
+    required VisitDebriefPayload payload,
+  }) async {
+    try {
+      final visit = await _apiService.debriefDoctorVisit(id: id, payload: payload);
+      final updated = state.visits
+          .map((v) => v.id == id ? visit : v)
+          .toList()
+        ..sort((a, b) => b.visitDate.compareTo(a.visitDate));
+      state = state.copyWith(visits: updated);
+      return visit;
+    } on ApiException catch (e) {
+      state = state.copyWith(error: e.message);
+      rethrow;
+    }
+  }
+
   Future<void> deleteVisit(String id) async {
     try {
       await _apiService.deleteDoctorVisit(id);

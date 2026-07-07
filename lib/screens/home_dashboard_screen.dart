@@ -13,6 +13,7 @@ import '../theme/typography.dart';
 import '../widgets/widgets.dart';
 import '../widgets/ongoing_symptom_prompt.dart';
 import '../widgets/home_community_highlight.dart';
+import '../widgets/visit_check_in_prompt.dart';
 import '../widgets/ttc_home_hero.dart';
 import 'calendar_screen.dart';
 import 'conversation_list_screen.dart';
@@ -99,6 +100,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                 child: _buildWelcomeSection(welcomeState, profile),
               ),
             ),
+            const SliverToBoxAdapter(child: VisitCheckInPrompt()),
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.only(top: AppSpacing.spaceLG),

@@ -108,6 +108,59 @@ class VisitLabResult {
   }
 }
 
+/// Ordered test that is not yet completed (post-visit debrief).
+class VisitPendingTest {
+  final String testName;
+  final DateTime? dueBy;
+  final String status; // pending, done, skipped
+  final String? notes;
+
+  const VisitPendingTest({
+    required this.testName,
+    this.dueBy,
+    this.status = 'pending',
+    this.notes,
+  });
+
+  factory VisitPendingTest.fromJson(Map<String, dynamic> json) {
+    return VisitPendingTest(
+      testName: json['test_name'] as String? ?? '',
+      dueBy: json['due_by'] != null
+          ? DateTime.parse(json['due_by'] as String)
+          : null,
+      status: json['status'] as String? ?? 'pending',
+      notes: json['notes'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'test_name': testName,
+        if (dueBy != null) 'due_by': dueBy!.toUtc().toIso8601String(),
+        'status': status,
+        if (notes != null && notes!.isNotEmpty) 'notes': notes,
+      };
+}
+
+/// Body for saving a post-visit debrief from the home check-in card.
+class VisitDebriefPayload {
+  final List<VisitPendingTest> pendingTests;
+  final List<VisitMedication> medications;
+  final bool markCompleted;
+
+  const VisitDebriefPayload({
+    this.pendingTests = const [],
+    this.medications = const [],
+    this.markCompleted = true,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'pending_tests': pendingTests.map((t) => t.toJson()).toList(),
+        if (medications.isNotEmpty)
+          'medications': medications.map((m) => m.toJson()).toList(),
+        'mark_completed': markCompleted,
+      };
+}
+
 /// Doctor / prenatal visit record (micro EMR).
 class DoctorVisit {
   final String id;
@@ -131,8 +184,10 @@ class DoctorVisit {
   final int? gestationalAgeWeeks;
   final List<VisitMedication> medications;
   final List<VisitLabResult> labResults;
+  final List<VisitPendingTest> pendingTests;
   final DateTime? nextAppointmentAt;
   final String? nextAppointmentNotes;
+  final DateTime? debriefCompletedAt;
   final String recordedBy;
   final String? providerUserId;
   final DateTime createdAt;
@@ -160,8 +215,10 @@ class DoctorVisit {
     this.gestationalAgeWeeks,
     this.medications = const [],
     this.labResults = const [],
+    this.pendingTests = const [],
     this.nextAppointmentAt,
     this.nextAppointmentNotes,
+    this.debriefCompletedAt,
     this.recordedBy = 'user',
     this.providerUserId,
     required this.createdAt,
@@ -195,10 +252,16 @@ class DoctorVisit {
       labResults: (json['lab_results'] as List<dynamic>? ?? [])
           .map((e) => VisitLabResult.fromJson(e as Map<String, dynamic>))
           .toList(),
+      pendingTests: (json['pending_tests'] as List<dynamic>? ?? [])
+          .map((e) => VisitPendingTest.fromJson(e as Map<String, dynamic>))
+          .toList(),
       nextAppointmentAt: json['next_appointment_at'] != null
           ? DateTime.parse(json['next_appointment_at'] as String)
           : null,
       nextAppointmentNotes: json['next_appointment_notes'] as String?,
+      debriefCompletedAt: json['debrief_completed_at'] != null
+          ? DateTime.parse(json['debrief_completed_at'] as String)
+          : null,
       recordedBy: json['recorded_by'] as String? ?? 'user',
       providerUserId: json['provider_user_id'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -219,6 +282,13 @@ class DoctorVisit {
   bool get hasUpcomingAppointment {
     if (nextAppointmentAt == null) return false;
     return nextAppointmentAt!.isAfter(DateTime.now());
+  }
+
+  bool get needsDebrief {
+    if (debriefCompletedAt != null) return false;
+    final daysSince =
+        DateTime.now().difference(visitDate.toLocal()).inDays;
+    return daysSince >= 0 && daysSince <= 14;
   }
 
   bool get isProviderRecorded => recordedBy == 'provider';
