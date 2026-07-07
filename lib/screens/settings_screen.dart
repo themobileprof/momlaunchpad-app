@@ -4,6 +4,8 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../providers/auth_provider.dart';
+import '../providers/google_calendar_sync_provider.dart';
+import '../providers/reminders_provider.dart';
 import '../providers/theme_provider.dart';
 import '../models/user.dart';
 import '../widgets/feedback_sheet.dart';
@@ -17,6 +19,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
     final themePreference = ref.watch(themePreferenceProvider);
+    final calendarSync = ref.watch(googleCalendarSyncProvider);
 
     return Scaffold(
       appBar: const MomAppBar(pageTitle: 'Settings'),
@@ -49,6 +52,31 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.spaceLG),
 
           _buildSectionHeader(context, 'Preferences'),
+          AppListTileCard(
+            leadingIcon: Icons.sync_rounded,
+            title: 'Google Calendar sync',
+            subtitle: calendarSync.enabled
+                ? 'Reminders sync to your primary Google Calendar'
+                : 'Send app reminders to Google Calendar',
+            trailing: calendarSync.isLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Switch.adaptive(
+                    value: calendarSync.enabled,
+                    onChanged: (value) =>
+                        _setGoogleCalendarSync(context, ref, value),
+                  ),
+            onTap: calendarSync.isLoading
+                ? null
+                : () => _setGoogleCalendarSync(
+                      context,
+                      ref,
+                      !calendarSync.enabled,
+                    ),
+          ),
           AppListTileCard(
             leadingIcon: Icons.notifications_rounded,
             title: 'Notifications',
@@ -229,6 +257,48 @@ class SettingsScreen extends ConsumerWidget {
           },
         );
       },
+    );
+  }
+
+  Future<void> _setGoogleCalendarSync(
+    BuildContext context,
+    WidgetRef ref,
+    bool enabled,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final syncNotifier = ref.read(googleCalendarSyncProvider.notifier);
+
+    if (enabled) {
+      final ok = await syncNotifier.enable();
+      if (!context.mounted) return;
+      if (ok) {
+        await ref.read(remindersProvider.notifier).syncAllToGoogleCalendar();
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Google Calendar sync enabled'),
+          ),
+        );
+      } else {
+        final error = ref.read(googleCalendarSyncProvider).error;
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              error ?? 'Could not connect Google Calendar',
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    await syncNotifier.disable();
+    if (!context.mounted) return;
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Google Calendar sync turned off. Existing Google events were kept.',
+        ),
+      ),
     );
   }
 

@@ -8,6 +8,7 @@ class Reminder {
   final String priority; // 'low', 'medium', 'high', 'urgent'
   final bool isCompleted;
   final String? communityEventId;
+  final String? googleCalendarEventId;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -20,6 +21,7 @@ class Reminder {
     required this.priority,
     required this.isCompleted,
     this.communityEventId,
+    this.googleCalendarEventId,
     required this.createdAt,
     this.updatedAt,
   });
@@ -34,6 +36,7 @@ class Reminder {
       priority: json['priority'] as String,
       isCompleted: json['is_completed'] as bool? ?? false,
       communityEventId: json['community_event_id']?.toString(),
+      googleCalendarEventId: json['google_calendar_event_id']?.toString(),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
@@ -51,6 +54,8 @@ class Reminder {
       'priority': priority,
       'is_completed': isCompleted,
       if (communityEventId != null) 'community_event_id': communityEventId,
+      if (googleCalendarEventId != null)
+        'google_calendar_event_id': googleCalendarEventId,
       'created_at': createdAt.toIso8601String(),
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
     };
@@ -65,6 +70,7 @@ class Reminder {
     String? priority,
     bool? isCompleted,
     String? communityEventId,
+    String? googleCalendarEventId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -77,6 +83,8 @@ class Reminder {
       priority: priority ?? this.priority,
       isCompleted: isCompleted ?? this.isCompleted,
       communityEventId: communityEventId ?? this.communityEventId,
+      googleCalendarEventId:
+          googleCalendarEventId ?? this.googleCalendarEventId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

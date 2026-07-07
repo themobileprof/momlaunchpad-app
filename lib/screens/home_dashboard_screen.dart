@@ -7,6 +7,7 @@ import '../providers/profile_provider.dart';
 import '../providers/symptom_provider.dart';
 import '../providers/welcome_provider.dart';
 import '../providers/home_community_preview_provider.dart';
+import '../providers/service_providers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -35,6 +36,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(welcomeProvider.notifier).ensureFreshForHome();
       ref.read(homeCommunityPreviewProvider.notifier).load();
+      ref.read(apiServiceProvider).trackUsage('home_view');
     });
   }
 

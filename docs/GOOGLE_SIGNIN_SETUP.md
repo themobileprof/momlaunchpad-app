@@ -81,6 +81,23 @@ clientID := "YOUR_WEB_CLIENT_ID_HERE.apps.googleusercontent.com"
 - `lib/screens/login_screen.dart` - Added Google Sign-In button
 - `android/app/src/main/res/values/strings.xml` - Created for Web Client ID
 
+## Google Calendar sync (optional)
+
+Reminders can sync one-way to the user's **primary Google Calendar** when enabled in **Settings → Google Calendar sync**.
+
+### Google Cloud setup
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), enable **Google Calendar API** for the same project as Sign-In.
+2. On the **OAuth consent screen**, add scope:
+   - `https://www.googleapis.com/auth/calendar.events`
+3. No extra OAuth client is required beyond existing Android/iOS/Web clients — the app requests the scope at runtime via `requestScopes`.
+
+### Behaviour
+
+- **On:** new and updated reminders create/update Google Calendar events; deletes remove linked events.
+- **Off:** MomLaunchpad reminders stay in-app only; existing Google events are **not** deleted.
+- Event links are stored as `google_calendar_event_id` on each reminder (migration `029`).
+
 ## Troubleshooting
 
 ### "Sign-in failed" Error

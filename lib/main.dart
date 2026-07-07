@@ -56,6 +56,11 @@ class _MomLaunchpadAppState extends ConsumerState<MomLaunchpadApp>
     if (state == AppLifecycleState.resumed) {
       ref.read(analyticsServiceProvider).logAppOpen();
       ref.read(authProvider.notifier).refreshSessionIfLoggedIn();
+      // Daily usage ping on every foreground so a returning user is counted
+      // each day even if the home widget is never rebuilt (server dedups by day).
+      if (ref.read(authProvider).isLoggedIn) {
+        ref.read(apiServiceProvider).trackUsage('app_open');
+      }
     }
   }
 

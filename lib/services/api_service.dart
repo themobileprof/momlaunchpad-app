@@ -32,11 +32,15 @@ class ApiService {
   })  : _storage = storage,
         _http = httpClient ?? http.Client();
 
+  /// Platform tag sent on every request so the backend can compare mobile vs web usage.
+  static const String _clientPlatform = 'mobile';
+
   /// Get authorization header with JWT token
   Future<Map<String, String>> _getHeaders() async {
     final token = await _storage.getToken();
     return {
       'Content-Type': 'application/json',
+      'X-Client-Platform': _clientPlatform,
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
@@ -64,6 +68,19 @@ class ApiService {
     await _storage.saveCachedUser(authResponse.user);
   }
 
+  /// Fire-and-forget usage ping (mobile vs web comparison). Never throws.
+  Future<void> trackUsage([String event = 'home_view']) async {
+    try {
+      await _http.post(
+        Uri.parse('$baseUrl/api/usage/track'),
+        headers: await _getHeaders(),
+        body: jsonEncode({'event': event, 'platform': _clientPlatform}),
+      );
+    } catch (_) {
+      // usage tracking is best-effort; ignore network/errors
+    }
+  }
+
   // ============ AUTH ENDPOINTS ============
 
   /// Register new user
@@ -84,7 +101,7 @@ class ApiService {
     }
     final response = await _http.post(
       Uri.parse('$baseUrl/api/auth/register'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json', 'X-Client-Platform': _clientPlatform},
       body: jsonEncode(body),
     );
 
@@ -107,7 +124,7 @@ class ApiService {
   }) async {
     final response = await _http.post(
       Uri.parse('$baseUrl/api/auth/login'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json', 'X-Client-Platform': _clientPlatform},
       body: jsonEncode({
         'email': email,
         'password': password,
@@ -137,7 +154,7 @@ class ApiService {
     }
     final response = await _http.post(
       Uri.parse('$baseUrl/api/auth/google/token'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json', 'X-Client-Platform': _clientPlatform},
       body: jsonEncode(body),
     );
 
@@ -371,13 +388,14 @@ class ApiService {
   }
 
   /// Update existing reminder
-  Future<void> updateReminder({
+  Future<Reminder> updateReminder({
     required String id,
     String? title,
     String? description,
     DateTime? scheduledTime,
     String? priority,
     bool? isCompleted,
+    String? googleCalendarEventId,
   }) async {
     final response = await _http.put(
       Uri.parse('$baseUrl/api/reminders/$id'),
@@ -389,10 +407,14 @@ class ApiService {
           'reminder_time': scheduledTime.toUtc().toIso8601String(),
         if (priority != null) 'priority': priority,
         if (isCompleted != null) 'is_completed': isCompleted,
+        if (googleCalendarEventId != null)
+          'google_calendar_event_id': googleCalendarEventId,
       }),
     );
 
-    if (response.statusCode != 200) {
+    if (response.statusCode == 200) {
+      return Reminder.fromJson(jsonDecode(response.body));
+    } else {
       throw ApiException(
         statusCode: response.statusCode,
         message: 'Failed to update reminder',

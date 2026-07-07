@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/reminder.dart';
 import '../services/api_service.dart';
+import '../services/google_calendar_sync_service.dart';
+import 'google_calendar_sync_provider.dart';
 import 'service_providers.dart';
 
 /// Reminders state
@@ -37,11 +40,8 @@ class RemindersState {
   List<Reminder> get upcomingReminders {
     final now = DateTime.now();
     return reminders
-        .where((r) => 
-            r.scheduledTime.isAfter(now) && 
-            !r.isToday && 
-            !r.isCompleted
-        )
+        .where((r) =>
+            r.scheduledTime.isAfter(now) && !r.isToday && !r.isCompleted)
         .toList()
       ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
   }
@@ -56,12 +56,9 @@ class RemindersState {
   List<Reminder> get pastReminders {
     final now = DateTime.now();
     return reminders
-        .where((r) => 
-            r.scheduledTime.isBefore(now) && 
-            !r.isToday
-        )
+        .where((r) => r.scheduledTime.isBefore(now) && !r.isToday)
         .toList()
-      ..sort((a, b) => b.scheduledTime.compareTo(a.scheduledTime)); // Most recent first
+      ..sort((a, b) => b.scheduledTime.compareTo(a.scheduledTime));
   }
 }
 
@@ -75,10 +72,22 @@ class RemindersNotifier extends Notifier<RemindersState> {
     return RemindersState();
   }
 
+  bool get _googleSyncEnabled => ref.read(googleCalendarSyncProvider).enabled;
+
+  GoogleCalendarSyncService get _googleSync =>
+      ref.read(googleCalendarSyncServiceProvider);
+
+  void _replaceReminder(Reminder reminder) {
+    final updated = state.reminders
+        .map((r) => r.id == reminder.id ? reminder : r)
+        .toList();
+    state = state.copyWith(reminders: updated);
+  }
+
   /// Fetch all reminders from backend
   Future<void> fetchReminders() async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final reminders = await _apiService.getReminders();
       state = RemindersState(reminders: reminders, isLoading: false);
@@ -95,6 +104,64 @@ class RemindersNotifier extends Notifier<RemindersState> {
     }
   }
 
+  /// Push existing reminders that are not yet linked to Google Calendar.
+  Future<void> syncAllToGoogleCalendar() async {
+    if (!_googleSyncEnabled) return;
+
+    for (final reminder in state.reminders) {
+      if (reminder.isCompleted) continue;
+      if (reminder.googleCalendarEventId != null &&
+          reminder.googleCalendarEventId!.isNotEmpty) {
+        continue;
+      }
+      try {
+        final linked = await _linkReminderToGoogle(reminder);
+        _replaceReminder(linked);
+      } catch (e) {
+        debugPrint('Google Calendar backfill failed for ${reminder.id}: $e');
+      }
+    }
+  }
+
+  Future<Reminder> _linkReminderToGoogle(Reminder reminder) async {
+    final eventId = await _googleSync.createEvent(reminder);
+    return _apiService.updateReminder(
+      id: reminder.id,
+      googleCalendarEventId: eventId,
+    );
+  }
+
+  Future<Reminder> _syncReminderChange(Reminder reminder) async {
+    if (!_googleSyncEnabled) return reminder;
+
+    try {
+      final eventId = reminder.googleCalendarEventId;
+      if (reminder.isCompleted) {
+        if (eventId != null && eventId.isNotEmpty) {
+          await _googleSync.deleteEvent(eventId);
+          return _apiService.updateReminder(
+            id: reminder.id,
+            googleCalendarEventId: '',
+          );
+        }
+        return reminder;
+      }
+
+      if (eventId != null && eventId.isNotEmpty) {
+        await _googleSync.updateEvent(reminder);
+        return reminder;
+      }
+
+      return _linkReminderToGoogle(reminder);
+    } on GoogleCalendarSyncException catch (e) {
+      debugPrint('Google Calendar sync failed: $e');
+      return reminder;
+    } catch (e) {
+      debugPrint('Google Calendar sync failed: $e');
+      return reminder;
+    }
+  }
+
   /// Add new reminder
   Future<Reminder> addReminder({
     required String title,
@@ -103,13 +170,15 @@ class RemindersNotifier extends Notifier<RemindersState> {
     required String priority,
   }) async {
     try {
-      final reminder = await _apiService.createReminder(
+      var reminder = await _apiService.createReminder(
         title: title,
         description: description,
         scheduledTime: scheduledTime,
         priority: priority,
       );
-      
+
+      reminder = await _syncReminderChange(reminder);
+
       state = state.copyWith(
         reminders: [...state.reminders, reminder],
       );
@@ -130,7 +199,7 @@ class RemindersNotifier extends Notifier<RemindersState> {
     bool? isCompleted,
   }) async {
     try {
-      await _apiService.updateReminder(
+      var reminder = await _apiService.updateReminder(
         id: id,
         title: title,
         description: description,
@@ -138,22 +207,9 @@ class RemindersNotifier extends Notifier<RemindersState> {
         priority: priority,
         isCompleted: isCompleted,
       );
-      
-      // Update local state
-      final updatedReminders = state.reminders.map((r) {
-        if (r.id == id) {
-          return r.copyWith(
-            title: title,
-            description: description,
-            scheduledTime: scheduledTime,
-            priority: priority,
-            isCompleted: isCompleted,
-          );
-        }
-        return r;
-      }).toList();
-      
-      state = state.copyWith(reminders: updatedReminders);
+
+      reminder = await _syncReminderChange(reminder);
+      _replaceReminder(reminder);
     } on ApiException catch (e) {
       state = state.copyWith(error: e.message);
       rethrow;
@@ -163,12 +219,22 @@ class RemindersNotifier extends Notifier<RemindersState> {
   /// Delete reminder
   Future<void> deleteReminder(String id) async {
     try {
+      final reminder = state.reminders.firstWhere((r) => r.id == id);
+      if (_googleSyncEnabled &&
+          reminder.googleCalendarEventId != null &&
+          reminder.googleCalendarEventId!.isNotEmpty) {
+        try {
+          await _googleSync.deleteEvent(reminder.googleCalendarEventId!);
+        } catch (e) {
+          debugPrint('Google Calendar delete failed: $e');
+        }
+      }
+
       await _apiService.deleteReminder(id);
-      
-      final updatedReminders = state.reminders
-          .where((r) => r.id != id)
-          .toList();
-      
+
+      final updatedReminders =
+          state.reminders.where((r) => r.id != id).toList();
+
       state = state.copyWith(reminders: updatedReminders);
     } on ApiException catch (e) {
       state = state.copyWith(error: e.message);
@@ -184,7 +250,8 @@ class RemindersNotifier extends Notifier<RemindersState> {
 }
 
 /// Reminders provider instance
-final remindersProvider = NotifierProvider<RemindersNotifier, RemindersState>(RemindersNotifier.new);
+final remindersProvider =
+    NotifierProvider<RemindersNotifier, RemindersState>(RemindersNotifier.new);
 
 /// Convenience provider for today's reminders
 final todayRemindersProvider = Provider<List<Reminder>>((ref) {
