@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/journey_stage.dart';
+import '../models/baby_gender.dart';
 import '../models/user_profile.dart';
+import '../providers/baby_theme_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
 import 'package:intl/intl.dart';
@@ -15,6 +17,7 @@ import '../widgets/app_background.dart';
 import '../widgets/glass_container.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/journey_stage_picker.dart';
+import '../widgets/gender_picker.dart';
 
 /// First-time walkthrough — pregnancy-first, with TTC support at signup.
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -32,6 +35,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   JourneyStage? _journeyStage;
   int _pregnancyWeek = 20;
   bool? _isFirstPregnancy;
+  BabyGender? _babyGender;
   bool _isSubmitting = false;
 
   static const _stepCount = 4;
@@ -47,6 +51,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   void dispose() {
+    ref.read(previewBabyGenderProvider.notifier).clear();
     _pageController.dispose();
     _nameController.dispose();
     super.dispose();
@@ -104,6 +109,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   JourneyHelpers.needsPregnancyWeek(stage) ? _pregnancyWeek : null,
               isFirstPregnancy: _journeyStage == JourneyStage.pregnant
                   ? (_isFirstPregnancy ?? true)
+                  : null,
+              babyGender: _journeyStage == JourneyStage.pregnant
+                  ? _babyGender
                   : null,
             ),
           );
@@ -391,6 +399,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               label: 'No, I\'ve been pregnant before',
               selected: _isFirstPregnancy == false,
               onTap: () => setState(() => _isFirstPregnancy = false),
+            ),
+            const SizedBox(height: AppSpacing.spaceLG),
+            Text(
+              'Baby gender (optional)',
+              style: AppTypography.bodyTextMedium.copyWith(color: context.appInk),
+            ),
+            const SizedBox(height: AppSpacing.spaceXS),
+            Text(
+              'Personalize your app colors — you can change this anytime in profile.',
+              style: AppTypography.caption.copyWith(color: context.appInkMuted),
+            ),
+            const SizedBox(height: AppSpacing.spaceMD),
+            GenderPicker(
+              value: _babyGender,
+              onChanged: (gender) {
+                setState(() => _babyGender = gender);
+                ref.read(previewBabyGenderProvider.notifier).set(gender);
+              },
             ),
           ] else ...[
             Text(

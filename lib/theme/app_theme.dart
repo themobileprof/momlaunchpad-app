@@ -1,28 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../utils/baby_theme.dart';
 import 'colors.dart';
 import 'spacing.dart';
 import 'typography.dart';
 import 'theme_extensions.dart';
 
-ThemeData buildAppLightTheme() => _buildTheme(Brightness.light);
+ThemeData buildAppLightTheme({BabyThemePalette? babyTheme}) =>
+    _buildTheme(Brightness.light, babyTheme: babyTheme);
 
-ThemeData buildAppDarkTheme() => _buildTheme(Brightness.dark);
+ThemeData buildAppDarkTheme({BabyThemePalette? babyTheme}) =>
+    _buildTheme(Brightness.dark, babyTheme: babyTheme);
 
 /// MomLaunchpad theme — mint greens and soft teals, solid button fills.
-ThemeData _buildTheme(Brightness brightness) {
+ThemeData _buildTheme(Brightness brightness, {BabyThemePalette? babyTheme}) {
   final isDark = brightness == Brightness.dark;
 
-  final canvas = isDark ? AppColors.canvasDark : AppColors.canvasLight;
-  final surface = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+  final canvas = isDark
+      ? AppColors.canvasDark
+      : (babyTheme?.canvas ?? AppColors.canvasLight);
+  final surface = isDark
+      ? AppColors.surfaceDark
+      : AppColors.surfaceLight;
+  final surfaceMuted = isDark
+      ? AppColors.surfaceMutedDark
+      : (babyTheme?.surfaceMuted ?? AppColors.surfaceMutedLight);
   final onSurface = isDark ? AppColors.inkDarkMode : AppColors.inkLightMode;
   final onSurfaceMuted =
       isDark ? AppColors.inkMutedDark : AppColors.inkMutedLight;
-  final primary = isDark ? AppColors.tealLight : AppColors.teal;
-  final primaryContainer =
-      isDark ? AppColors.tealDark : AppColors.tealSoft;
-  final secondaryContainer =
-      isDark ? AppColors.surfaceMutedDark : AppColors.mintSoft;
+  final primary = babyTheme?.accentDeep ??
+      (isDark ? AppColors.tealLight : AppColors.teal);
+  final primaryContainer = babyTheme?.accentSoft ??
+      (isDark ? AppColors.tealDark : AppColors.tealSoft);
+  final secondary = babyTheme?.accent ??
+      (isDark ? AppColors.mintLight : AppColors.mint);
+  final secondaryContainer = babyTheme?.accentLight.withValues(alpha: 0.35) ??
+      (isDark ? AppColors.surfaceMutedDark : AppColors.mintSoft);
 
   final colorScheme = isDark
       ? ColorScheme.dark(
@@ -30,12 +43,13 @@ ThemeData _buildTheme(Brightness brightness) {
           onPrimary: AppColors.surfaceLight,
           primaryContainer: primaryContainer,
           onPrimaryContainer: AppColors.inkDarkMode,
-          secondary: AppColors.mintLight,
-          onSecondary: AppColors.tealDark,
+          secondary: secondary,
+          onSecondary: isDark ? AppColors.tealDark : AppColors.tealDark,
           secondaryContainer: secondaryContainer,
           onSecondaryContainer: AppColors.inkDarkMode,
           surface: surface,
           onSurface: onSurface,
+          surfaceContainerHighest: surfaceMuted,
           error: AppColors.error,
           onError: AppColors.surfaceLight,
           outline: onSurfaceMuted.withValues(alpha: 0.35),
@@ -45,12 +59,13 @@ ThemeData _buildTheme(Brightness brightness) {
           onPrimary: AppColors.surfaceLight,
           primaryContainer: primaryContainer,
           onPrimaryContainer: AppColors.tealDark,
-          secondary: AppColors.mint,
+          secondary: secondary,
           onSecondary: AppColors.tealDark,
           secondaryContainer: secondaryContainer,
           onSecondaryContainer: AppColors.tealDark,
           surface: surface,
           onSurface: onSurface,
+          surfaceContainerHighest: surfaceMuted,
           error: AppColors.error,
           onError: AppColors.surfaceLight,
           outline: onSurfaceMuted.withValues(alpha: 0.35),

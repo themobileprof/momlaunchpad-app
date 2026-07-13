@@ -1,4 +1,5 @@
 import 'journey_stage.dart';
+import 'baby_gender.dart';
 
 /// User profile and personalization facts from the backend.
 class UserProfile {
@@ -13,6 +14,7 @@ class UserProfile {
   final DateTime? pregnancyStartDate;
   final int? pregnancyWeek;
   final bool? isFirstPregnancy;
+  final BabyGender? babyGender;
   final String? primaryConcern;
   final String? dietPreference;
   final Map<String, String> learnedFacts;
@@ -41,6 +43,7 @@ class UserProfile {
     this.pregnancyStartDate,
     this.pregnancyWeek,
     this.isFirstPregnancy,
+    this.babyGender,
     this.primaryConcern,
     this.dietPreference,
     this.learnedFacts = const {},
@@ -71,6 +74,7 @@ class UserProfile {
       pregnancyStartDate: _parseDate(json['pregnancy_start_date']),
       pregnancyWeek: _parseInt(json['pregnancy_week']),
       isFirstPregnancy: json['is_first_pregnancy'] as bool?,
+      babyGender: BabyGender.fromApi(json['baby_gender']?.toString()),
       primaryConcern: json['primary_concern']?.toString(),
       dietPreference: json['diet_preference']?.toString(),
       learnedFacts: _parseFactMap(json['learned_facts']),
@@ -125,6 +129,68 @@ class UserProfile {
     }
     return 'Not set';
   }
+
+  UserProfile copyWith({
+    String? name,
+    String? language,
+    bool? onboardingCompleted,
+    JourneyStage? journeyStage,
+    DateTime? journeyStageSince,
+    DateTime? babyBirthDate,
+    DateTime? lossDate,
+    DateTime? expectedDeliveryDate,
+    DateTime? pregnancyStartDate,
+    int? pregnancyWeek,
+    bool? isFirstPregnancy,
+    BabyGender? babyGender,
+    bool clearBabyGender = false,
+    String? primaryConcern,
+    String? dietPreference,
+    Map<String, String>? learnedFacts,
+    Map<String, String>? facts,
+    String? profilePhotoUrl,
+    String? country,
+    String? countryCode,
+    String? stateProvince,
+    String? city,
+    bool? communityOnboardingCompleted,
+    List<String>? communityInterests,
+    String? referralCode,
+    String? referralLink,
+    int? referralRewardPoints,
+    int? totalReferrals,
+  }) {
+    return UserProfile(
+      name: name ?? this.name,
+      language: language ?? this.language,
+      onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      journeyStage: journeyStage ?? this.journeyStage,
+      journeyStageSince: journeyStageSince ?? this.journeyStageSince,
+      babyBirthDate: babyBirthDate ?? this.babyBirthDate,
+      lossDate: lossDate ?? this.lossDate,
+      expectedDeliveryDate: expectedDeliveryDate ?? this.expectedDeliveryDate,
+      pregnancyStartDate: pregnancyStartDate ?? this.pregnancyStartDate,
+      pregnancyWeek: pregnancyWeek ?? this.pregnancyWeek,
+      isFirstPregnancy: isFirstPregnancy ?? this.isFirstPregnancy,
+      babyGender: clearBabyGender ? null : (babyGender ?? this.babyGender),
+      primaryConcern: primaryConcern ?? this.primaryConcern,
+      dietPreference: dietPreference ?? this.dietPreference,
+      learnedFacts: learnedFacts ?? this.learnedFacts,
+      facts: facts ?? this.facts,
+      profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
+      country: country ?? this.country,
+      countryCode: countryCode ?? this.countryCode,
+      stateProvince: stateProvince ?? this.stateProvince,
+      city: city ?? this.city,
+      communityOnboardingCompleted:
+          communityOnboardingCompleted ?? this.communityOnboardingCompleted,
+      communityInterests: communityInterests ?? this.communityInterests,
+      referralCode: referralCode ?? this.referralCode,
+      referralLink: referralLink ?? this.referralLink,
+      referralRewardPoints: referralRewardPoints ?? this.referralRewardPoints,
+      totalReferrals: totalReferrals ?? this.totalReferrals,
+    );
+  }
 }
 
 /// Payload for saving profile or completing onboarding.
@@ -137,6 +203,8 @@ class ProfileSavePayload {
   final DateTime? babyBirthDate;
   final DateTime? lossDate;
   final bool? isFirstPregnancy;
+  final BabyGender? babyGender;
+  final bool clearBabyGender;
   final String? primaryConcern;
   final String? dietPreference;
   final String? profilePhotoUrl;
@@ -154,6 +222,8 @@ class ProfileSavePayload {
     this.babyBirthDate,
     this.lossDate,
     this.isFirstPregnancy,
+    this.babyGender,
+    this.clearBabyGender = false,
     this.primaryConcern,
     this.dietPreference,
     this.profilePhotoUrl,
@@ -177,6 +247,9 @@ class ProfileSavePayload {
       if (lossDate != null)
         'loss_date': lossDate!.toUtc().toIso8601String(),
       if (isFirstPregnancy != null) 'is_first_pregnancy': isFirstPregnancy,
+      if (clearBabyGender) 'baby_gender': '',
+      if (!clearBabyGender && babyGender != null)
+        'baby_gender': babyGender!.apiValue,
       if (primaryConcern != null) 'primary_concern': primaryConcern,
       if (dietPreference != null) 'diet_preference': dietPreference,
       if (profilePhotoUrl != null) 'profile_photo_url': profilePhotoUrl,

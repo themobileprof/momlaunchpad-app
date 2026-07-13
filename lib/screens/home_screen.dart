@@ -37,6 +37,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       screen: HomeDashboardScreen(),
     ),
     _NavItem(
+      icon: Icons.calendar_today_outlined,
+      activeIcon: Icons.calendar_today_rounded,
+      label: 'Calendar',
+      screen: CalendarScreen(),
+    ),
+    _NavItem(
       icon: Icons.chat_bubble_outline_rounded,
       activeIcon: Icons.chat_bubble_rounded,
       label: 'Chat',
@@ -47,12 +53,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       activeIcon: Icons.groups_rounded,
       label: 'Community',
       screen: CommunityScreen(),
-    ),
-    _NavItem(
-      icon: Icons.calendar_today_outlined,
-      activeIcon: Icons.calendar_today_rounded,
-      label: 'Calendar',
-      screen: CalendarScreen(),
     ),
   ];
 

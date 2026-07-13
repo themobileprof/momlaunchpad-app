@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../utils/generic_welcome.dart';
 import '../utils/journey_helpers.dart';
+import '../utils/baby_theme.dart';
 import '../models/user_profile.dart';
 import '../providers/profile_provider.dart';
+import '../providers/home_navigation_provider.dart';
 import '../providers/symptom_provider.dart';
 import '../providers/welcome_provider.dart';
 import '../providers/home_community_preview_provider.dart';
@@ -70,10 +72,23 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (profile != null) ...[
-                      AppBadge(
-                        label: JourneyHelpers.homeBadgeLabel(profile),
-                        icon: Icons.favorite_rounded,
-                        variant: AppBadgeVariant.secondary,
+                      Wrap(
+                        spacing: AppSpacing.spaceXS,
+                        runSpacing: AppSpacing.spaceXS,
+                        children: [
+                          AppBadge(
+                            label: JourneyHelpers.homeBadgeLabel(profile),
+                            icon: Icons.favorite_rounded,
+                            variant: AppBadgeVariant.secondary,
+                          ),
+                          if (profile.babyGender != null)
+                            AppBadge(
+                              label:
+                                  '${babyThemeLabel(profile.babyGender)} palette',
+                              icon: Icons.palette_outlined,
+                              variant: AppBadgeVariant.secondary,
+                            ),
+                        ],
                       ),
                     ],
                   ],
@@ -173,14 +188,17 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     }
     return [
       _QuickLinkCard(
-        icon: Icons.chat_bubble_rounded,
-        label: 'Chat',
-        onTap: () => _open(context, const ConversationListScreen()),
-      ),
-      _QuickLinkCard(
         icon: Icons.calendar_today_rounded,
         label: 'Calendar',
-        onTap: () => _open(context, const CalendarScreen()),
+        onTap: () => ref
+            .read(homeTabRequestProvider.notifier)
+            .openTab(calendarTabIndex),
+      ),
+      _QuickLinkCard(
+        icon: Icons.chat_bubble_rounded,
+        label: 'Chat',
+        onTap: () =>
+            ref.read(homeTabRequestProvider.notifier).openTab(chatTabIndex),
       ),
       _QuickLinkCard(
         icon: Icons.monitor_heart_outlined,
@@ -190,7 +208,8 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
       _QuickLinkCard(
         icon: Icons.auto_awesome_rounded,
         label: 'New chat',
-        onTap: () => _open(context, const ConversationListScreen()),
+        onTap: () =>
+            ref.read(homeTabRequestProvider.notifier).openTab(chatTabIndex),
       ),
     ];
   }

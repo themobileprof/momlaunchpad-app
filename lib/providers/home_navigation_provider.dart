@@ -26,10 +26,11 @@ final homeNavigationProvider =
   HomeNavigationNotifier.new,
 );
 
-/// Tab indices in [HomeScreen].
-const chatTabIndex = 1;
-const communityTabIndex = 2;
-const calendarTabIndex = 3;
+/// Tab indices in [HomeScreen] — Home, Calendar, Chat, Community.
+const homeTabIndex = 0;
+const calendarTabIndex = 1;
+const chatTabIndex = 2;
+const communityTabIndex = 3;
 
 /// Switches the home shell to a primary tab (e.g. from dashboard quick links).
 class HomeTabRequestNotifier extends Notifier<int?> {

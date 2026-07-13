@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/journey_stage.dart';
+import '../models/baby_gender.dart';
+import '../providers/baby_theme_provider.dart';
 import '../models/community.dart';
 import '../models/user_profile.dart';
 import '../config/app_config.dart';
@@ -22,6 +24,7 @@ import '../theme/typography.dart';
 import '../widgets/community_badge_profile_section.dart';
 import '../widgets/referral_profile_section.dart';
 import '../widgets/widgets.dart';
+import '../widgets/gender_picker.dart';
 import 'community_preferences_screen.dart';
 
 /// Profile page — view and edit pregnancy context used to personalize chat.
@@ -46,6 +49,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   DateTime? _lossDate;
   bool _dueDateManuallySet = false;
   bool? _isFirstPregnancy;
+  BabyGender? _babyGender;
   JourneyStage? _journeyStage;
   String? _dietPreference;
   bool _isSaving = false;
@@ -75,6 +79,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   void dispose() {
+    ref.read(previewBabyGenderProvider.notifier).clear();
     _nameController.dispose();
     _stateController.dispose();
     _cityController.dispose();
@@ -149,6 +154,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _dueDateManuallySet = false;
     }
     _isFirstPregnancy = profile.isFirstPregnancy;
+    _babyGender = profile.babyGender;
     _journeyStage = JourneyHelpers.stageOf(profile);
     _babyBirthDate = profile.babyBirthDate;
     _lossDate = profile.lossDate;
@@ -277,6 +283,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   : null,
               lossDate: _journeyStage == JourneyStage.miscarriage ? _lossDate : null,
               isFirstPregnancy: _isFirstPregnancy,
+              babyGender: _journeyStage == JourneyStage.pregnant
+                  ? _babyGender
+                  : null,
+              clearBabyGender: _journeyStage == JourneyStage.pregnant &&
+                  _babyGender == null,
               dietPreference:
                   (_dietPreference == null || _dietPreference!.isEmpty)
                       ? null
@@ -736,6 +747,41 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               ),
                             ],
                           ),
+                          const Divider(),
+                          Text(
+                            'Baby gender & app colors',
+                            style: AppTypography.bodyTextMedium,
+                          ),
+                          const SizedBox(height: AppSpacing.spaceXS),
+                          Text(
+                            'Optional — personalizes accent colors across the app.',
+                            style: AppTypography.caption.copyWith(
+                              color: context.appInkSubtle,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.spaceMD),
+                          GenderPicker(
+                            value: _babyGender,
+                            onChanged: (gender) {
+                              setState(() => _babyGender = gender);
+                              ref
+                                  .read(previewBabyGenderProvider.notifier)
+                                  .set(gender);
+                            },
+                          ),
+                          if (_babyGender != null)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton(
+                                onPressed: () {
+                                  setState(() => _babyGender = null);
+                                  ref
+                                      .read(previewBabyGenderProvider.notifier)
+                                      .clear();
+                                },
+                                child: const Text('Clear gender theme'),
+                              ),
+                            ),
                         ],
                       ),
                     ),

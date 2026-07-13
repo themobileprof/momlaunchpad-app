@@ -6,8 +6,12 @@ import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../providers/reminders_provider.dart';
 import '../providers/home_navigation_provider.dart';
-import '../widgets/widgets.dart';
+import '../providers/profile_provider.dart';
+import '../models/journey_stage.dart';
 import '../models/reminder.dart';
+import '../utils/journey_helpers.dart';
+import '../widgets/pregnancy_week_story.dart';
+import '../widgets/widgets.dart';
 
 /// Calendar/Reminders screen - Manage pregnancy-related reminders
 class CalendarScreen extends ConsumerStatefulWidget {
@@ -64,6 +68,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget build(BuildContext context) {
     final remindersState = ref.watch(remindersProvider);
     final remindersForSelectedDay = _getRemindersForDay(_selectedDay, remindersState.reminders);
+    final profile = ref.watch(profileProvider).profile;
+    final isPregnant =
+        JourneyHelpers.stageOf(profile) == JourneyStage.pregnant;
 
     ref.listen(homeNavigationProvider, (previous, next) {
       if (next != null) _applyNavigationFocus(next);
@@ -74,6 +81,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       appBar: const MomAppBar(pageTitle: 'Calendar'),
       body: Column(
         children: [
+          if (isPregnant)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.spaceMD,
+                AppSpacing.spaceMD,
+                AppSpacing.spaceMD,
+                0,
+              ),
+              child: PregnancyWeekStory(profileWeek: profile?.pregnancyWeek),
+            ),
           _buildCalendar(remindersState.reminders),
           const SizedBox(height: AppSpacing.spaceMD),
           Padding(

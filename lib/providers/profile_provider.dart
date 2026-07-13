@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_profile.dart';
 import '../services/api_service.dart';
 import '../utils/session_errors.dart';
+import '../utils/baby_gender_storage.dart';
 import 'auth_provider.dart';
 import 'service_providers.dart';
 import 'welcome_provider.dart';
@@ -65,7 +66,11 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final profile = await _apiService.getUserProfile();
+      var profile = await _apiService.getUserProfile();
+      final userId = ref.read(authProvider).user?.id;
+      if (userId != null && userId.isNotEmpty) {
+        profile = await mergeProfileBabyGender(userId, profile);
+      }
       state = ProfileState(profile: profile, isLoading: false);
     } catch (e) {
       debugPrint('Profile load error: $e');
@@ -83,7 +88,16 @@ class ProfileNotifier extends Notifier<ProfileState> {
 
   Future<UserProfile> updateProfile(ProfileSavePayload payload) async {
     final previous = state.profile;
-    final profile = await _apiService.updateProfile(payload);
+    var profile = await _apiService.updateProfile(payload);
+    final userId = ref.read(authProvider).user?.id;
+    if (userId != null && userId.isNotEmpty) {
+      if (payload.babyGender != null) {
+        await saveStoredBabyGender(userId, payload.babyGender);
+      } else if (payload.clearBabyGender) {
+        await saveStoredBabyGender(userId, null);
+      }
+      profile = await mergeProfileBabyGender(userId, profile);
+    }
     state = ProfileState(profile: profile, isLoading: false);
     await ref.read(authProvider.notifier).refreshUser();
     if (welcomeRelevantProfileChange(previous, profile)) {
@@ -107,7 +121,12 @@ class ProfileNotifier extends Notifier<ProfileState> {
   }
 
   Future<UserProfile> completeOnboarding(ProfileSavePayload payload) async {
-    final profile = await _apiService.completeOnboarding(payload);
+    var profile = await _apiService.completeOnboarding(payload);
+    final userId = ref.read(authProvider).user?.id;
+    if (userId != null && userId.isNotEmpty && payload.babyGender != null) {
+      await saveStoredBabyGender(userId, payload.babyGender);
+      profile = await mergeProfileBabyGender(userId, profile);
+    }
 
     state = ProfileState(profile: profile, isLoading: false);
     await ref.read(authProvider.notifier).refreshUser();

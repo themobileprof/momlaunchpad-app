@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'providers/baby_theme_provider.dart';
 import 'providers/theme_provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
@@ -69,6 +70,7 @@ class _MomLaunchpadAppState extends ConsumerState<MomLaunchpadApp>
   @override
   Widget build(BuildContext context) {
     final themePreference = ref.watch(themePreferenceProvider);
+    final babyTheme = ref.watch(babyThemePaletteProvider);
 
     ref.listen(authProvider, (previous, next) {
       if (previous?.isLoggedIn == true && !next.isLoggedIn) {
@@ -84,8 +86,8 @@ class _MomLaunchpadAppState extends ConsumerState<MomLaunchpadApp>
       navigatorKey: rootNavigatorKey,
       navigatorObservers: [AnalyticsRouteObserver(analytics)],
       title: 'MomLaunchpad',
-      theme: applyGoogleFonts(buildAppLightTheme()),
-      darkTheme: applyGoogleFonts(buildAppDarkTheme()),
+      theme: applyGoogleFonts(buildAppLightTheme(babyTheme: babyTheme)),
+      darkTheme: applyGoogleFonts(buildAppDarkTheme(babyTheme: babyTheme)),
       themeMode: themePreference.themeMode,
       debugShowCheckedModeBanner: false,
       home: const AppInitializer(),
