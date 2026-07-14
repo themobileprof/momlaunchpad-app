@@ -8,6 +8,7 @@ import '../models/user_profile.dart';
 import '../models/welcome_message.dart';
 import '../models/reminder.dart';
 import '../models/doctor_visit.dart';
+import '../models/hospital_bag_item.dart';
 import '../models/vital_reading.dart';
 import '../models/savings_summary.dart';
 import '../models/savings_entry.dart';
@@ -540,6 +541,110 @@ class ApiService {
       throw ApiException(
         statusCode: response.statusCode,
         message: 'Failed to delete visit record',
+      );
+    }
+  }
+
+  // ============ HOSPITAL BAG CHECKLIST ENDPOINTS ============
+
+  /// Get hospital / delivery bag checklist (seeds defaults on first load).
+  Future<HospitalBagList> getHospitalBagItems() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/hospital-bag'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      return HospitalBagList.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: 'Failed to fetch hospital bag checklist',
+    );
+  }
+
+  /// Add a custom checklist item.
+  Future<HospitalBagItem> createHospitalBagItem({
+    required String label,
+    String category = 'other',
+    double? price,
+    int? sortOrder,
+  }) async {
+    final body = <String, dynamic>{
+      'label': label,
+      'category': category,
+      if (price != null) 'price': price,
+      if (sortOrder != null) 'sort_order': sortOrder,
+    };
+
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/hospital-bag/items'),
+      headers: await _getHeaders(),
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return HospitalBagItem.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to add checklist item'),
+    );
+  }
+
+  /// Update a checklist item (label, price, packed state, etc.).
+  Future<HospitalBagItem> updateHospitalBagItem({
+    required String id,
+    String? label,
+    String? category,
+    double? price,
+    bool clearPrice = false,
+    bool? isPacked,
+    int? sortOrder,
+  }) async {
+    final body = <String, dynamic>{};
+    if (label != null) body['label'] = label;
+    if (category != null) body['category'] = category;
+    if (clearPrice) {
+      body['clear_price'] = true;
+    } else if (price != null) {
+      body['price'] = price;
+    }
+    if (isPacked != null) body['is_packed'] = isPacked;
+    if (sortOrder != null) body['sort_order'] = sortOrder;
+
+    final response = await _http.put(
+      Uri.parse('$baseUrl/api/hospital-bag/items/$id'),
+      headers: await _getHeaders(),
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      return HospitalBagItem.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to update checklist item'),
+    );
+  }
+
+  /// Delete a checklist item.
+  Future<void> deleteHospitalBagItem(String id) async {
+    final response = await _http.delete(
+      Uri.parse('$baseUrl/api/hospital-bag/items/$id'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: 'Failed to delete checklist item',
       );
     }
   }

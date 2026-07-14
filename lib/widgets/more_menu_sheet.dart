@@ -9,6 +9,7 @@ import '../screens/notifications_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/symptom_stats_screen.dart';
 import '../screens/profile_screen.dart';
+import '../screens/hospital_bag_screen.dart';
 
 /// Bottom sheet listing secondary destinations (profile, settings, etc.).
 class MoreMenuSheet extends ConsumerWidget {
@@ -72,6 +73,12 @@ class MoreMenuSheet extends ConsumerWidget {
                 title: 'Health tracker',
                 subtitle: 'Symptoms, vitals, and stats',
                 onTap: () => _open(context, const SymptomStatsScreen()),
+              ),
+              _MoreMenuItem(
+                icon: Icons.luggage_outlined,
+                title: 'Hospital bag',
+                subtitle: 'Pack, price, and share your checklist',
+                onTap: () => _open(context, const HospitalBagScreen()),
               ),
               _MoreMenuItem(
                 icon: Icons.person_outline_rounded,

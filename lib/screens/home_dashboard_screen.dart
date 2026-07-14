@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../utils/generic_welcome.dart';
 import '../utils/journey_helpers.dart';
 import '../utils/baby_theme.dart';
+import '../models/journey_stage.dart';
 import '../models/user_profile.dart';
 import '../providers/profile_provider.dart';
 import '../providers/home_navigation_provider.dart';
@@ -21,6 +22,7 @@ import '../widgets/ttc_home_hero.dart';
 import 'calendar_screen.dart';
 import 'conversation_list_screen.dart';
 import 'symptom_stats_screen.dart';
+import 'hospital_bag_screen.dart';
 
 /// Home dashboard with a weekly personalized welcome message.
 class HomeDashboardScreen extends ConsumerStatefulWidget {
@@ -151,7 +153,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                   childAspectRatio: 1.6,
                 ),
                 delegate: SliverChildListDelegate(
-                  _quickLinks(context, isTtc),
+                  _quickLinks(context, profile),
                 ),
               ),
             ),
@@ -161,7 +163,11 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     );
   }
 
-  List<Widget> _quickLinks(BuildContext context, bool isTtc) {
+  List<Widget> _quickLinks(BuildContext context, UserProfile? profile) {
+    final isTtc = JourneyHelpers.isTtc(profile);
+    final isPregnant =
+        JourneyHelpers.stageOf(profile) == JourneyStage.pregnant;
+
     if (isTtc) {
       return [
         _QuickLinkCard(
@@ -205,12 +211,19 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
         label: 'Health tracker',
         onTap: () => _open(context, const SymptomStatsScreen()),
       ),
-      _QuickLinkCard(
-        icon: Icons.auto_awesome_rounded,
-        label: 'New chat',
-        onTap: () =>
-            ref.read(homeTabRequestProvider.notifier).openTab(chatTabIndex),
-      ),
+      if (isPregnant)
+        _QuickLinkCard(
+          icon: Icons.luggage_outlined,
+          label: 'Hospital bag',
+          onTap: () => _open(context, const HospitalBagScreen()),
+        )
+      else
+        _QuickLinkCard(
+          icon: Icons.auto_awesome_rounded,
+          label: 'New chat',
+          onTap: () =>
+              ref.read(homeTabRequestProvider.notifier).openTab(chatTabIndex),
+        ),
     ];
   }
 
