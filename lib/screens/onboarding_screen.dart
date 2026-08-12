@@ -337,6 +337,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             options: JourneyStage.signupStages,
             onSelected: (stage) => setState(() => _journeyStage = stage),
           ),
+          const SizedBox(height: AppSpacing.spaceMD),
+          Text(
+            'Healthcare professional at a clinic or hospital? Choose trying to conceive if you\'re not currently pregnant, then request your professional badge in Profile after signup.',
+            style: AppTypography.caption.copyWith(color: context.appInkMuted),
+          ),
         ],
       ),
     );

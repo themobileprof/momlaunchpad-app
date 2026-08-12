@@ -1396,6 +1396,7 @@ class ApiService {
 
   Future<CommunityBadgeRequest> createCommunityBadgeRequest({
     required String badgeType,
+    required BadgeRequestDetails details,
     String? message,
   }) async {
     final response = await _http.post(
@@ -1403,6 +1404,7 @@ class ApiService {
       headers: await _getHeaders(),
       body: jsonEncode({
         'badge_type': badgeType,
+        'details': details.toJson(),
         if (message != null && message.trim().isNotEmpty)
           'message': message.trim(),
       }),

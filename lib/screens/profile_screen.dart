@@ -422,6 +422,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   if (profile != null) ...[
                     ReferralProfileSection(profile: profile),
                     const SizedBox(height: AppSpacing.spaceLG),
+                    if (_journeyStage == JourneyStage.ttc) ...[
+                      Text(
+                        'Healthcare professional supporting mothers at your clinic? Request your professional badge below — workplace, role, and credentials help us verify faster.',
+                        style: AppTypography.caption.copyWith(
+                          color: context.appInkMuted,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.spaceSM),
+                    ],
                     const CommunityBadgeProfileSection(),
                     const SizedBox(height: AppSpacing.spaceLG),
                   ],

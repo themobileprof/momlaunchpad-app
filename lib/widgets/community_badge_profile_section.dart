@@ -4,6 +4,7 @@ import '../models/community.dart';
 import '../models/community_badge_request.dart';
 import '../providers/service_providers.dart';
 import '../services/api_service.dart';
+import '../utils/community_badges.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -67,83 +68,151 @@ class _CommunityBadgeProfileSectionState
   }
 
   Future<void> _requestBadge(CommunityCatalogItem badgeType) async {
+    final workplaceController = TextEditingController();
+    final roleController = TextEditingController();
+    final credentialController = TextEditingController();
+    final linkController = TextEditingController();
     final messageController = TextEditingController();
+    final credentialRequired = credentialRequiredForBadge(badgeType.key);
     try {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Request ${badgeType.label}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (badgeType.description != null &&
-                badgeType.description!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.spaceMD),
-                child: Text(
-                  badgeType.description!,
-                  style: AppTypography.caption.copyWith(
-                    color: context.appInkSubtle,
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('Request ${badgeType.label}'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (badgeType.description != null &&
+                    badgeType.description!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.spaceMD),
+                    child: Text(
+                      badgeType.description!,
+                      style: AppTypography.caption.copyWith(
+                        color: context.appInkSubtle,
+                      ),
+                    ),
+                  ),
+                TextField(
+                  controller: workplaceController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Workplace or facility',
+                    hintText: 'Hospital, clinic, or program name',
                   ),
                 ),
-              ),
-            TextField(
-              controller: messageController,
-              maxLines: 3,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Optional note for reviewers',
-                hintText: 'Credentials, license number, or context',
-              ),
+                const SizedBox(height: AppSpacing.spaceSM),
+                TextField(
+                  controller: roleController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Role or job title',
+                    hintText: 'e.g. Staff midwife, Clinic manager',
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.spaceSM),
+                TextField(
+                  controller: credentialController,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: InputDecoration(
+                    labelText: credentialRequired
+                        ? 'License or registration number'
+                        : 'Employee or program ID (optional)',
+                    hintText: credentialRequired
+                        ? 'Professional license or registration'
+                        : 'Optional identifier',
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.spaceSM),
+                TextField(
+                  controller: linkController,
+                  keyboardType: TextInputType.url,
+                  decoration: const InputDecoration(
+                    labelText: 'Verification link (optional)',
+                    hintText: 'Hospital page, registry profile, or LinkedIn',
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.spaceSM),
+                TextField(
+                  controller: messageController,
+                  maxLines: 3,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    labelText: 'Additional note (optional)',
+                    hintText: 'Anything else reviewers should know',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Submit request'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Submit request'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-
-    setState(() => _submittingBadgeType = badgeType.key);
-    try {
-      await ref.read(apiServiceProvider).createCommunityBadgeRequest(
-            badgeType: badgeType.key,
-            message: messageController.text,
-          );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${badgeType.label} request submitted')),
       );
-      await _load();
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      final showUpsell = e.message.toLowerCase().contains('premium') ||
-          e.message.toLowerCase().contains('upgrade');
-      if (showUpsell) {
-        await showDialog<void>(
-          context: context,
-          builder: (ctx) => const PremiumUpsellDialog(
-            featureName: 'multiple badge requests',
-          ),
-        );
-      } else {
+      if (confirmed != true || !mounted) return;
+
+      final details = BadgeRequestDetails(
+        workplace: workplaceController.text,
+        roleTitle: roleController.text,
+        credentialId: credentialController.text,
+        verificationUrl: linkController.text,
+      );
+      final validationError =
+          validateBadgeRequestDetails(badgeType.key, details);
+      if (validationError != null) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
+          SnackBar(content: Text(validationError)),
         );
+        return;
+      }
+
+      setState(() => _submittingBadgeType = badgeType.key);
+      try {
+        await ref.read(apiServiceProvider).createCommunityBadgeRequest(
+              badgeType: badgeType.key,
+              details: details,
+              message: messageController.text,
+            );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${badgeType.label} request submitted')),
+        );
+        await _load();
+      } on ApiException catch (e) {
+        if (!mounted) return;
+        final showUpsell = e.message.toLowerCase().contains('premium') ||
+            e.message.toLowerCase().contains('upgrade');
+        if (showUpsell) {
+          await showDialog<void>(
+            context: context,
+            builder: (ctx) => const PremiumUpsellDialog(
+              featureName: 'multiple badge requests',
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.message)),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _submittingBadgeType = null);
       }
     } finally {
-      if (mounted) setState(() => _submittingBadgeType = null);
-    }
-    } finally {
+      workplaceController.dispose();
+      roleController.dispose();
+      credentialController.dispose();
+      linkController.dispose();
       messageController.dispose();
     }
   }
@@ -372,6 +441,21 @@ class _RequestTile extends StatelessWidget {
                   '$statusLabel · $date',
                   style: AppTypography.caption.copyWith(color: statusColor),
                 ),
+                ...formatBadgeRequestDetails(request.details).map(
+                  (line) => Text(
+                    line,
+                    style: AppTypography.caption.copyWith(
+                      color: context.appInkSubtle,
+                    ),
+                  ),
+                ),
+                if (request.message != null && request.message!.isNotEmpty)
+                  Text(
+                    'Note: ${request.message!}',
+                    style: AppTypography.caption.copyWith(
+                      color: context.appInkSubtle,
+                    ),
+                  ),
                 if (request.adminNote != null &&
                     request.adminNote!.isNotEmpty &&
                     request.isRejected)

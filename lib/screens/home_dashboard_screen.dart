@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../utils/community_badges.dart';
 import '../utils/generic_welcome.dart';
 import '../utils/journey_helpers.dart';
 import '../utils/baby_theme.dart';
 import '../models/journey_stage.dart';
 import '../models/user_profile.dart';
 import '../providers/profile_provider.dart';
+import '../providers/community_badges_provider.dart';
 import '../providers/home_navigation_provider.dart';
 import '../providers/symptom_provider.dart';
 import '../providers/welcome_provider.dart';
@@ -48,7 +50,16 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
   Widget build(BuildContext context) {
     final welcomeState = ref.watch(welcomeProvider);
     final profile = ref.watch(profileProvider).profile;
-    final isTtc = JourneyHelpers.isTtc(profile);
+    final badgesAsync = ref.watch(myCommunityBadgesProvider);
+    final professionalLabel = badgesAsync.maybeWhen(
+      data: primaryProfessionalBadgeLabel,
+      orElse: () => null,
+    );
+    final isProfessional = badgesAsync.maybeWhen(
+      data: (data) => hasProfessionalBadge(data.badges),
+      orElse: () => false,
+    );
+    final isTtc = JourneyHelpers.isTtc(profile) && !isProfessional;
 
     return Scaffold(
       backgroundColor: context.appCanvas,
@@ -79,9 +90,14 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                         runSpacing: AppSpacing.spaceXS,
                         children: [
                           AppBadge(
-                            label: JourneyHelpers.homeBadgeLabel(profile),
-                            icon: Icons.favorite_rounded,
-                            variant: AppBadgeVariant.secondary,
+                            label: professionalLabel ??
+                                JourneyHelpers.homeBadgeLabel(profile),
+                            icon: professionalLabel != null
+                                ? Icons.verified_rounded
+                                : Icons.favorite_rounded,
+                            variant: professionalLabel != null
+                                ? AppBadgeVariant.primary
+                                : AppBadgeVariant.secondary,
                           ),
                           if (profile.babyGender != null)
                             AppBadge(
@@ -116,7 +132,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceMD),
-                child: _buildWelcomeSection(welcomeState, profile),
+                child: _buildWelcomeSection(welcomeState, profile, isProfessional),
               ),
             ),
             const SliverToBoxAdapter(child: VisitCheckInPrompt()),
@@ -227,12 +243,18 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     ];
   }
 
-  Widget _buildWelcomeSection(WelcomeState welcomeState, UserProfile? profile) {
+  Widget _buildWelcomeSection(
+    WelcomeState welcomeState,
+    UserProfile? profile,
+    bool isProfessional,
+  ) {
     if (welcomeState.isLoading && welcomeState.message == null) {
       return const SizedBox.shrink();
     }
-    final message =
-        welcomeState.message?.message ?? genericWelcomeMessage(profile);
+    final message = welcomeState.message?.message ??
+        (isProfessional
+            ? 'Thank you for supporting mothers in your community — chat, community, and reminders are here when you need them.'
+            : genericWelcomeMessage(profile));
     return _WelcomeCard(
       message: message,
       title: JourneyHelpers.homeWelcomeTitle(profile),

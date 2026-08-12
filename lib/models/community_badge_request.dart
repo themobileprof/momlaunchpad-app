@@ -1,5 +1,43 @@
 import 'community.dart';
 
+/// Structured verification details submitted with a badge request.
+class BadgeRequestDetails {
+  final String workplace;
+  final String roleTitle;
+  final String? credentialId;
+  final String? verificationUrl;
+
+  const BadgeRequestDetails({
+    required this.workplace,
+    required this.roleTitle,
+    this.credentialId,
+    this.verificationUrl,
+  });
+
+  factory BadgeRequestDetails.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return const BadgeRequestDetails(workplace: '', roleTitle: '');
+    }
+    return BadgeRequestDetails(
+      workplace: json['workplace']?.toString() ?? '',
+      roleTitle: json['role_title']?.toString() ?? '',
+      credentialId: json['credential_id']?.toString(),
+      verificationUrl: json['verification_url']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'workplace': workplace.trim(),
+      'role_title': roleTitle.trim(),
+      if (credentialId != null && credentialId!.trim().isNotEmpty)
+        'credential_id': credentialId!.trim(),
+      if (verificationUrl != null && verificationUrl!.trim().isNotEmpty)
+        'verification_url': verificationUrl!.trim(),
+    };
+  }
+}
+
 /// A user-submitted request to verify a community badge.
 class CommunityBadgeRequest {
   final String id;
@@ -7,6 +45,7 @@ class CommunityBadgeRequest {
   final String badgeType;
   final String status;
   final String? message;
+  final BadgeRequestDetails details;
   final String? adminNote;
   final DateTime? reviewedAt;
   final DateTime createdAt;
@@ -17,6 +56,7 @@ class CommunityBadgeRequest {
     required this.badgeType,
     required this.status,
     this.message,
+    this.details = const BadgeRequestDetails(workplace: '', roleTitle: ''),
     this.adminNote,
     this.reviewedAt,
     required this.createdAt,
@@ -29,6 +69,11 @@ class CommunityBadgeRequest {
       badgeType: json['badge_type']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
       message: json['message']?.toString(),
+      details: BadgeRequestDetails.fromJson(
+        json['details'] is Map
+            ? Map<String, dynamic>.from(json['details'] as Map)
+            : null,
+      ),
       adminNote: json['admin_note']?.toString(),
       reviewedAt: _parseOptionalDate(json['reviewed_at']),
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
