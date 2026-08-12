@@ -24,6 +24,8 @@ class UserProfile {
   final String? countryCode;
   final String? stateProvince;
   final String? city;
+  final String? phoneNumber;
+  final bool facilityAnnouncementsOptIn;
   final String? healthcareFacilityId;
   final String? healthcareFacilityName;
   final bool communityOnboardingCompleted;
@@ -55,6 +57,8 @@ class UserProfile {
     this.countryCode,
     this.stateProvince,
     this.city,
+    this.phoneNumber,
+    this.facilityAnnouncementsOptIn = true,
     this.healthcareFacilityId,
     this.healthcareFacilityName,
     this.communityOnboardingCompleted = false,
@@ -88,6 +92,9 @@ class UserProfile {
       countryCode: json['country_code']?.toString(),
       stateProvince: json['state_province']?.toString(),
       city: json['city']?.toString(),
+      phoneNumber: json['phone_number']?.toString(),
+      facilityAnnouncementsOptIn:
+          json['facility_announcements_opt_in'] as bool? ?? true,
       healthcareFacilityId: json['healthcare_facility_id']?.toString(),
       healthcareFacilityName: json['healthcare_facility_name']?.toString(),
       communityOnboardingCompleted:
@@ -159,6 +166,8 @@ class UserProfile {
     String? countryCode,
     String? stateProvince,
     String? city,
+    String? phoneNumber,
+    bool? facilityAnnouncementsOptIn,
     String? healthcareFacilityId,
     String? healthcareFacilityName,
     bool? communityOnboardingCompleted,
@@ -190,6 +199,9 @@ class UserProfile {
       countryCode: countryCode ?? this.countryCode,
       stateProvince: stateProvince ?? this.stateProvince,
       city: city ?? this.city,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      facilityAnnouncementsOptIn:
+          facilityAnnouncementsOptIn ?? this.facilityAnnouncementsOptIn,
       healthcareFacilityId: healthcareFacilityId ?? this.healthcareFacilityId,
       healthcareFacilityName:
           healthcareFacilityName ?? this.healthcareFacilityName,
@@ -223,6 +235,8 @@ class ProfileSavePayload {
   final String? countryCode;
   final String? stateProvince;
   final String? city;
+  final String? phoneNumber;
+  final bool? facilityAnnouncementsOptIn;
 
   const ProfileSavePayload({
     required this.name,
@@ -242,6 +256,8 @@ class ProfileSavePayload {
     this.countryCode,
     this.stateProvince,
     this.city,
+    this.phoneNumber,
+    this.facilityAnnouncementsOptIn,
   });
 
   Map<String, dynamic> toJson() {
@@ -268,6 +284,9 @@ class ProfileSavePayload {
       if (countryCode != null) 'country_code': countryCode,
       if (stateProvince != null) 'state_province': stateProvince,
       if (city != null) 'city': city,
+      if (phoneNumber != null) 'phone_number': phoneNumber,
+      if (facilityAnnouncementsOptIn != null)
+        'facility_announcements_opt_in': facilityAnnouncementsOptIn,
     };
   }
 }

@@ -158,6 +158,7 @@ class AuthNotifier extends Notifier<AuthState> {
     required String email,
     required String password,
     required String name,
+    String? phoneNumber,
     String? referralCode,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -167,6 +168,7 @@ class AuthNotifier extends Notifier<AuthState> {
         email: email,
         password: password,
         name: name,
+        phoneNumber: phoneNumber,
         referralCode: referralCode,
       );
       await _storageService.clearPendingReferralCode();

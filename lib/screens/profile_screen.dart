@@ -38,6 +38,7 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _stateController = TextEditingController();
   final _cityController = TextEditingController();
   final _facilityController = TextEditingController();
@@ -83,6 +84,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void dispose() {
     ref.read(previewBabyGenderProvider.notifier).clear();
     _nameController.dispose();
+    _phoneController.dispose();
     _stateController.dispose();
     _cityController.dispose();
     _facilityController.dispose();
@@ -162,6 +164,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (_initialized && !force) return;
     _initialized = true;
     _nameController.text = profile.name;
+    _phoneController.text = profile.phoneNumber ?? '';
     _pregnancyWeek = profile.pregnancyWeek ?? 20;
     final storedDueDate = profile.expectedDeliveryDate;
     if (storedDueDate != null &&
@@ -290,6 +293,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ProfileSavePayload(
               name: _nameController.text.trim(),
               language: AppConfig.languageCode,
+              phoneNumber: _phoneController.text.trim(),
               journeyStage: _journeyStage,
               pregnancyWeek: _journeyStage == JourneyStage.pregnant &&
                       !_dueDateManuallySet
@@ -560,6 +564,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'Name is required';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.spaceMD),
+                        TextFormField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          decoration: const InputDecoration(
+                            labelText: 'WhatsApp number (optional)',
+                            hintText: '+234…',
+                            helperText:
+                                'Optional — used for WhatsApp updates and support',
+                          ),
+                          validator: (value) {
+                            final raw = (value ?? '').trim();
+                            if (raw.isEmpty) return null;
+                            final digits =
+                                raw.replaceAll(RegExp(r'[^\d]'), '');
+                            if (digits.length < 7 || digits.length > 15) {
+                              return 'Enter a valid WhatsApp number';
                             }
                             return null;
                           },

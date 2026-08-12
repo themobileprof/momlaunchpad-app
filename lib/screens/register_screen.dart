@@ -26,6 +26,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _referralController = TextEditingController();
@@ -56,6 +57,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _referralController.dispose();
@@ -70,6 +72,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       await ref.read(authProvider.notifier).register(
             name: _nameController.text.trim(),
             email: _emailController.text.trim(),
+            phoneNumber: _phoneController.text.trim().isEmpty
+                ? null
+                : _phoneController.text.trim(),
             password: _passwordController.text,
             referralCode: referralCodeFromInput(_referralController.text),
           );
@@ -190,6 +195,31 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   }
                                   if (!value.contains('@') || !value.contains('.')) {
                                     return 'Please enter a valid email';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: AppSpacing.spaceMD),
+                              TextFormField(
+                                controller: _phoneController,
+                                keyboardType: TextInputType.phone,
+                                decoration: const InputDecoration(
+                                  labelText: 'WhatsApp number (optional)',
+                                  hintText: '+234…',
+                                  helperText:
+                                      'Optional — we’ll use this for WhatsApp updates',
+                                  prefixIcon: Icon(Icons.chat_outlined),
+                                ),
+                                validator: (value) {
+                                  final raw = (value ?? '').trim();
+                                  if (raw.isEmpty) return null;
+                                  final digits =
+                                      raw.replaceAll(RegExp(r'[^\d]'), '');
+                                  if (digits.length < 7) {
+                                    return 'Enter a valid WhatsApp number';
+                                  }
+                                  if (digits.length > 15) {
+                                    return 'Phone number is too long';
                                   }
                                   return null;
                                 },

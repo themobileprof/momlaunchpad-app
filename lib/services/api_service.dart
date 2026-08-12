@@ -90,6 +90,7 @@ class ApiService {
     required String email,
     required String password,
     required String name,
+    String? phoneNumber,
     String? referralCode,
   }) async {
     final body = <String, dynamic>{
@@ -98,6 +99,9 @@ class ApiService {
       'name': name,
       'language': AppConfig.languageCode,
     };
+    if (phoneNumber != null && phoneNumber.trim().isNotEmpty) {
+      body['phone_number'] = phoneNumber.trim();
+    }
     if (referralCode != null && referralCode.trim().isNotEmpty) {
       body['referral_code'] = referralCode.trim().toUpperCase();
     }

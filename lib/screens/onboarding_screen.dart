@@ -30,6 +30,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
   final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
 
   int _step = 0;
   JourneyStage? _journeyStage;
@@ -47,6 +48,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (user != null && user.name.isNotEmpty) {
       _nameController.text = user.name;
     }
+    final profile = ref.read(profileProvider).profile;
+    if (profile?.phoneNumber != null && profile!.phoneNumber!.isNotEmpty) {
+      _phoneController.text = profile.phoneNumber!;
+    }
   }
 
   @override
@@ -54,6 +59,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     ref.read(previewBabyGenderProvider.notifier).clear();
     _pageController.dispose();
     _nameController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -61,6 +67,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (_step == 1 && _nameController.text.trim().isEmpty) {
       _showMessage('Please enter your name');
       return;
+    }
+    if (_step == 1) {
+      final raw = _phoneController.text.trim();
+      if (raw.isNotEmpty) {
+        final digits = raw.replaceAll(RegExp(r'[^\d]'), '');
+        if (digits.length < 7 || digits.length > 15) {
+          _showMessage('Enter a valid WhatsApp number');
+          return;
+        }
+      }
     }
     if (_step == 2 && _journeyStage == null) {
       _showMessage('Please choose where you are on your journey');
@@ -104,6 +120,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ProfileSavePayload(
               name: _nameController.text.trim(),
               language: AppConfig.languageCode,
+              phoneNumber: _phoneController.text.trim().isEmpty
+                  ? null
+                  : _phoneController.text.trim(),
               journeyStage: stage,
               pregnancyWeek:
                   JourneyHelpers.needsPregnancyWeek(stage) ? _pregnancyWeek : null,
@@ -313,6 +332,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             decoration: const InputDecoration(
               labelText: 'Your name',
               hintText: 'e.g. Sarah',
+            ),
+          ),
+          const SizedBox(height: AppSpacing.spaceMD),
+          TextField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              labelText: 'WhatsApp number (optional)',
+              hintText: '+234…',
+              helperText: 'Optional — so we can reach you on WhatsApp later',
             ),
           ),
         ],
