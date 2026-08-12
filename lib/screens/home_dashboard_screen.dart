@@ -68,6 +68,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
         onRefresh: () async {
           ref.invalidate(recentSymptomsProvider);
           ref.invalidate(symptomStatsProvider);
+          ref.invalidate(myCommunityBadgesProvider);
           await ref.read(homeCommunityPreviewProvider.notifier).load();
         },
         child: CustomScrollView(
@@ -169,7 +170,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                   childAspectRatio: 1.6,
                 ),
                 delegate: SliverChildListDelegate(
-                  _quickLinks(context, profile),
+                  _quickLinks(context, profile, isProfessional: isProfessional),
                 ),
               ),
             ),
@@ -179,8 +180,12 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     );
   }
 
-  List<Widget> _quickLinks(BuildContext context, UserProfile? profile) {
-    final isTtc = JourneyHelpers.isTtc(profile);
+  List<Widget> _quickLinks(
+    BuildContext context,
+    UserProfile? profile, {
+    bool isProfessional = false,
+  }) {
+    final isTtc = JourneyHelpers.isTtc(profile) && !isProfessional;
     final isPregnant =
         JourneyHelpers.stageOf(profile) == JourneyStage.pregnant;
 

@@ -10,6 +10,15 @@ const professionalBadgeKeys = <String>[
   'ambassador',
 ];
 
+/// Clinical badges that require a license/registration number.
+const credentialRequiredBadgeKeys = <String>{
+  'doctor',
+  'midwife',
+  'pediatrician',
+  'nurse',
+  'lactation_consultant',
+};
+
 final _professionalBadgeSet = professionalBadgeKeys.toSet();
 
 bool isProfessionalBadgeKey(String key) => _professionalBadgeSet.contains(key);
@@ -37,7 +46,8 @@ String? primaryProfessionalBadgeLabel(MyCommunityBadges data) {
   return badgeLabelForKey(key, data);
 }
 
-bool credentialRequiredForBadge(String badgeType) => badgeType != 'ambassador';
+bool credentialRequiredForBadge(String badgeType) =>
+    credentialRequiredBadgeKeys.contains(badgeType);
 
 String? validateBadgeRequestDetails(String badgeType, BadgeRequestDetails details) {
   if (details.workplace.trim().isEmpty) {
