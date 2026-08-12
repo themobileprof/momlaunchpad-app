@@ -24,6 +24,8 @@ class UserProfile {
   final String? countryCode;
   final String? stateProvince;
   final String? city;
+  final String? healthcareFacilityId;
+  final String? healthcareFacilityName;
   final bool communityOnboardingCompleted;
   final List<String> communityInterests;
   final String referralCode;
@@ -53,6 +55,8 @@ class UserProfile {
     this.countryCode,
     this.stateProvince,
     this.city,
+    this.healthcareFacilityId,
+    this.healthcareFacilityName,
     this.communityOnboardingCompleted = false,
     this.communityInterests = const [],
     this.referralCode = '',
@@ -84,6 +88,8 @@ class UserProfile {
       countryCode: json['country_code']?.toString(),
       stateProvince: json['state_province']?.toString(),
       city: json['city']?.toString(),
+      healthcareFacilityId: json['healthcare_facility_id']?.toString(),
+      healthcareFacilityName: json['healthcare_facility_name']?.toString(),
       communityOnboardingCompleted:
           json['community_onboarding_completed'] as bool? ?? false,
       communityInterests: (json['community_interests'] as List<dynamic>? ?? [])
@@ -153,6 +159,8 @@ class UserProfile {
     String? countryCode,
     String? stateProvince,
     String? city,
+    String? healthcareFacilityId,
+    String? healthcareFacilityName,
     bool? communityOnboardingCompleted,
     List<String>? communityInterests,
     String? referralCode,
@@ -182,6 +190,9 @@ class UserProfile {
       countryCode: countryCode ?? this.countryCode,
       stateProvince: stateProvince ?? this.stateProvince,
       city: city ?? this.city,
+      healthcareFacilityId: healthcareFacilityId ?? this.healthcareFacilityId,
+      healthcareFacilityName:
+          healthcareFacilityName ?? this.healthcareFacilityName,
       communityOnboardingCompleted:
           communityOnboardingCompleted ?? this.communityOnboardingCompleted,
       communityInterests: communityInterests ?? this.communityInterests,

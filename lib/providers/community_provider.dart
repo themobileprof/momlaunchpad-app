@@ -114,6 +114,8 @@ class CommunityNotifier extends Notifier<CommunityState> {
     required String countryCode,
     required String stateProvince,
     required String city,
+    String? healthcareFacilityId,
+    String? healthcareFacilityName,
     required List<String> interests,
   }) async {
     try {
@@ -121,6 +123,8 @@ class CommunityNotifier extends Notifier<CommunityState> {
         countryCode: countryCode,
         stateProvince: stateProvince,
         city: city,
+        healthcareFacilityId: healthcareFacilityId,
+        healthcareFacilityName: healthcareFacilityName,
         interests: interests,
       );
       state = state.copyWith(status: status);

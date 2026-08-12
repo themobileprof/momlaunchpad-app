@@ -290,6 +290,8 @@ class CommunityStatus {
   final String? country;
   final String? stateProvince;
   final String? city;
+  final String? healthcareFacilityId;
+  final String? healthcareFacilityName;
   final List<String> interests;
 
   const CommunityStatus({
@@ -297,6 +299,8 @@ class CommunityStatus {
     this.country,
     this.stateProvince,
     this.city,
+    this.healthcareFacilityId,
+    this.healthcareFacilityName,
     this.interests = const [],
   });
 
@@ -307,9 +311,37 @@ class CommunityStatus {
       country: json['country']?.toString(),
       stateProvince: json['state_province']?.toString(),
       city: json['city']?.toString(),
+      healthcareFacilityId: json['healthcare_facility_id']?.toString(),
+      healthcareFacilityName: json['healthcare_facility_name']?.toString(),
       interests: (json['interests'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
           .toList(),
+    );
+  }
+}
+
+class CommunityHealthcareFacility {
+  final String id;
+  final String name;
+  final String countryCode;
+  final String stateProvince;
+  final String city;
+
+  const CommunityHealthcareFacility({
+    required this.id,
+    required this.name,
+    required this.countryCode,
+    required this.stateProvince,
+    required this.city,
+  });
+
+  factory CommunityHealthcareFacility.fromJson(Map<String, dynamic> json) {
+    return CommunityHealthcareFacility(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      countryCode: json['country_code']?.toString() ?? '',
+      stateProvince: json['state_province']?.toString() ?? '',
+      city: json['city']?.toString() ?? '',
     );
   }
 }

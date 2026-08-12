@@ -82,9 +82,11 @@ class _CommunityPreferencesScreenState
 
     final stateProvince = profile.stateProvince?.trim() ?? '';
     final city = profile.city?.trim() ?? '';
+    final facility = profile.healthcareFacilityName?.trim() ?? '';
     return _resolveCountryCode() != null &&
         stateProvince.isNotEmpty &&
-        city.isNotEmpty;
+        city.isNotEmpty &&
+        facility.isNotEmpty;
   }
 
   Future<void> _save() async {
@@ -98,7 +100,7 @@ class _CommunityPreferencesScreenState
     }
     if (!_hasCompleteLocation()) {
       _showSnack(
-        'Add your community location on Profile first — it powers Nearby and your feed.',
+        'Add your community location and health center on Profile first — they power Nearby and your feed.',
       );
       return;
     }
@@ -111,6 +113,8 @@ class _CommunityPreferencesScreenState
           countryCode: countryCode,
           stateProvince: profile.stateProvince!.trim(),
           city: profile.city!.trim(),
+          healthcareFacilityId: profile.healthcareFacilityId,
+          healthcareFacilityName: profile.healthcareFacilityName,
           interests: _selected.toList(),
         );
     if (!mounted) return;

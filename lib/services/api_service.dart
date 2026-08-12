@@ -964,10 +964,42 @@ class ApiService {
     return CommunityBadgeCatalog(labels);
   }
 
+  Future<List<CommunityHealthcareFacility>> getHealthcareFacilities({
+    required String countryCode,
+    required String stateProvince,
+    required String city,
+    required String query,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/community/locations/healthcare-facilities')
+        .replace(
+      queryParameters: {
+        'country_code': countryCode,
+        'state_province': stateProvince,
+        'city': city,
+        'q': query,
+      },
+    );
+    final response = await _http.get(uri, headers: await _getHeaders());
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load facilities'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    return (body['facilities'] as List<dynamic>? ?? [])
+        .map((e) => CommunityHealthcareFacility.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ))
+        .toList();
+  }
+
   Future<CommunityStatus> completeCommunityOnboarding({
     required String countryCode,
     required String stateProvince,
     required String city,
+    String? healthcareFacilityId,
+    String? healthcareFacilityName,
     required List<String> interests,
   }) async {
     final response = await _http.post(
@@ -977,6 +1009,10 @@ class ApiService {
         'country_code': countryCode,
         'state_province': stateProvince,
         'city': city,
+        if (healthcareFacilityId != null && healthcareFacilityId.isNotEmpty)
+          'healthcare_facility_id': healthcareFacilityId,
+        if (healthcareFacilityName != null && healthcareFacilityName.isNotEmpty)
+          'healthcare_facility_name': healthcareFacilityName,
         'interests': interests,
       }),
     );

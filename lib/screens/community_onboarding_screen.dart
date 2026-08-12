@@ -23,14 +23,17 @@ class _CommunityOnboardingScreenState
     extends ConsumerState<CommunityOnboardingScreen> {
   final _stateController = TextEditingController();
   final _cityController = TextEditingController();
+  final _facilityController = TextEditingController();
   final _selected = <String>{};
   String? _countryCode;
+  String? _selectedFacilityId;
   bool _submitting = false;
 
   @override
   void dispose() {
     _stateController.dispose();
     _cityController.dispose();
+    _facilityController.dispose();
     super.dispose();
   }
 
@@ -48,9 +51,14 @@ class _CommunityOnboardingScreenState
   Future<void> _submit() async {
     final stateProvince = _stateController.text.trim();
     final city = _cityController.text.trim();
+    final facilityName = _facilityController.text.trim();
 
     if (_countryCode == null || stateProvince.isEmpty || city.isEmpty) {
       _showSnack('Please select your country and enter state and city.');
+      return;
+    }
+    if (facilityName.isEmpty) {
+      _showSnack('Please enter your hospital or health center.');
       return;
     }
     if (_selected.isEmpty) {
@@ -63,10 +71,13 @@ class _CommunityOnboardingScreenState
     }
 
     setState(() => _submitting = true);
+    await _syncSelectedFacilityId(facilityName);
     final ok = await ref.read(communityProvider.notifier).completeOnboarding(
           countryCode: _countryCode!,
           stateProvince: stateProvince,
           city: city,
+          healthcareFacilityId: _selectedFacilityId,
+          healthcareFacilityName: facilityName,
           interests: _selected.toList(),
         );
     if (!mounted) return;
@@ -111,6 +122,50 @@ class _CommunityOnboardingScreenState
         );
   }
 
+  Future<List<String>> _fetchFacilitySuggestions(String query) async {
+    if (_countryCode == null) return const [];
+    final stateProvince = _stateController.text.trim();
+    final city = _cityController.text.trim();
+    if (stateProvince.isEmpty || city.isEmpty) return const [];
+    final facilities = await ref.read(apiServiceProvider).getHealthcareFacilities(
+          countryCode: _countryCode!,
+          stateProvince: stateProvince,
+          city: city,
+          query: query,
+        );
+    return facilities.map((f) => f.name).toList();
+  }
+
+  Future<void> _syncSelectedFacilityId(String name) async {
+    final trimmed = name.trim();
+    if (_countryCode == null || trimmed.isEmpty) {
+      _selectedFacilityId = null;
+      return;
+    }
+    final stateProvince = _stateController.text.trim();
+    final city = _cityController.text.trim();
+    if (stateProvince.isEmpty || city.isEmpty) {
+      _selectedFacilityId = null;
+      return;
+    }
+    try {
+      final facilities =
+          await ref.read(apiServiceProvider).getHealthcareFacilities(
+                countryCode: _countryCode!,
+                stateProvince: stateProvince,
+                city: city,
+                query: trimmed,
+              );
+      for (final f in facilities) {
+        if (f.name.toLowerCase() == trimmed.toLowerCase()) {
+          _selectedFacilityId = f.id;
+          return;
+        }
+      }
+    } catch (_) {}
+    _selectedFacilityId = null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final communityState = ref.watch(communityProvider);
@@ -135,8 +190,8 @@ class _CommunityOnboardingScreenState
         ),
         children: [
           Text(
-            'Your location helps us show nearby discussions and events. '
-            'Pick a few topics so we can personalize your feed.',
+            'Your location and health center help us show Nearby posts from '
+            'moms registered where you are. Pick a few topics to personalize your feed.',
             style: AppTypography.bodyText.copyWith(color: context.appInkMuted),
           ),
           const SizedBox(height: AppSpacing.spaceLG),
@@ -145,7 +200,10 @@ class _CommunityOnboardingScreenState
           CountryPickerField(
             countryCode: _countryCode,
             countries: countries,
-            onSelected: (code) => setState(() => _countryCode = code),
+            onSelected: (code) => setState(() {
+              _countryCode = code;
+              _selectedFacilityId = null;
+            }),
           ),
           const SizedBox(height: AppSpacing.spaceSM),
           LocationSuggestField(
@@ -161,10 +219,17 @@ class _CommunityOnboardingScreenState
             enabled: _countryCode != null,
             fetchSuggestions: _fetchCitySuggestions,
           ),
+          const SizedBox(height: AppSpacing.spaceSM),
+          LocationSuggestField(
+            controller: _facilityController,
+            label: 'Hospital / health center',
+            enabled: _countryCode != null,
+            fetchSuggestions: _fetchFacilitySuggestions,
+          ),
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.spaceXS),
             child: Text(
-              'Start typing to see suggestions. You can always enter your own.',
+              'Start typing to search. If yours is missing, type the full name and we\'ll add it.',
               style: AppTypography.caption.copyWith(color: context.appInkMuted),
             ),
           ),

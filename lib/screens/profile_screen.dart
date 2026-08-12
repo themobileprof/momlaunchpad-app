@@ -40,6 +40,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _nameController = TextEditingController();
   final _stateController = TextEditingController();
   final _cityController = TextEditingController();
+  final _facilityController = TextEditingController();
+  String? _selectedFacilityId;
 
   String? _countryCode;
 
@@ -83,6 +85,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _nameController.dispose();
     _stateController.dispose();
     _cityController.dispose();
+    _facilityController.dispose();
     super.dispose();
   }
 
@@ -129,11 +132,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         );
   }
 
+  Future<List<String>> _fetchFacilitySuggestions(String query) async {
+    if (_countryCode == null) return const [];
+    final stateProvince = _stateController.text.trim();
+    final city = _cityController.text.trim();
+    if (stateProvince.isEmpty || city.isEmpty) return const [];
+    final facilities = await ref.read(apiServiceProvider).getHealthcareFacilities(
+          countryCode: _countryCode!,
+          stateProvince: stateProvince,
+          city: city,
+          query: query,
+        );
+    return facilities.map((f) => f.name).toList();
+  }
+
   void _onCountrySelected(String code, List<CommunityCountryOption> countries) {
     setState(() {
       if (_countryCode != code) {
         _stateController.clear();
         _cityController.clear();
+        _facilityController.clear();
+        _selectedFacilityId = null;
       }
       _countryCode = code;
     });
@@ -162,6 +181,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _countryCode = profile.countryCode;
     _stateController.text = profile.stateProvince ?? '';
     _cityController.text = profile.city ?? '';
+    _facilityController.text = profile.healthcareFacilityName ?? '';
+    _selectedFacilityId = profile.healthcareFacilityId;
   }
 
   Future<void> _openCommunityFeedTopics() async {
@@ -305,8 +326,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           );
 
+      final facilityName = _facilityController.text.trim();
+      final stateProvince = _stateController.text.trim();
+      final city = _cityController.text.trim();
+      if (_countryCode != null &&
+          stateProvince.isNotEmpty &&
+          city.isNotEmpty &&
+          facilityName.isNotEmpty &&
+          (saved.communityOnboardingCompleted ||
+              saved.communityInterests.isNotEmpty)) {
+        await ref.read(communityProvider.notifier).completeOnboarding(
+              countryCode: _countryCode!,
+              stateProvince: stateProvince,
+              city: city,
+              healthcareFacilityId: _selectedFacilityId,
+              healthcareFacilityName: facilityName,
+              interests: saved.communityInterests,
+            );
+        await ref.read(profileProvider.notifier).loadProfile();
+      }
+
       if (mounted) {
-        setState(() => _applyProfile(saved, force: true));
+        final refreshed = ref.read(profileProvider).profile ?? saved;
+        setState(() => _applyProfile(refreshed, force: true));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile updated')),
         );
@@ -554,10 +596,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           enabled: _countryCode != null,
                           fetchSuggestions: _fetchCitySuggestions,
                         ),
+                        const SizedBox(height: AppSpacing.spaceMD),
+                        LocationSuggestField(
+                          controller: _facilityController,
+                          label: 'Hospital / health center',
+                          enabled: _countryCode != null,
+                          fetchSuggestions: _fetchFacilitySuggestions,
+                        ),
                         Padding(
                           padding: const EdgeInsets.only(top: AppSpacing.spaceXS),
                           child: Text(
-                            'Start typing state or city to see suggestions.',
+                            'Start typing to search. Missing centers are added when you save.',
                             style: AppTypography.caption.copyWith(
                               color: context.appInkSubtle,
                             ),
