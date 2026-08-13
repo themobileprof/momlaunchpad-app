@@ -139,7 +139,7 @@ class RemindersNotifier extends Notifier<RemindersState> {
       if (reminder.isCompleted) {
         if (eventId != null && eventId.isNotEmpty) {
           await _googleSync.deleteEvent(eventId);
-          return _apiService.updateReminder(
+          return await _apiService.updateReminder(
             id: reminder.id,
             googleCalendarEventId: '',
           );
@@ -152,7 +152,7 @@ class RemindersNotifier extends Notifier<RemindersState> {
         return reminder;
       }
 
-      return _linkReminderToGoogle(reminder);
+      return await _linkReminderToGoogle(reminder);
     } on GoogleCalendarSyncException catch (e) {
       debugPrint('Google Calendar sync failed: $e');
       return reminder;
