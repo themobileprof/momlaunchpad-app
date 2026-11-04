@@ -1,3 +1,5 @@
+import '../utils/condition_class.dart';
+
 /// Symptom model matching backend API response
 class Symptom {
   final String id;
@@ -13,6 +15,9 @@ class Symptom {
   final String? summary;
   final String? conversationId;
   final String? messageId;
+  final ConditionClass? conditionClass;
+  final int? recurrenceCount;
+  final bool isRecurrent;
 
   Symptom({
     required this.id,
@@ -28,6 +33,9 @@ class Symptom {
     this.summary,
     this.conversationId,
     this.messageId,
+    this.conditionClass,
+    this.recurrenceCount,
+    this.isRecurrent = false,
   });
 
   bool get hasSourceChat =>
@@ -39,9 +47,10 @@ class Symptom {
       : description;
 
   factory Symptom.fromJson(Map<String, dynamic> json) {
+    final type = json['symptom_type'] as String;
     return Symptom(
       id: json['id'] as String,
-      symptomType: json['symptom_type'] as String,
+      symptomType: type,
       description: json['description'] as String,
       severity: json['severity'] as String? ?? 'unknown',
       frequency: json['frequency'] as String? ?? 'unknown',
@@ -58,6 +67,12 @@ class Symptom {
       summary: json['summary'] as String?,
       conversationId: json['conversation_id'] as String?,
       messageId: json['message_id'] as String?,
+      conditionClass: parseConditionClass(
+        json['condition_class']?.toString(),
+        symptomType: type,
+      ),
+      recurrenceCount: _asInt(json['recurrence_count']),
+      isRecurrent: json['is_recurrent'] == true,
     );
   }
 
@@ -76,6 +91,10 @@ class Symptom {
       'summary': summary,
       'conversation_id': conversationId,
       'message_id': messageId,
+      if (conditionClass != null)
+        'condition_class': conditionClass!.name,
+      if (recurrenceCount != null) 'recurrence_count': recurrenceCount,
+      'is_recurrent': isRecurrent,
     };
   }
 
@@ -93,6 +112,9 @@ class Symptom {
     String? summary,
     String? conversationId,
     String? messageId,
+    ConditionClass? conditionClass,
+    int? recurrenceCount,
+    bool? isRecurrent,
   }) {
     return Symptom(
       id: id ?? this.id,
@@ -108,6 +130,9 @@ class Symptom {
       summary: summary ?? this.summary,
       conversationId: conversationId ?? this.conversationId,
       messageId: messageId ?? this.messageId,
+      conditionClass: conditionClass ?? this.conditionClass,
+      recurrenceCount: recurrenceCount ?? this.recurrenceCount,
+      isRecurrent: isRecurrent ?? this.isRecurrent,
     );
   }
 
@@ -117,6 +142,15 @@ class Symptom {
         .split('_')
         .map((word) => word[0].toUpperCase() + word.substring(1))
         .join(' ');
+  }
+
+  String get conditionClassDisplay {
+    final cls = conditionClass ?? classifySymptomType(symptomType);
+    final base = conditionClassLabel(cls);
+    if (isRecurrent && (recurrenceCount ?? 0) > 1) {
+      return '$base · recurrent x$recurrenceCount';
+    }
+    return base;
   }
 
   /// Get severity color
@@ -132,6 +166,13 @@ class Symptom {
         return '#9E9E9E'; // Gray
     }
   }
+}
+
+int? _asInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString());
 }
 
 /// Symptom statistics

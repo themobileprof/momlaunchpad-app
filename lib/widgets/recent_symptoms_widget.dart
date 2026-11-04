@@ -4,6 +4,8 @@ import '../models/symptom.dart';
 import '../providers/symptom_provider.dart';
 import '../screens/symptom_stats_screen.dart';
 import '../theme/colors.dart';
+import '../utils/condition_class.dart';
+import 'condition_class_chip.dart';
 
 /// Widget displaying recent symptoms for quick reference
 class RecentSymptomsWidget extends ConsumerWidget {
@@ -11,11 +13,12 @@ class RecentSymptomsWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final recentAsync = ref.watch(recentSymptomsProvider(3));
+    final recentAsync = ref.watch(recentSymptomsProvider(40));
 
     return recentAsync.when(
       data: (symptoms) {
-        if (symptoms.isEmpty) return const SizedBox.shrink();
+        final relevant = selectRelevantSymptoms(symptoms, max: 3);
+        if (relevant.isEmpty) return const SizedBox.shrink();
 
         return Card(
           margin: const EdgeInsets.all(16),
@@ -59,7 +62,7 @@ class RecentSymptomsWidget extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                ...symptoms.map((symptom) => _buildSymptomItem(symptom)),
+                ...relevant.map((symptom) => _buildSymptomItem(symptom)),
               ],
             ),
           ),
@@ -109,12 +112,15 @@ class RecentSymptomsWidget extends ConsumerWidget {
               ],
             ),
           ),
-          if (symptom.isResolved)
-            Icon(
+          ConditionClassChip(symptom: symptom),
+          if (symptom.isResolved) ...[
+            const SizedBox(width: 6),
+            const Icon(
               Icons.check_circle,
               color: Colors.green,
               size: 16,
             ),
+          ],
         ],
       ),
     );

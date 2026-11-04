@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/symptom.dart';
 import '../providers/symptom_provider.dart';
 import '../utils/symptom_resolve.dart';
+import '../widgets/condition_class_chip.dart';
 import '../widgets/symptom_source_chat_link.dart';
 import '../widgets/widgets.dart';
 import '../theme/colors.dart';
@@ -140,6 +141,8 @@ class _SymptomHistoryScreenState extends ConsumerState<SymptomHistoryScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(width: 8),
+                ConditionClassChip(symptom: symptom),
                 const Spacer(),
                 // Severity indicator
                 Container(

@@ -8,9 +8,11 @@ import '../utils/journey_helpers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
+import '../utils/condition_class.dart';
 import '../utils/symptom_resolve.dart';
 import '../screens/symptom_stats_screen.dart';
 import 'app_button.dart';
+import 'condition_class_chip.dart';
 import 'glass_container.dart';
 import 'symptom_source_chat_link.dart';
 
@@ -29,12 +31,12 @@ class _OngoingSymptomPromptState extends ConsumerState<OngoingSymptomPrompt> {
 
   @override
   Widget build(BuildContext context) {
-    final recentAsync = ref.watch(recentSymptomsProvider(20));
+    final recentAsync = ref.watch(recentSymptomsProvider(40));
     final profile = ref.watch(profileProvider).profile;
 
     return recentAsync.when(
       data: (symptoms) {
-        final ongoing = _firstOngoing(symptoms);
+        final ongoing = _firstOngoing(selectRelevantSymptoms(symptoms, max: 10));
         if (ongoing == null || ongoing.id == _dismissedSymptomId) {
           return const SizedBox.shrink();
         }
@@ -71,12 +73,20 @@ class _OngoingSymptomPromptState extends ConsumerState<OngoingSymptomPrompt> {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.spaceSM),
-                Text(
-                  'Has your ${ongoing.symptomTypeName.toLowerCase()} improved?',
-                  style: AppTypography.bodyText.copyWith(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Has your ${ongoing.symptomTypeName.toLowerCase()} improved?',
+                        style: AppTypography.bodyText.copyWith(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.spaceSM),
+                    ConditionClassChip(symptom: ongoing),
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.spaceXS),
                 Text(

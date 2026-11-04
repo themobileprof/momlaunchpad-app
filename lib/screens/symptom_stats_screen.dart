@@ -9,6 +9,7 @@ import '../services/api_service.dart';
 import '../utils/symptom_resolve.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
+import '../widgets/condition_class_chip.dart';
 import '../widgets/log_vitals_sheet.dart';
 import '../widgets/symptom_source_chat_link.dart';
 import '../widgets/widgets.dart';
@@ -748,6 +749,10 @@ class _SymptomsTabContent {
                             ),
                           ),
                         ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: ConditionClassChip(symptom: symptom),
                 ),
                 SymptomSourceChatLink(symptom: symptom),
                 if (!symptom.isResolved)
