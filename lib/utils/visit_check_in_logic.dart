@@ -11,11 +11,14 @@ class VisitCheckInContext {
   final VisitCheckInKind kind;
   final DoctorVisit? visit;
   final DateTime? appointmentAt;
+  /// True when the upcoming slot is the visit's own scheduled date.
+  final bool isScheduledVisit;
 
   const VisitCheckInContext({
     required this.kind,
     this.visit,
     this.appointmentAt,
+    this.isScheduledVisit = false,
   });
 
   String dismissalKey(DateTime now) {
@@ -57,6 +60,7 @@ VisitCheckInContext? resolveVisitCheckIn({
         kind: VisitCheckInKind.upcomingAppointment,
         visit: visit,
         appointmentAt: appt,
+        isScheduledVisit: upcoming.isScheduledVisit,
       );
       if (!dismissedKeys.contains(context.dismissalKey(clock)) &&
           !hasMatchingAppointmentReminder(reminders, appt)) {
@@ -66,7 +70,7 @@ VisitCheckInContext? resolveVisitCheckIn({
   }
 
   for (final visit in visits) {
-    if (!_visitNeedsDebrief(visit, clock)) continue;
+    if (!visitNeedsUpdate(visit, clock)) continue;
     final context = VisitCheckInContext(
       kind: VisitCheckInKind.recentDebrief,
       visit: visit,
@@ -88,30 +92,56 @@ VisitCheckInContext? resolveVisitCheckIn({
   return null;
 }
 
-({DoctorVisit visit, DateTime appointmentAt})? _nearestUpcomingAppointment(
+({DoctorVisit visit, DateTime appointmentAt, bool isScheduledVisit})?
+    _nearestUpcomingAppointment(
   List<DoctorVisit> visits,
   DateTime now,
 ) {
   DoctorVisit? bestVisit;
   DateTime? bestAppt;
+  var bestIsScheduled = false;
 
   for (final visit in visits) {
-    final appt = visit.nextAppointmentAt;
-    if (appt == null || !appt.isAfter(now)) continue;
-    if (bestAppt == null || appt.isBefore(bestAppt)) {
-      bestAppt = appt;
-      bestVisit = visit;
+    final visitDate = visit.visitDate.toLocal();
+    if (visitDate.isAfter(now)) {
+      if (bestAppt == null || visitDate.isBefore(bestAppt)) {
+        bestAppt = visitDate;
+        bestVisit = visit;
+        bestIsScheduled = true;
+      }
+    }
+
+    final appt = visit.nextAppointmentAt?.toLocal();
+    if (appt != null && appt.isAfter(now)) {
+      if (bestAppt == null || appt.isBefore(bestAppt)) {
+        bestAppt = appt;
+        bestVisit = visit;
+        bestIsScheduled = false;
+      }
     }
   }
 
   if (bestVisit == null || bestAppt == null) return null;
-  return (visit: bestVisit, appointmentAt: bestAppt);
+  return (
+    visit: bestVisit,
+    appointmentAt: bestAppt,
+    isScheduledVisit: bestIsScheduled,
+  );
 }
 
-bool _visitNeedsDebrief(DoctorVisit visit, DateTime clock) {
+/// Past visit that still needs a simple after-visit update.
+bool visitNeedsUpdate(DoctorVisit visit, DateTime clock) {
   if (visit.debriefCompletedAt != null) return false;
-  final daysSince = clock.difference(visit.visitDate.toLocal()).inDays;
+  final visitDate = visit.visitDate.toLocal();
+  if (visitDate.isAfter(clock)) return false;
+  final daysSince = clock.difference(visitDate).inDays;
   return daysSince >= 0 && daysSince <= visitDebriefWindowDays;
+}
+
+bool isScheduledVisit(DoctorVisit visit, [DateTime? now]) {
+  final clock = now ?? DateTime.now();
+  return visit.visitDate.toLocal().isAfter(clock) &&
+      visit.debriefCompletedAt == null;
 }
 
 bool hasMatchingAppointmentReminder(List<Reminder> reminders, DateTime appt) {

@@ -8,6 +8,7 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../widgets/widgets.dart';
+import '../utils/visit_check_in_logic.dart';
 import 'doctor_visit_form_screen.dart';
 
 /// List of doctor / prenatal visit records (micro EMR).
@@ -25,16 +26,49 @@ class _DoctorVisitsScreenState extends ConsumerState<DoctorVisitsScreen> {
     Future.microtask(() => ref.read(doctorVisitsProvider.notifier).fetchVisits());
   }
 
-  Future<void> _openForm({DoctorVisit? visit}) async {
+  Future<void> _openForm({
+    DoctorVisit? visit,
+    DoctorVisitFormMode? mode,
+  }) async {
     final saved = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => DoctorVisitFormScreen(existingVisit: visit),
+        builder: (_) => DoctorVisitFormScreen(
+          existingVisit: visit,
+          mode: mode,
+        ),
       ),
     );
     if (saved == true && mounted) {
       ref.read(doctorVisitsProvider.notifier).fetchVisits();
     }
+  }
+
+  Future<void> _chooseNewVisit() async {
+    final choice = await showModalBottomSheet<DoctorVisitFormMode>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.event_outlined),
+              title: const Text('Schedule visit'),
+              subtitle: const Text('For an appointment that is coming up'),
+              onTap: () => Navigator.pop(context, DoctorVisitFormMode.schedule),
+            ),
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: const Text('Log past visit'),
+              subtitle: const Text('For a visit that already happened'),
+              onTap: () => Navigator.pop(context, DoctorVisitFormMode.past),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+    await _openForm(mode: choice);
   }
 
   @override
@@ -44,7 +78,7 @@ class _DoctorVisitsScreenState extends ConsumerState<DoctorVisitsScreen> {
 
     return Scaffold(
       backgroundColor: context.appCanvas,
-      appBar: const MomAppBar(pageTitle: 'Visit records'),
+      appBar: const MomAppBar(pageTitle: 'Doctor visits'),
       body: _buildBody(state, dateFormat),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 80),
@@ -52,7 +86,7 @@ class _DoctorVisitsScreenState extends ConsumerState<DoctorVisitsScreen> {
           filled: true,
           borderRadius: 30,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          onPressed: () => _openForm(),
+          onPressed: _chooseNewVisit,
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -81,32 +115,79 @@ class _DoctorVisitsScreenState extends ConsumerState<DoctorVisitsScreen> {
     if (state.visits.isEmpty) {
       return EmptyState(
         icon: Icons.medical_information_outlined,
-        title: 'No visit records yet',
+        title: 'No visits yet',
         description:
-            'Log prenatal checkups, ultrasounds, medications, vitals, and follow-up appointments.',
-        actionLabel: 'Add visit',
-        onAction: () => _openForm(),
+            'Schedule an upcoming appointment, or log one you already had.',
+        actionLabel: 'Schedule visit',
+        onAction: () => _openForm(mode: DoctorVisitFormMode.schedule),
       );
     }
 
+    final now = DateTime.now();
+    final upcoming = state.visits
+        .where(
+          (v) =>
+              isScheduledVisit(v, now) ||
+              (v.nextAppointmentAt != null &&
+                  v.nextAppointmentAt!.toLocal().isAfter(now)),
+        )
+        .toList();
+    final needsUpdate =
+        state.visits.where((v) => visitNeedsUpdate(v, now)).toList();
+    final past = state.visits
+        .where((v) => !isScheduledVisit(v, now) && !visitNeedsUpdate(v, now))
+        .toList();
+
     return RefreshIndicator(
       onRefresh: () => ref.read(doctorVisitsProvider.notifier).fetchVisits(),
-      child: ListView.builder(
+      child: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.spaceMD,
           AppSpacing.spaceSM,
           AppSpacing.spaceMD,
           120,
         ),
-        itemCount: state.visits.length,
-        itemBuilder: (context, index) {
-          final visit = state.visits[index];
-          return _VisitCard(
-            visit: visit,
-            dateFormat: dateFormat,
-            onTap: () => _showVisitDetails(visit),
-          );
-        },
+        children: [
+          if (upcoming.isNotEmpty) ...[
+            Text('Upcoming', style: AppTypography.bodyTextMedium),
+            const SizedBox(height: AppSpacing.spaceSM),
+            ...upcoming.map(
+              (visit) => _VisitCard(
+                visit: visit,
+                dateFormat: dateFormat,
+                onTap: () => _showVisitDetails(visit),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.spaceMD),
+          ],
+          if (needsUpdate.isNotEmpty) ...[
+            Text('Needs an update', style: AppTypography.bodyTextMedium),
+            const SizedBox(height: AppSpacing.spaceSM),
+            ...needsUpdate.map(
+              (visit) => _VisitCard(
+                visit: visit,
+                dateFormat: dateFormat,
+                badge: 'Update',
+                onTap: () => _openForm(
+                  visit: visit,
+                  mode: DoctorVisitFormMode.update,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.spaceMD),
+          ],
+          if (past.isNotEmpty) ...[
+            Text('Past visits', style: AppTypography.bodyTextMedium),
+            const SizedBox(height: AppSpacing.spaceSM),
+            ...past.map(
+              (visit) => _VisitCard(
+                visit: visit,
+                dateFormat: dateFormat,
+                onTap: () => _showVisitDetails(visit),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -120,7 +201,12 @@ class _DoctorVisitsScreenState extends ConsumerState<DoctorVisitsScreen> {
         visit: visit,
         onEdit: () {
           Navigator.pop(context);
-          _openForm(visit: visit);
+          final mode = visitNeedsUpdate(visit, DateTime.now())
+              ? DoctorVisitFormMode.update
+              : isScheduledVisit(visit)
+                  ? DoctorVisitFormMode.schedule
+                  : DoctorVisitFormMode.past;
+          _openForm(visit: visit, mode: mode);
         },
         onDelete: () => _confirmDelete(visit),
       ),
@@ -176,11 +262,13 @@ class _VisitCard extends StatelessWidget {
   final DoctorVisit visit;
   final DateFormat dateFormat;
   final VoidCallback onTap;
+  final String? badge;
 
   const _VisitCard({
     required this.visit,
     required this.dateFormat,
     required this.onTap,
+    this.badge,
   });
 
   @override
@@ -199,7 +287,12 @@ class _VisitCard extends StatelessWidget {
                   style: AppTypography.bodyTextMedium,
                 ),
               ),
-              if (visit.isProviderRecorded)
+              if (badge != null)
+                AppBadge(
+                  label: badge!,
+                  variant: AppBadgeVariant.primary,
+                )
+              else if (visit.isProviderRecorded)
                 const AppBadge(
                   label: 'Clinician',
                   variant: AppBadgeVariant.secondary,

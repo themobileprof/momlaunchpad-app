@@ -25,10 +25,10 @@ void main() {
       );
     }
 
-    test('shows upcoming appointment within 14 days', () {
+    test('shows upcoming from scheduled visit_date', () {
       final appt = now.add(const Duration(days: 5));
       final context = resolveVisitCheckIn(
-        visits: [visit(id: 'v1', visitDate: now.subtract(const Duration(days: 3)), nextAppointmentAt: appt)],
+        visits: [visit(id: 'v1', visitDate: appt)],
         reminders: const [],
         dismissedKeys: const {},
         monthlyDismissedAt: null,
@@ -37,6 +37,29 @@ void main() {
 
       expect(context?.kind, VisitCheckInKind.upcomingAppointment);
       expect(context?.appointmentAt, appt);
+      expect(context?.isScheduledVisit, isTrue);
+    });
+
+    test('shows upcoming appointment within 14 days', () {
+      final appt = now.add(const Duration(days: 5));
+      final context = resolveVisitCheckIn(
+        visits: [
+          visit(
+            id: 'v1',
+            visitDate: now.subtract(const Duration(days: 3)),
+            nextAppointmentAt: appt,
+            debriefCompletedAt: now,
+          ),
+        ],
+        reminders: const [],
+        dismissedKeys: const {},
+        monthlyDismissedAt: null,
+        now: now,
+      );
+
+      expect(context?.kind, VisitCheckInKind.upcomingAppointment);
+      expect(context?.appointmentAt, appt);
+      expect(context?.isScheduledVisit, isFalse);
     });
 
     test('hides upcoming appointment when calendar reminder exists', () {
@@ -69,7 +92,7 @@ void main() {
       expect(context?.kind, VisitCheckInKind.monthlyLog);
     });
 
-    test('shows recent debrief for visit in last 14 days', () {
+    test('shows recent update for visit in last 14 days', () {
       final context = resolveVisitCheckIn(
         visits: [visit(id: 'v1', visitDate: now.subtract(const Duration(days: 2)))],
         reminders: const [],
@@ -79,6 +102,19 @@ void main() {
       );
 
       expect(context?.kind, VisitCheckInKind.recentDebrief);
+    });
+
+    test('does not prompt update for future scheduled visit', () {
+      final context = resolveVisitCheckIn(
+        visits: [visit(id: 'v1', visitDate: now.add(const Duration(days: 20)))],
+        reminders: const [],
+        dismissedKeys: const {},
+        monthlyDismissedAt: now.subtract(const Duration(days: 40)),
+        now: now,
+      );
+
+      // Outside 14-day upcoming window → monthly
+      expect(context?.kind, VisitCheckInKind.monthlyLog);
     });
 
     test('shows monthly log when nothing else applies', () {

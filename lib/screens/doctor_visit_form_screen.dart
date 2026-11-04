@@ -9,11 +9,25 @@ import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../widgets/widgets.dart';
 
-/// Full-screen form for creating or editing a visit record.
+enum DoctorVisitFormMode {
+  /// Future appointment — essentials only.
+  schedule,
+  /// After the visit date — short update, optional details.
+  update,
+  /// Logging a visit that already happened.
+  past,
+}
+
+/// Full-screen form for scheduling, updating, or logging a visit.
 class DoctorVisitFormScreen extends ConsumerStatefulWidget {
   final DoctorVisit? existingVisit;
+  final DoctorVisitFormMode? mode;
 
-  const DoctorVisitFormScreen({super.key, this.existingVisit});
+  const DoctorVisitFormScreen({
+    super.key,
+    this.existingVisit,
+    this.mode,
+  });
 
   @override
   ConsumerState<DoctorVisitFormScreen> createState() =>
@@ -23,9 +37,11 @@ class DoctorVisitFormScreen extends ConsumerStatefulWidget {
 class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  late DoctorVisitFormMode _mode;
   late DateTime _visitDate;
   late String _visitType;
   DateTime? _nextAppointment;
+  bool _showMoreDetails = false;
 
   final _providerController = TextEditingController();
   final _facilityController = TextEditingController();
@@ -43,6 +59,7 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
   final _fundalController = TextEditingController();
   final _fhrController = TextEditingController();
   final _gaWeeksController = TextEditingController();
+  final _pendingTestController = TextEditingController();
 
   final List<_MedicationEntry> _medications = [];
   final List<_LabEntry> _labResults = [];
@@ -50,13 +67,58 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
 
   bool get _isEditing => widget.existingVisit != null;
 
+  DoctorVisitFormMode _resolveMode() {
+    if (widget.mode != null) return widget.mode!;
+    final visit = widget.existingVisit;
+    if (visit == null) return DoctorVisitFormMode.past;
+    final now = DateTime.now();
+    if (visit.visitDate.toLocal().isAfter(now) &&
+        visit.debriefCompletedAt == null) {
+      return DoctorVisitFormMode.schedule;
+    }
+    if (visit.debriefCompletedAt == null) return DoctorVisitFormMode.update;
+    return DoctorVisitFormMode.past;
+  }
+
+  String get _title {
+    switch (_mode) {
+      case DoctorVisitFormMode.schedule:
+        return _isEditing ? 'Edit scheduled visit' : 'Schedule visit';
+      case DoctorVisitFormMode.update:
+        return 'How did your visit go?';
+      case DoctorVisitFormMode.past:
+        return _isEditing ? 'Edit visit' : 'Log past visit';
+    }
+  }
+
+  String get _saveLabel {
+    switch (_mode) {
+      case DoctorVisitFormMode.schedule:
+        return 'Save appointment';
+      case DoctorVisitFormMode.update:
+        return 'Save update';
+      case DoctorVisitFormMode.past:
+        return 'Save visit';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _mode = _resolveMode();
     final visit = widget.existingVisit;
-    _visitDate = visit?.visitDate.toLocal() ?? DateTime.now();
-    _visitType = visit?.visitType ?? doctorVisitTypes.first;
-    _nextAppointment = visit?.nextAppointmentAt?.toLocal();
+    if (visit != null) {
+      _visitDate = visit.visitDate.toLocal();
+      _visitType = visit.visitType;
+      _nextAppointment = visit.nextAppointmentAt?.toLocal();
+    } else if (_mode == DoctorVisitFormMode.schedule) {
+      final d = DateTime.now().add(const Duration(days: 7));
+      _visitDate = DateTime(d.year, d.month, d.day, 9);
+      _visitType = doctorVisitTypes.first;
+    } else {
+      _visitDate = DateTime.now();
+      _visitType = doctorVisitTypes.first;
+    }
 
     _providerController.text = visit?.providerName ?? '';
     _facilityController.text = visit?.facilityName ?? '';
@@ -81,6 +143,24 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
     for (final lab in visit?.labResults ?? const <VisitLabResult>[]) {
       _labResults.add(_LabEntry.fromLabResult(lab));
     }
+    final pending = visit?.pendingTests
+        .where((t) => t.status != 'completed')
+        .map((t) => t.testName)
+        .where((n) => n.isNotEmpty);
+    if (pending != null && pending.isNotEmpty) {
+      _pendingTestController.text = pending.first;
+    }
+
+    if (_mode != DoctorVisitFormMode.schedule &&
+        (_diagnosisController.text.isNotEmpty ||
+            _treatmentController.text.isNotEmpty ||
+            _medications.isNotEmpty ||
+            _labResults.isNotEmpty ||
+            _pendingTestController.text.isNotEmpty ||
+            _complaintController.text.isNotEmpty ||
+            _bpSysController.text.isNotEmpty)) {
+      _showMoreDetails = true;
+    }
   }
 
   @override
@@ -101,6 +181,7 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
     _fundalController.dispose();
     _fhrController.dispose();
     _gaWeeksController.dispose();
+    _pendingTestController.dispose();
     for (final entry in _medications) {
       entry.dispose();
     }
@@ -111,11 +192,21 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
   }
 
   Future<void> _pickVisitDateTime() async {
+    final now = DateTime.now();
+    final first = _mode == DoctorVisitFormMode.schedule
+        ? DateTime(now.year, now.month, now.day)
+        : DateTime(2020);
+    final last = _mode == DoctorVisitFormMode.schedule
+        ? now.add(const Duration(days: 730))
+        : now;
+
     final date = await showDatePicker(
       context: context,
-      initialDate: _visitDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: _visitDate.isAfter(last)
+          ? last
+          : (_visitDate.isBefore(first) ? first : _visitDate),
+      firstDate: first,
+      lastDate: last,
     );
     if (date == null || !mounted) return;
 
@@ -126,7 +217,8 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
     if (time == null || !mounted) return;
 
     setState(() {
-      _visitDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      _visitDate =
+          DateTime(date.year, date.month, date.day, time.hour, time.minute);
     });
   }
 
@@ -141,61 +233,144 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
 
     final time = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay(hour: 9, minute: 0),
+      initialTime: const TimeOfDay(hour: 9, minute: 0),
     );
     if (time == null || !mounted) return;
 
     setState(() {
-      _nextAppointment = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      _nextAppointment =
+          DateTime(date.year, date.month, date.day, time.hour, time.minute);
     });
   }
 
-  DoctorVisitPayload _buildPayload() {
+  DoctorVisitPayload _buildPayload({required bool includeDetails}) {
+    final existing = widget.existingVisit;
+    // When details stay collapsed, keep any clinical data already on the visit.
+    final keepExisting = !includeDetails && existing != null;
+
     return DoctorVisitPayload(
       visitDate: _visitDate,
       visitType: _visitType,
       providerName: _trimOrNull(_providerController.text),
       facilityName: _trimOrNull(_facilityController.text),
-      chiefComplaint: _trimOrNull(_complaintController.text),
+      chiefComplaint: includeDetails
+          ? _trimOrNull(_complaintController.text)
+          : existing?.chiefComplaint,
       clinicalNotes: _trimOrNull(_notesController.text),
-      diagnosis: _trimOrNull(_diagnosisController.text),
-      treatmentPlan: _trimOrNull(_treatmentController.text),
-      followUpInstructions: _trimOrNull(_followUpController.text),
-      bloodPressureSystolic: _parseInt(_bpSysController.text),
-      bloodPressureDiastolic: _parseInt(_bpDiaController.text),
-      weightKg: _parseDouble(_weightController.text),
-      heartRateBpm: _parseInt(_heartRateController.text),
-      temperatureCelsius: _parseDouble(_tempController.text),
-      fundalHeightCm: _parseDouble(_fundalController.text),
-      fetalHeartRateBpm: _parseInt(_fhrController.text),
-      gestationalAgeWeeks: _parseInt(_gaWeeksController.text),
-      medications: _medications
-          .map((e) => e.toMedication())
-          .where((m) => m.name.isNotEmpty)
-          .toList(),
-      labResults: _labResults
-          .map((e) => e.toLabResult())
-          .where((l) => l.testName.isNotEmpty)
-          .toList(),
-      nextAppointmentAt: _nextAppointment,
-      nextAppointmentNotes: _trimOrNull(_nextApptNotesController.text),
+      diagnosis: includeDetails
+          ? _trimOrNull(_diagnosisController.text)
+          : existing?.diagnosis,
+      treatmentPlan: includeDetails
+          ? _trimOrNull(_treatmentController.text)
+          : existing?.treatmentPlan,
+      followUpInstructions: includeDetails
+          ? _trimOrNull(_followUpController.text)
+          : existing?.followUpInstructions,
+      bloodPressureSystolic: includeDetails
+          ? _parseInt(_bpSysController.text)
+          : existing?.bloodPressureSystolic,
+      bloodPressureDiastolic: includeDetails
+          ? _parseInt(_bpDiaController.text)
+          : existing?.bloodPressureDiastolic,
+      weightKg: includeDetails
+          ? _parseDouble(_weightController.text)
+          : existing?.weightKg,
+      heartRateBpm: includeDetails
+          ? _parseInt(_heartRateController.text)
+          : existing?.heartRateBpm,
+      temperatureCelsius: includeDetails
+          ? _parseDouble(_tempController.text)
+          : existing?.temperatureCelsius,
+      fundalHeightCm: includeDetails
+          ? _parseDouble(_fundalController.text)
+          : existing?.fundalHeightCm,
+      fetalHeartRateBpm: includeDetails
+          ? _parseInt(_fhrController.text)
+          : existing?.fetalHeartRateBpm,
+      gestationalAgeWeeks: includeDetails
+          ? _parseInt(_gaWeeksController.text)
+          : existing?.gestationalAgeWeeks,
+      medications: includeDetails
+          ? _medications
+              .map((e) => e.toMedication())
+              .where((m) => m.name.isNotEmpty)
+              .toList()
+          : (keepExisting ? existing.medications : const []),
+      labResults: includeDetails
+          ? _labResults
+              .map((e) => e.toLabResult())
+              .where((l) => l.testName.isNotEmpty)
+              .toList()
+          : (keepExisting ? existing.labResults : const []),
+      nextAppointmentAt:
+          _mode == DoctorVisitFormMode.schedule ? null : _nextAppointment,
+      nextAppointmentNotes: _mode == DoctorVisitFormMode.schedule
+          ? null
+          : _trimOrNull(_nextApptNotesController.text),
     );
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final now = DateTime.now();
+    if (_mode == DoctorVisitFormMode.schedule && !_visitDate.isAfter(now)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pick a future date for a scheduled visit')),
+      );
+      return;
+    }
+    if (_mode != DoctorVisitFormMode.schedule && _visitDate.isAfter(now)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Use Schedule visit for appointments that have not happened yet'),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
+    final includeDetails =
+        _mode != DoctorVisitFormMode.schedule && _showMoreDetails;
     try {
-      final payload = _buildPayload();
+      final payload = _buildPayload(includeDetails: includeDetails);
+      DoctorVisit saved;
       if (_isEditing) {
-        await ref.read(doctorVisitsProvider.notifier).saveVisit(
+        saved = await ref.read(doctorVisitsProvider.notifier).saveVisit(
               id: widget.existingVisit!.id,
               payload: payload,
             );
       } else {
-        await ref.read(doctorVisitsProvider.notifier).addVisit(payload);
+        saved = await ref.read(doctorVisitsProvider.notifier).addVisit(payload);
       }
+
+      if (_mode == DoctorVisitFormMode.past ||
+          _mode == DoctorVisitFormMode.update) {
+        final pendingName = includeDetails
+            ? _trimOrNull(_pendingTestController.text)
+            : null;
+        await ref.read(doctorVisitsProvider.notifier).debriefVisit(
+              id: saved.id,
+              payload: VisitDebriefPayload(
+                pendingTests: pendingName == null
+                    ? const []
+                    : [
+                        VisitPendingTest(
+                          testName: pendingName,
+                          status: 'pending',
+                        ),
+                      ],
+                medications: includeDetails
+                    ? _medications
+                        .map((e) => e.toMedication())
+                        .where((m) => m.name.isNotEmpty)
+                        .toList()
+                    : const [],
+                markCompleted: true,
+              ),
+            );
+      }
+
       if (mounted) Navigator.pop(context, true);
     } on ApiException catch (e) {
       if (mounted) {
@@ -220,9 +395,7 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
 
     return Scaffold(
       backgroundColor: context.appCanvas,
-      appBar: MomAppBar(
-        pageTitle: _isEditing ? 'Edit visit' : 'Add visit',
-      ),
+      appBar: MomAppBar(pageTitle: _title),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -233,7 +406,13 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
             AppSpacing.spaceXL,
           ),
           children: [
-            _sectionTitle('Visit details'),
+            Text(
+              _mode == DoctorVisitFormMode.schedule
+                  ? 'Just the essentials. We will ask how it went after the date.'
+                  : 'A short update is enough. Add more details only if you want.',
+              style: AppTypography.caption.copyWith(color: context.appInkSubtle),
+            ),
+            const SizedBox(height: AppSpacing.spaceMD),
             DropdownButtonFormField<String>(
               initialValue: _visitType,
               decoration: const InputDecoration(labelText: 'Visit type'),
@@ -253,170 +432,215 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
             InkWell(
               onTap: _pickVisitDateTime,
               child: InputDecorator(
-                decoration: const InputDecoration(labelText: 'Visit date & time'),
+                decoration: InputDecoration(
+                  labelText: _mode == DoctorVisitFormMode.schedule
+                      ? 'When is it?'
+                      : 'When was it?',
+                ),
                 child: Text(dateFormat.format(_visitDate)),
               ),
             ),
             const SizedBox(height: AppSpacing.spaceMD),
             AppTextField(
               controller: _providerController,
-              label: 'Doctor / provider',
+              label: 'Doctor / provider (optional)',
               hint: 'Dr. Smith',
             ),
             const SizedBox(height: AppSpacing.spaceMD),
             AppTextField(
               controller: _facilityController,
-              label: 'Clinic / hospital',
+              label: 'Clinic / hospital (optional)',
             ),
-            const SizedBox(height: AppSpacing.spaceLG),
-            _sectionTitle('Reason for visit'),
-            AppTextField(
-              controller: _complaintController,
-              label: 'Chief complaint',
-              maxLines: 3,
-            ),
-            const SizedBox(height: AppSpacing.spaceLG),
-            _sectionTitle('Vitals'),
-            Row(
-              children: [
-                Expanded(
-                  child: AppTextField(
-                    controller: _bpSysController,
-                    label: 'BP systolic',
-                    keyboardType: TextInputType.number,
+            if (_mode == DoctorVisitFormMode.schedule) ...[
+              const SizedBox(height: AppSpacing.spaceMD),
+              AppTextField(
+                controller: _notesController,
+                label: 'Note (optional)',
+                hint: 'Anything to remember before you go',
+                maxLines: 2,
+              ),
+            ] else ...[
+              const SizedBox(height: AppSpacing.spaceLG),
+              AppTextField(
+                controller: _notesController,
+                label: 'How did it go?',
+                hint: 'What the doctor said, how you feel…',
+                maxLines: 3,
+              ),
+              const SizedBox(height: AppSpacing.spaceLG),
+              _sectionTitle('Next appointment (optional)'),
+              InkWell(
+                onTap: _pickNextAppointment,
+                child: InputDecorator(
+                  decoration:
+                      const InputDecoration(labelText: 'Scheduled date & time'),
+                  child: Text(
+                    _nextAppointment != null
+                        ? dateFormat.format(_nextAppointment!)
+                        : 'Not scheduled',
                   ),
-                ),
-                const SizedBox(width: AppSpacing.spaceSM),
-                Expanded(
-                  child: AppTextField(
-                    controller: _bpDiaController,
-                    label: 'BP diastolic',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.spaceMD),
-            Row(
-              children: [
-                Expanded(
-                  child: AppTextField(
-                    controller: _weightController,
-                    label: 'Weight (kg)',
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.spaceSM),
-                Expanded(
-                  child: AppTextField(
-                    controller: _heartRateController,
-                    label: 'Heart rate',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.spaceMD),
-            Row(
-              children: [
-                Expanded(
-                  child: AppTextField(
-                    controller: _tempController,
-                    label: 'Temp (°C)',
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.spaceSM),
-                Expanded(
-                  child: AppTextField(
-                    controller: _gaWeeksController,
-                    label: 'Gestational weeks',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.spaceMD),
-            Row(
-              children: [
-                Expanded(
-                  child: AppTextField(
-                    controller: _fundalController,
-                    label: 'Fundal height (cm)',
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.spaceSM),
-                Expanded(
-                  child: AppTextField(
-                    controller: _fhrController,
-                    label: 'Fetal HR (bpm)',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.spaceLG),
-            _sectionTitle('Clinical notes'),
-            AppTextField(
-              controller: _notesController,
-              label: 'Doctor observations',
-              maxLines: 4,
-            ),
-            const SizedBox(height: AppSpacing.spaceMD),
-            AppTextField(
-              controller: _diagnosisController,
-              label: 'Diagnosis',
-              maxLines: 2,
-            ),
-            const SizedBox(height: AppSpacing.spaceMD),
-            AppTextField(
-              controller: _treatmentController,
-              label: 'Treatment plan',
-              maxLines: 3,
-            ),
-            const SizedBox(height: AppSpacing.spaceMD),
-            AppTextField(
-              controller: _followUpController,
-              label: 'Follow-up instructions',
-              maxLines: 3,
-            ),
-            const SizedBox(height: AppSpacing.spaceLG),
-            _buildMedicationsSection(),
-            const SizedBox(height: AppSpacing.spaceLG),
-            _buildLabResultsSection(),
-            const SizedBox(height: AppSpacing.spaceLG),
-            _sectionTitle('Next appointment'),
-            InkWell(
-              onTap: _pickNextAppointment,
-              child: InputDecorator(
-                decoration: const InputDecoration(labelText: 'Scheduled date & time'),
-                child: Text(
-                  _nextAppointment != null
-                      ? dateFormat.format(_nextAppointment!)
-                      : 'Not scheduled',
                 ),
               ),
-            ),
-            if (_nextAppointment != null) ...[
-              const SizedBox(height: AppSpacing.spaceSM),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  onPressed: () => setState(() => _nextAppointment = null),
-                  child: const Text('Clear appointment'),
+              if (_nextAppointment != null) ...[
+                const SizedBox(height: AppSpacing.spaceSM),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: () => setState(() => _nextAppointment = null),
+                    child: const Text('Clear appointment'),
+                  ),
                 ),
+              ],
+              const SizedBox(height: AppSpacing.spaceMD),
+              AppTextField(
+                controller: _nextApptNotesController,
+                label: 'Appointment notes',
+                maxLines: 2,
               ),
+              const SizedBox(height: AppSpacing.spaceMD),
+              if (!_showMoreDetails)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: () => setState(() => _showMoreDetails = true),
+                    child: const Text('Add more details'),
+                  ),
+                )
+              else ...[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: () => setState(() => _showMoreDetails = false),
+                    child: const Text('Hide extra details'),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.spaceSM),
+                _sectionTitle('More details'),
+                AppTextField(
+                  controller: _complaintController,
+                  label: 'Chief complaint',
+                  maxLines: 2,
+                ),
+                const SizedBox(height: AppSpacing.spaceMD),
+                AppTextField(
+                  controller: _diagnosisController,
+                  label: 'Diagnosis',
+                  maxLines: 2,
+                ),
+                const SizedBox(height: AppSpacing.spaceMD),
+                AppTextField(
+                  controller: _treatmentController,
+                  label: 'Treatment plan',
+                  maxLines: 2,
+                ),
+                const SizedBox(height: AppSpacing.spaceMD),
+                AppTextField(
+                  controller: _followUpController,
+                  label: 'Follow-up instructions',
+                  maxLines: 2,
+                ),
+                const SizedBox(height: AppSpacing.spaceMD),
+                AppTextField(
+                  controller: _pendingTestController,
+                  label: 'Test still to do',
+                  hint: 'Blood work, scan…',
+                ),
+                const SizedBox(height: AppSpacing.spaceLG),
+                _sectionTitle('Vitals'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppTextField(
+                        controller: _bpSysController,
+                        label: 'BP systolic',
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.spaceSM),
+                    Expanded(
+                      child: AppTextField(
+                        controller: _bpDiaController,
+                        label: 'BP diastolic',
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.spaceMD),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppTextField(
+                        controller: _weightController,
+                        label: 'Weight (kg)',
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.spaceSM),
+                    Expanded(
+                      child: AppTextField(
+                        controller: _heartRateController,
+                        label: 'Heart rate',
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.spaceMD),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppTextField(
+                        controller: _tempController,
+                        label: 'Temp (°C)',
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.spaceSM),
+                    Expanded(
+                      child: AppTextField(
+                        controller: _gaWeeksController,
+                        label: 'Gestational weeks',
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.spaceMD),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppTextField(
+                        controller: _fundalController,
+                        label: 'Fundal height (cm)',
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.spaceSM),
+                    Expanded(
+                      child: AppTextField(
+                        controller: _fhrController,
+                        label: 'Fetal HR (bpm)',
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.spaceLG),
+                _buildMedicationsSection(),
+                const SizedBox(height: AppSpacing.spaceLG),
+                _buildLabResultsSection(),
+              ],
             ],
-            const SizedBox(height: AppSpacing.spaceMD),
-            AppTextField(
-              controller: _nextApptNotesController,
-              label: 'Appointment notes',
-              maxLines: 2,
-            ),
             const SizedBox(height: AppSpacing.spaceXL),
             AppButton(
-              label: _isSaving ? 'Saving...' : 'Save visit',
+              label: _isSaving ? 'Saving...' : _saveLabel,
               onPressed: _isSaving ? null : _save,
             ),
           ],
@@ -440,8 +664,9 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
           children: [
             Expanded(child: _sectionTitle('Medications')),
             TextButton.icon(
-              onPressed: () => setState(() => _medications.add(_MedicationEntry.empty())),
-              icon: Icon(Icons.add),
+              onPressed: () =>
+                  setState(() => _medications.add(_MedicationEntry.empty())),
+              icon: const Icon(Icons.add),
               label: const Text('Add'),
             ),
           ],
@@ -458,7 +683,10 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
             margin: const EdgeInsets.only(bottom: AppSpacing.spaceSM),
             child: Column(
               children: [
-                AppTextField(controller: med.nameController, label: 'Medication'),
+                AppTextField(
+                  controller: med.nameController,
+                  label: 'Medication',
+                ),
                 const SizedBox(height: AppSpacing.spaceSM),
                 Row(
                   children: [
@@ -476,12 +704,6 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: AppSpacing.spaceSM),
-                AppTextField(
-                  controller: med.instructionsController,
-                  label: 'Instructions',
-                  maxLines: 2,
                 ),
                 Align(
                   alignment: Alignment.centerRight,
@@ -511,8 +733,9 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
           children: [
             Expanded(child: _sectionTitle('Lab results')),
             TextButton.icon(
-              onPressed: () => setState(() => _labResults.add(_LabEntry.empty())),
-              icon: Icon(Icons.add),
+              onPressed: () =>
+                  setState(() => _labResults.add(_LabEntry.empty())),
+              icon: const Icon(Icons.add),
               label: const Text('Add'),
             ),
           ],
@@ -529,7 +752,10 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
             margin: const EdgeInsets.only(bottom: AppSpacing.spaceSM),
             child: Column(
               children: [
-                AppTextField(controller: lab.testController, label: 'Test name'),
+                AppTextField(
+                  controller: lab.testController,
+                  label: 'Test name',
+                ),
                 const SizedBox(height: AppSpacing.spaceSM),
                 Row(
                   children: [
@@ -547,12 +773,6 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: AppSpacing.spaceSM),
-                AppTextField(
-                  controller: lab.notesController,
-                  label: 'Notes',
-                  maxLines: 2,
                 ),
                 Align(
                   alignment: Alignment.centerRight,
@@ -619,7 +839,8 @@ class _MedicationEntry {
       nameController: TextEditingController(text: med.name),
       dosageController: TextEditingController(text: med.dosage),
       frequencyController: TextEditingController(text: med.frequency),
-      instructionsController: TextEditingController(text: med.instructions ?? ''),
+      instructionsController:
+          TextEditingController(text: med.instructions ?? ''),
     );
   }
 
@@ -678,7 +899,8 @@ class _LabEntry {
       testName: testController.text.trim(),
       result: resultController.text.trim(),
       unit: unitController.text.trim().isEmpty ? null : unitController.text.trim(),
-      notes: notesController.text.trim().isEmpty ? null : notesController.text.trim(),
+      notes:
+          notesController.text.trim().isEmpty ? null : notesController.text.trim(),
     );
   }
 
