@@ -143,51 +143,66 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       }
     });
 
+    final topicTitle = conversationDisplayTitle(
+      chatState.conversationTitle ??
+          widget.conversationTitle ??
+          defaultConversationTitle,
+    );
+
     return Scaffold(
       appBar: _buildAppBar(chatState),
       body: chatState.isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Error banner
+                _buildTopicBar(topicTitle),
                 if (chatState.error != null) _buildErrorBanner(chatState.error!),
-
-                // Messages list
                 Expanded(child: _buildMessagesList(chatState)),
-
-                // Input field
                 _buildInputArea(chatState),
               ],
             ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(ChatState chatState) {
-    return MomAppBar(
-      pageTitle: conversationDisplayTitle(
-        chatState.conversationTitle ??
-            widget.conversationTitle ??
-            defaultConversationTitle,
-      ),
-      subtitle: Row(
-        children: [
-          StatusDot(
-            isActive: chatState.isConnected,
-            size: 6,
-            pulse: chatState.isConnected,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            chatState.isConnected ? 'Connected' : 'Disconnected',
-            style: AppTypography.caption.copyWith(
-              fontSize: 12,
-              color: chatState.isConnected
-                  ? AppColors.success
-                  : context.appInkSubtle,
+  Widget _buildTopicBar(String topicTitle) {
+    if (topicTitle == defaultConversationTitle || topicTitle == 'Chat') {
+      return const SizedBox.shrink();
+    }
+    return Material(
+      color: context.appSurface,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.spaceMD,
+          AppSpacing.spaceSM,
+          AppSpacing.spaceMD,
+          AppSpacing.spaceSM,
+        ),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: context.appInkSubtle.withValues(alpha: 0.18),
             ),
           ),
-        ],
+        ),
+        child: Text(
+          topicTitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTypography.bodyTextMedium.copyWith(
+            fontSize: 14,
+            color: context.appInk,
+          ),
+        ),
       ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(ChatState chatState) {
+    // Keep the brand bar short: long topic titles belong below the app bar,
+    // not stacked into the sticky header (especially cramped on phones).
+    return MomAppBar(
+      pageTitle: 'Chat',
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: AppSpacing.spaceSM),

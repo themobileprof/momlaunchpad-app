@@ -96,6 +96,18 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
       backgroundColor: context.appCanvas,
       appBar: MomAppBar(
         pageTitle: 'Community',
+        // Keep feed topics in the app bar bottom so they don't stack under a
+        // second sticky header and crowd the top of the screen on phones.
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.spaceSM),
+            child: CommunityFilterBar(
+              selected: state.filter,
+              onSelected: (f) => ref.read(communityProvider.notifier).setFilter(f),
+            ),
+          ),
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.notifications_outlined),
@@ -166,15 +178,6 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.spaceSM),
-            child: CommunityFilterBar(
-              selected: state.filter,
-              onSelected: (f) => ref.read(communityProvider.notifier).setFilter(f),
-            ),
-          ),
-        ),
         if (state.posts.isEmpty)
           SliverFillRemaining(
             hasScrollBody: false,
