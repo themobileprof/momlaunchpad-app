@@ -10,6 +10,11 @@ import '../providers/theme_provider.dart';
 import '../models/user.dart';
 import '../widgets/feedback_sheet.dart';
 import '../widgets/widgets.dart';
+import 'doctor_visits_screen.dart';
+import 'facility_admin_screen.dart';
+import 'nest_screen.dart';
+import 'symptom_stats_screen.dart';
+import 'hospital_bag_screen.dart';
 
 /// Settings screen - User preferences and account management
 class SettingsScreen extends ConsumerWidget {
@@ -32,6 +37,56 @@ class SettingsScreen extends ConsumerWidget {
         ),
         children: [
           _buildAccountCard(user),
+
+          const SizedBox(height: AppSpacing.spaceLG),
+
+          _buildSectionHeader(context, 'App'),
+          AppListTileCard(
+            leadingIcon: Icons.health_and_safety_outlined,
+            title: 'Health tracker',
+            subtitle: 'Symptoms, vitals, and stats',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SymptomStatsScreen()),
+            ),
+          ),
+          AppListTileCard(
+            leadingIcon: Icons.medical_services_outlined,
+            title: 'Doctor visits',
+            subtitle: 'Schedule and after-visit updates',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DoctorVisitsScreen()),
+            ),
+          ),
+          AppListTileCard(
+            leadingIcon: Icons.luggage_outlined,
+            title: 'Hospital bag',
+            subtitle: 'Packing checklist',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HospitalBagScreen()),
+            ),
+          ),
+          AppListTileCard(
+            leadingIcon: Icons.savings_outlined,
+            title: 'Delivery nest',
+            subtitle: 'Coming soon — share interest',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NestScreen()),
+            ),
+          ),
+          AppListTileCard(
+            leadingIcon: Icons.local_hospital_outlined,
+            title: 'Health center admin',
+            subtitle: 'Claim, roster, and member messages',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const FacilityAdminScreen()),
+            ),
+            margin: const EdgeInsets.only(bottom: AppSpacing.spaceSM),
+          ),
 
           const SizedBox(height: AppSpacing.spaceLG),
 

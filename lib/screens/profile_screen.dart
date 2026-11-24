@@ -58,6 +58,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _isSaving = false;
   bool _isUploadingPhoto = false;
   bool _initialized = false;
+  bool _facilityAnnouncementsOptIn = true;
 
   static const _dietOptions = [
     '',
@@ -186,6 +187,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _cityController.text = profile.city ?? '';
     _facilityController.text = profile.healthcareFacilityName ?? '';
     _selectedFacilityId = profile.healthcareFacilityId;
+    _facilityAnnouncementsOptIn = profile.facilityAnnouncementsOptIn;
   }
 
   Future<void> _openCommunityFeedTopics() async {
@@ -327,6 +329,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               city: _cityController.text.trim().isEmpty
                   ? null
                   : _cityController.text.trim(),
+              facilityAnnouncementsOptIn: _facilityAnnouncementsOptIn,
             ),
           );
 
@@ -635,6 +638,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             style: AppTypography.caption.copyWith(
                               color: context.appInkSubtle,
                             ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.spaceMD),
+                        SwitchListTile.adaptive(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            'Health center announcements',
+                            style: AppTypography.bodyTextMedium,
+                          ),
+                          subtitle: Text(
+                            'Allow your center’s approved admins to send in-app broadcasts',
+                            style: AppTypography.caption.copyWith(
+                              color: context.appInkSubtle,
+                            ),
+                          ),
+                          value: _facilityAnnouncementsOptIn,
+                          onChanged: (value) => setState(
+                            () => _facilityAnnouncementsOptIn = value,
                           ),
                         ),
                       ],

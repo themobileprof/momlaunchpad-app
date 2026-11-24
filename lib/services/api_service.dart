@@ -17,6 +17,8 @@ import '../models/community_badge_request.dart';
 import '../models/community_thread_evaluation.dart';
 import '../models/referral.dart';
 import '../models/user_notification.dart';
+import '../models/nest.dart';
+import '../models/facility_admin.dart';
 import '../config/app_config.dart';
 import 'storage_service.dart';
 
@@ -1503,6 +1505,334 @@ class ApiService {
     throw ApiException(
       statusCode: response.statusCode,
       message: _errorMessageFromBody(response, 'Failed to load referral rewards'),
+    );
+  }
+
+  // ============ DELIVERY NEST ENDPOINTS ============
+
+  /// Interest survey while Nest create/contribute is gated.
+  Future<({NestInterestResponse? response, bool featureLive})>
+      getNestInterest() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/nests/interest'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final raw = decoded['response'];
+      return (
+        response: raw == null
+            ? null
+            : NestInterestResponse.fromJson(
+                Map<String, dynamic>.from(raw as Map),
+              ),
+        featureLive: decoded['feature_live'] as bool? ?? false,
+      );
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to load nest interest'),
+    );
+  }
+
+  Future<NestInterestResponse> submitNestInterest({
+    required String interested,
+    String? moreInfo,
+  }) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/nests/interest'),
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        'interested': interested,
+        if (moreInfo != null && moreInfo.isNotEmpty) 'more_info': moreInfo,
+      }),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      return NestInterestResponse.fromJson(
+        Map<String, dynamic>.from(decoded['response'] as Map),
+      );
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to save nest interest'),
+    );
+  }
+
+  /// Mom's nest, or null when they have not created one yet.
+  Future<Nest?> getMyNest() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/nests/me'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final nest = decoded['nest'];
+      if (nest == null) return null;
+      return Nest.fromJson(Map<String, dynamic>.from(nest as Map));
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to load delivery nest'),
+    );
+  }
+
+  Future<Nest> createNest({
+    String? title,
+    double? goalAmount,
+    double? monthlyTargetAmount,
+    String currency = 'NGN',
+    DateTime? expectedDeliveryDate,
+    int reminderDayOfMonth = 28,
+  }) async {
+    final body = <String, dynamic>{
+      'currency': currency,
+      'reminder_day_of_month': reminderDayOfMonth,
+      if (title != null && title.isNotEmpty) 'title': title,
+      if (goalAmount != null) 'goal_amount': goalAmount,
+      if (monthlyTargetAmount != null)
+        'monthly_target_amount': monthlyTargetAmount,
+      if (expectedDeliveryDate != null)
+        'expected_delivery_date':
+            expectedDeliveryDate.toUtc().toIso8601String().split('T').first,
+    };
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/nests'),
+      headers: await _getHeaders(),
+      body: jsonEncode(body),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      return Nest.fromJson(
+        Map<String, dynamic>.from(decoded['nest'] as Map),
+      );
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to create nest'),
+    );
+  }
+
+  Future<NestActivity> listNestActivity(String nestId) async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/nests/$nestId/contributions'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final contributions = (decoded['contributions'] as List<dynamic>? ?? [])
+          .map((e) => NestContribution.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      final contributors = (decoded['contributors'] as List<dynamic>? ?? [])
+          .map((e) => NestContributor.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      return NestActivity(
+        contributions: contributions,
+        contributors: contributors,
+      );
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to load nest activity'),
+    );
+  }
+
+  Future<NestContribution> recordNestContribution({
+    required String nestId,
+    required String displayName,
+    required double amount,
+    String? note,
+    String status = 'recorded',
+  }) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/nests/$nestId/contributions'),
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        'display_name': displayName,
+        'amount': amount,
+        'status': status,
+        if (note != null && note.isNotEmpty) 'note': note,
+      }),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      return NestContribution.fromJson(
+        Map<String, dynamic>.from(decoded['contribution'] as Map),
+      );
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to record gift'),
+    );
+  }
+
+  Future<({String inviteToken, String inviteLink})> rotateNestInvite(
+    String nestId,
+  ) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/nests/$nestId/invite'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      return (
+        inviteToken: decoded['invite_token'] as String? ?? '',
+        inviteLink: decoded['invite_link'] as String? ?? '',
+      );
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to refresh invite link'),
+    );
+  }
+
+  // ============ FACILITY ADMIN ENDPOINTS ============
+
+  Future<FacilityAdminMe> getMyFacilityAdmin() async {
+    final response = await _http.get(
+      Uri.parse('$baseUrl/api/community/facility-admin/me'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final claims = (decoded['claims'] as List<dynamic>? ?? [])
+          .map((e) =>
+              FacilityAdminClaim.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      final approved = (decoded['approved'] as List<dynamic>? ?? [])
+          .map((e) =>
+              FacilityAdminClaim.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      return FacilityAdminMe(claims: claims, approved: approved);
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to load facility admin'),
+    );
+  }
+
+  Future<FacilityAdminClaim> createFacilityAdminClaim({
+    required String healthcareFacilityId,
+    String? roleTitle,
+    String? proofNote,
+    String? proofUrl,
+  }) async {
+    final response = await _http.post(
+      Uri.parse('$baseUrl/api/community/facility-admin/claims'),
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        'healthcare_facility_id': healthcareFacilityId,
+        if (roleTitle != null && roleTitle.isNotEmpty) 'role_title': roleTitle,
+        if (proofNote != null && proofNote.isNotEmpty) 'proof_note': proofNote,
+        if (proofUrl != null && proofUrl.isNotEmpty) 'proof_url': proofUrl,
+      }),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      return FacilityAdminClaim.fromJson(
+        Map<String, dynamic>.from(decoded['claim'] as Map),
+      );
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to submit claim'),
+    );
+  }
+
+  Future<FacilityMembersPage> listFacilityMembers(
+    String facilityId, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final response = await _http.get(
+      Uri.parse(
+        '$baseUrl/api/community/facility-admin/facilities/$facilityId/members'
+        '?limit=$limit&offset=$offset',
+      ),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final members = (decoded['members'] as List<dynamic>? ?? [])
+          .map((e) =>
+              FacilityMember.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      return FacilityMembersPage(
+        members: members,
+        total: decoded['total'] as int? ?? members.length,
+      );
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to load members'),
+    );
+  }
+
+  Future<List<FacilityAnnouncement>> listFacilityAnnouncements(
+    String facilityId,
+  ) async {
+    final response = await _http.get(
+      Uri.parse(
+        '$baseUrl/api/community/facility-admin/facilities/$facilityId/announcements',
+      ),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      return (decoded['announcements'] as List<dynamic>? ?? [])
+          .map((e) => FacilityAnnouncement.fromJson(
+                Map<String, dynamic>.from(e as Map),
+              ))
+          .toList();
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to load announcements'),
+    );
+  }
+
+  Future<FacilityAnnouncement> createFacilityAnnouncement({
+    required String facilityId,
+    required String title,
+    required String body,
+  }) async {
+    final response = await _http.post(
+      Uri.parse(
+        '$baseUrl/api/community/facility-admin/facilities/$facilityId/announcements',
+      ),
+      headers: await _getHeaders(),
+      body: jsonEncode({'title': title, 'body': body}),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      return FacilityAnnouncement.fromJson(
+        Map<String, dynamic>.from(decoded['announcement'] as Map),
+      );
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to send announcement'),
+    );
+  }
+
+  Future<void> sendFacilityDirectMessage({
+    required String facilityId,
+    required String memberUserId,
+    required String title,
+    required String body,
+  }) async {
+    final response = await _http.post(
+      Uri.parse(
+        '$baseUrl/api/community/facility-admin/facilities/$facilityId'
+        '/members/$memberUserId/messages',
+      ),
+      headers: await _getHeaders(),
+      body: jsonEncode({'title': title, 'body': body}),
+    );
+    if (response.statusCode == 200) return;
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to send message'),
     );
   }
 

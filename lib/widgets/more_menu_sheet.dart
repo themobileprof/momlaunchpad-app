@@ -10,6 +10,9 @@ import '../screens/settings_screen.dart';
 import '../screens/symptom_stats_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/hospital_bag_screen.dart';
+import '../screens/doctor_visits_screen.dart';
+import '../screens/nest_screen.dart';
+import '../screens/facility_admin_screen.dart';
 
 /// Bottom sheet listing secondary destinations (profile, settings, etc.).
 class MoreMenuSheet extends ConsumerWidget {
@@ -75,10 +78,28 @@ class MoreMenuSheet extends ConsumerWidget {
                 onTap: () => _open(context, const SymptomStatsScreen()),
               ),
               _MoreMenuItem(
+                icon: Icons.medical_services_outlined,
+                title: 'Doctor visits',
+                subtitle: 'Schedule checkups and after-visit notes',
+                onTap: () => _open(context, const DoctorVisitsScreen()),
+              ),
+              _MoreMenuItem(
                 icon: Icons.luggage_outlined,
                 title: 'Hospital bag',
                 subtitle: 'Pack, price, and share your checklist',
                 onTap: () => _open(context, const HospitalBagScreen()),
+              ),
+              _MoreMenuItem(
+                icon: Icons.savings_outlined,
+                title: 'Delivery nest',
+                subtitle: 'Coming soon — tell us if you want it',
+                onTap: () => _open(context, const NestScreen()),
+              ),
+              _MoreMenuItem(
+                icon: Icons.local_hospital_outlined,
+                title: 'Health center admin',
+                subtitle: 'Claim your center, roster, and messages',
+                onTap: () => _open(context, const FacilityAdminScreen()),
               ),
               _MoreMenuItem(
                 icon: Icons.person_outline_rounded,
