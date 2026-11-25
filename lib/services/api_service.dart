@@ -1768,6 +1768,26 @@ class ApiService {
     );
   }
 
+  Future<List<FacilityAdminPeer>> listFacilityAdmins(String facilityId) async {
+    final response = await _http.get(
+      Uri.parse(
+        '$baseUrl/api/community/facility-admin/facilities/$facilityId/admins',
+      ),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      return (decoded['admins'] as List<dynamic>? ?? [])
+          .map((e) =>
+              FacilityAdminPeer.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    }
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: _errorMessageFromBody(response, 'Failed to load admins'),
+    );
+  }
+
   Future<List<FacilityAnnouncement>> listFacilityAnnouncements(
     String facilityId,
   ) async {

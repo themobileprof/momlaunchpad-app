@@ -145,6 +145,29 @@ class FacilityAnnouncement {
   }
 }
 
+class FacilityAdminPeer {
+  final String userId;
+  final String displayName;
+  final String? roleTitle;
+  final DateTime approvedAt;
+
+  const FacilityAdminPeer({
+    required this.userId,
+    required this.displayName,
+    this.roleTitle,
+    required this.approvedAt,
+  });
+
+  factory FacilityAdminPeer.fromJson(Map<String, dynamic> json) {
+    return FacilityAdminPeer(
+      userId: json['user_id'] as String? ?? '',
+      displayName: json['display_name'] as String? ?? 'Admin',
+      roleTitle: json['role_title'] as String?,
+      approvedAt: _asDate(json['approved_at']) ?? DateTime.now(),
+    );
+  }
+}
+
 class FacilityAdminMe {
   final List<FacilityAdminClaim> claims;
   final List<FacilityAdminClaim> approved;
