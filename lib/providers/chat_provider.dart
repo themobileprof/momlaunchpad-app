@@ -10,6 +10,8 @@ import '../utils/analytics_topic_classifier.dart';
 import 'service_providers.dart';
 import 'conversation_provider.dart';
 
+const _replyTimeout = Duration(seconds: 45);
+
 /// Chat state
 class ChatState {
   final List<Message> messages;
@@ -61,11 +63,17 @@ class ChatNotifier extends Notifier<ChatState> {
   late final WebSocketService _wsService;
   late final ConversationService _conversationService;
   StreamSubscription<WebSocketMessage>? _messageSubscription;
+  Timer? _replyTimeoutTimer;
+  bool _everConnected = false;
 
   @override
   ChatState build() {
     _wsService = ref.read(webSocketServiceProvider);
     _conversationService = ref.read(conversationServiceProvider);
+    ref.onDispose(() {
+      _replyTimeoutTimer?.cancel();
+      _messageSubscription?.cancel();
+    });
     return ChatState();
   }
 
@@ -76,12 +84,13 @@ class ChatNotifier extends Notifier<ChatState> {
       return;
     }
 
+    _everConnected = false;
     state = ChatState(
       currentConversationId: conversationId,
       conversationTitle: title,
       isLoading: true,
     );
-    
+
     // Disconnect previous connection if any
     disconnect();
 
@@ -97,7 +106,6 @@ class ChatNotifier extends Notifier<ChatState> {
 
       // Connect to WebSocket for this conversation
       await connect(conversationId: conversationId);
-      
     } catch (e) {
       debugPrint('DEBUG: Error initializing chat: $e');
       state = state.copyWith(
@@ -111,13 +119,45 @@ class ChatNotifier extends Notifier<ChatState> {
   Future<void> connect({String? conversationId}) async {
     final id = conversationId ?? state.currentConversationId;
     debugPrint('DEBUG: ChatNotifier.connect for ID: $id');
+    final wasConnected = state.isConnected;
     await _wsService.connect(conversationId: id);
     debugPrint('DEBUG: WebSocketService connected status: ${_wsService.isConnected}');
-    state = state.copyWith(isConnected: _wsService.isConnected);
+    final nowConnected = _wsService.isConnected;
+    state = state.copyWith(isConnected: nowConnected);
 
     // Listen to WebSocket messages
     _messageSubscription?.cancel();
     _messageSubscription = _wsService.messages.listen(_handleMessage);
+
+    if (nowConnected) {
+      if (_everConnected && !wasConnected && id != null) {
+        await _syncMessagesFromServer(id);
+      }
+      _everConnected = true;
+    }
+  }
+
+  Future<void> _syncMessagesFromServer(String conversationId) async {
+    try {
+      final server = await _conversationService.getMessages(conversationId);
+      final pending = state.messages
+          .where((m) => m.isUser && m.sendStatus != null)
+          .toList();
+      if (pending.isEmpty) {
+        state = state.copyWith(messages: server);
+        return;
+      }
+      final serverContents = server
+          .where((m) => m.isUser)
+          .map((m) => m.content.trim())
+          .toSet();
+      final stillLocal = pending
+          .where((m) => !serverContents.contains(m.content.trim()))
+          .toList();
+      state = state.copyWith(messages: [...server, ...stillLocal]);
+    } catch (e) {
+      debugPrint('DEBUG: Failed to sync messages after reconnect: $e');
+    }
   }
 
   /// Handle incoming WebSocket messages
@@ -126,10 +166,14 @@ class ChatNotifier extends Notifier<ChatState> {
 
     switch (wsMessage.type) {
       case MessageType.message:
+        _clearPendingSendStatus();
+        _cancelReplyTimeout();
         _applyStreamingChunk(wsMessage.content);
         break;
 
       case MessageType.done:
+        _clearPendingSendStatus();
+        _cancelReplyTimeout();
         _finalizeStreamingAiMessage();
         break;
 
@@ -146,7 +190,7 @@ class ChatNotifier extends Notifier<ChatState> {
         break;
 
       case MessageType.error:
-        // Error from backend
+        _markLastSendingFailed();
         state = state.copyWith(error: wsMessage.message ?? 'Unknown error');
         break;
     }
@@ -205,53 +249,115 @@ class ChatNotifier extends Notifier<ChatState> {
         );
   }
 
+  void _armReplyTimeout() {
+    _replyTimeoutTimer?.cancel();
+    _replyTimeoutTimer = Timer(_replyTimeout, () {
+      _markLastSendingFailed();
+      state = state.copyWith(
+        error: 'No reply yet — check your connection and tap Retry.',
+      );
+    });
+  }
+
+  void _cancelReplyTimeout() {
+    _replyTimeoutTimer?.cancel();
+    _replyTimeoutTimer = null;
+  }
+
+  void _clearPendingSendStatus() {
+    final updated = state.messages
+        .map((m) => m.isUser && m.sendStatus != null
+            ? m.copyWith(clearSendStatus: true)
+            : m)
+        .toList();
+    state = state.copyWith(messages: updated);
+  }
+
+  void _markLastSendingFailed() {
+    _cancelReplyTimeout();
+    _wsService.clearPendingQueue();
+    final updated = List<Message>.from(state.messages);
+    for (var i = updated.length - 1; i >= 0; i--) {
+      if (updated[i].isUser &&
+          updated[i].sendStatus == MessageSendStatus.sending) {
+        updated[i] = updated[i].copyWith(sendStatus: MessageSendStatus.failed);
+        break;
+      }
+    }
+    state = state.copyWith(messages: updated);
+  }
+
   /// Send message to backend
-  void sendMessage(String content) {
+  void sendMessage(String content, {String? existingMessageId}) {
     if (content.trim().isEmpty) return;
 
     debugPrint('DEBUG: Sending message: "$content"');
 
-    // Add user message to UI
-    final userMessage = Message(
-      id: DateTime.now().toString(),
-      content: content,
-      isUser: true,
-      timestamp: DateTime.now(),
-    );
+    final trimmed = content.trim();
+    List<Message> nextMessages;
 
-    // DON'T create AI message here - let the first chunk create it
+    if (existingMessageId != null) {
+      nextMessages = state.messages
+          .map((m) => m.id == existingMessageId
+              ? m.copyWith(sendStatus: MessageSendStatus.sending)
+              : m)
+          .toList();
+    } else {
+      final userMessage = Message(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        content: trimmed,
+        isUser: true,
+        timestamp: DateTime.now(),
+        sendStatus: MessageSendStatus.sending,
+      );
+      nextMessages = [...state.messages, userMessage];
+
+      ref.read(analyticsServiceProvider).logEvent(
+        AnalyticsEvents.aiQuestionSent,
+        {
+          AnalyticsParams.topicBucket:
+              AnalyticsTopicClassifier.topicBucket(trimmed),
+          AnalyticsParams.intentCategory:
+              AnalyticsTopicClassifier.intentCategory(trimmed),
+          AnalyticsParams.messageLengthBucket:
+              AnalyticsTopicClassifier.messageLengthBucket(trimmed.length),
+        },
+      );
+      ref.read(analyticsServiceProvider).logEvent(
+        AnalyticsEvents.featureUsed,
+        {AnalyticsParams.featureName: 'chat'},
+      );
+    }
+
     state = state.copyWith(
-      messages: [...state.messages, userMessage],
-      currentResponse: '', 
+      messages: nextMessages,
+      currentResponse: '',
       error: null,
     );
 
-    final trimmed = content.trim();
-    ref.read(analyticsServiceProvider).logEvent(
-      AnalyticsEvents.aiQuestionSent,
-      {
-        AnalyticsParams.topicBucket:
-            AnalyticsTopicClassifier.topicBucket(trimmed),
-        AnalyticsParams.intentCategory:
-            AnalyticsTopicClassifier.intentCategory(trimmed),
-        AnalyticsParams.messageLengthBucket:
-            AnalyticsTopicClassifier.messageLengthBucket(trimmed.length),
-      },
+    // Send to backend via WebSocket (queues if offline)
+    final sent = _wsService.sendMessage(
+      trimmed,
+      conversationId: state.currentConversationId,
     );
-    ref.read(analyticsServiceProvider).logEvent(
-      AnalyticsEvents.featureUsed,
-      {AnalyticsParams.featureName: 'chat'},
-    );
-
-    // Send to backend via WebSocket
-    final sent = _wsService.sendMessage(content);
     debugPrint('DEBUG: Message sent status: $sent');
-    
-    if (!sent) {
-      state = state.copyWith(
-        error: 'Could not send message. Please try again.',
-      );
+    _armReplyTimeout();
+  }
+
+  void retryMessage(String messageId) {
+    Message? target;
+    for (final m in state.messages) {
+      if (m.id == messageId) {
+        target = m;
+        break;
+      }
     }
+    if (target == null ||
+        !target.isUser ||
+        target.sendStatus != MessageSendStatus.failed) {
+      return;
+    }
+    sendMessage(target.content, existingMessageId: messageId);
   }
 
   /// Clear pending calendar suggestion
@@ -271,6 +377,7 @@ class ChatNotifier extends Notifier<ChatState> {
 
   /// Disconnect WebSocket
   void disconnect() {
+    _cancelReplyTimeout();
     _wsService.disconnect();
     _messageSubscription?.cancel();
     state = state.copyWith(isConnected: false);

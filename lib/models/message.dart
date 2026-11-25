@@ -1,3 +1,6 @@
+/// Local delivery state for optimistic user bubbles.
+enum MessageSendStatus { sending, failed }
+
 /// Message model for chat
 class Message {
   final String id;
@@ -5,6 +8,7 @@ class Message {
   final bool isUser;
   final DateTime timestamp;
   final bool isStreaming;
+  final MessageSendStatus? sendStatus;
 
   Message({
     required this.id,
@@ -12,6 +16,7 @@ class Message {
     required this.isUser,
     required this.timestamp,
     this.isStreaming = false,
+    this.sendStatus,
   });
 
   Message copyWith({
@@ -20,6 +25,8 @@ class Message {
     bool? isUser,
     DateTime? timestamp,
     bool? isStreaming,
+    MessageSendStatus? sendStatus,
+    bool clearSendStatus = false,
   }) {
     return Message(
       id: id ?? this.id,
@@ -27,6 +34,7 @@ class Message {
       isUser: isUser ?? this.isUser,
       timestamp: timestamp ?? this.timestamp,
       isStreaming: isStreaming ?? this.isStreaming,
+      sendStatus: clearSendStatus ? null : (sendStatus ?? this.sendStatus),
     );
   }
 

@@ -341,8 +341,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Widget _buildInputArea(ChatState chatState) {
-    final canSend = chatState.isConnected &&
-        ref.read(chatProvider.notifier).canSendMessage();
+    // Allow send while offline — message is queued and flushed on reconnect.
+    final canSend = ref.read(chatProvider.notifier).canSendMessage();
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.spaceMD),
@@ -581,6 +581,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               isUser: message.isUser,
               timestamp: message.timestamp,
               isStreaming: message.isStreaming,
+              sendStatus: message.sendStatus,
+              onRetry: message.sendStatus == MessageSendStatus.failed
+                  ? () => ref.read(chatProvider.notifier).retryMessage(message.id)
+                  : null,
             ),
           );
         }

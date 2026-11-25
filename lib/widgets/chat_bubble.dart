@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/message.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -9,6 +10,8 @@ class ChatBubble extends StatelessWidget {
   final bool isUser;
   final DateTime? timestamp;
   final bool isStreaming;
+  final MessageSendStatus? sendStatus;
+  final VoidCallback? onRetry;
   final double maxWidthFactor;
 
   const ChatBubble({
@@ -17,11 +20,14 @@ class ChatBubble extends StatelessWidget {
     required this.isUser,
     this.timestamp,
     this.isStreaming = false,
+    this.sendStatus,
+    this.onRetry,
     this.maxWidthFactor = 0.75,
   });
 
   @override
   Widget build(BuildContext context) {
+    final failed = sendStatus == MessageSendStatus.failed;
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -33,61 +39,94 @@ class ChatBubble extends StatelessWidget {
           crossAxisAlignment:
               isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.spaceMD,
-                vertical: AppSpacing.spaceSM + 4,
-              ),
-              decoration: BoxDecoration(
-                color: isUser ? context.appPrimary : context.appSurface,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(20),
-                  topRight: const Radius.circular(20),
-                  bottomLeft: Radius.circular(isUser ? 20 : 4),
-                  bottomRight: Radius.circular(isUser ? 4 : 20),
+            Opacity(
+              opacity: failed ? 0.85 : 1,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.spaceMD,
+                  vertical: AppSpacing.spaceSM + 4,
                 ),
-                border: isUser
-                    ? null
-                    : Border.all(
-                        color: context.appPrimary.withValues(alpha: 0.08),
-                      ),
-                boxShadow: isUser
-                    ? [
-                        BoxShadow(
-                          color: context.appPrimary.withValues(alpha: 0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
+                decoration: BoxDecoration(
+                  color: isUser ? context.appPrimary : context.appSurface,
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(20),
+                    topRight: const Radius.circular(20),
+                    bottomLeft: Radius.circular(isUser ? 20 : 4),
+                    bottomRight: Radius.circular(isUser ? 4 : 20),
+                  ),
+                  border: isUser
+                      ? (failed
+                          ? Border.all(color: AppColors.error.withValues(alpha: 0.6))
+                          : null)
+                      : Border.all(
+                          color: context.appPrimary.withValues(alpha: 0.08),
                         ),
-                      ]
-                    : [
-                        BoxShadow(
-                          color: AppColors.shadowTintFor(context.appBrightness),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                  boxShadow: isUser
+                      ? [
+                          BoxShadow(
+                            color: context.appPrimary.withValues(alpha: 0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : [
+                          BoxShadow(
+                            color: AppColors.shadowTintFor(context.appBrightness),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        content.isEmpty && isStreaming ? '...' : content,
+                        style: AppTypography.bodyText.copyWith(
+                          color: isUser ? context.appOnPrimary : context.appInk,
+                          height: 1.5,
                         ),
-                      ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Flexible(
-                    child: Text(
-                      content.isEmpty && isStreaming ? '...' : content,
-                      style: AppTypography.bodyText.copyWith(
-                        color: isUser ? context.appOnPrimary : context.appInk,
-                        height: 1.5,
                       ),
                     ),
-                  ),
-                  if (isStreaming) ...[
-                    const SizedBox(width: AppSpacing.spaceSM),
-                    _StreamingIndicator(isUser: isUser),
+                    if (isStreaming) ...[
+                      const SizedBox(width: AppSpacing.spaceSM),
+                      _StreamingIndicator(isUser: isUser),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-            if (timestamp != null) ...[
+            if (sendStatus == MessageSendStatus.sending) ...[
+              const SizedBox(height: AppSpacing.spaceXS),
+              Text(
+                'Sending…',
+                style: AppTypography.caption.copyWith(
+                  fontSize: 11,
+                  color: context.appInkSubtle.withValues(alpha: 0.75),
+                ),
+              ),
+            ],
+            if (failed && onRetry != null) ...[
+              const SizedBox(height: AppSpacing.spaceXS),
+              TextButton(
+                onPressed: onRetry,
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  foregroundColor: AppColors.error,
+                ),
+                child: Text(
+                  'Not delivered — Retry',
+                  style: AppTypography.caption.copyWith(
+                    fontSize: 11,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ] else if (timestamp != null) ...[
               const SizedBox(height: AppSpacing.spaceXS),
               Text(
                 _formatTime(timestamp!),

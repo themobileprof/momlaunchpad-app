@@ -21,6 +21,8 @@ class WebSocketService {
   static const int _maxReconnectAttempts = 5;
   static const int _reconnectDelaySecondsPerAttempt = 3;
   DateTime? _lastConnectionAttempt;
+  String? _conversationId;
+  final List<String> _pendingQueue = [];
 
   // Rate limiting (10 messages per minute)
   DateTime? _lastMessageTime;
@@ -32,6 +34,7 @@ class WebSocketService {
   }) : _storage = storage;
 
   bool get isConnected => _isConnected;
+  String? get conversationId => _conversationId;
 
   Stream<WebSocketMessage> get messages {
     _messageController ??= StreamController<WebSocketMessage>.broadcast();
@@ -40,6 +43,10 @@ class WebSocketService {
 
   /// Connect to WebSocket with JWT token and optional conversation ID
   Future<void> connect({String? conversationId}) async {
+    if (conversationId != null) {
+      _conversationId = conversationId;
+    }
+
     // Prevent duplicate connection attempts
     if (_isConnecting || _isConnected) {
       debugPrint('Connection already in progress or connected');
@@ -56,6 +63,7 @@ class WebSocketService {
     }
 
     _isConnecting = true;
+    _shouldReconnect = true;
     _lastConnectionAttempt = DateTime.now();
 
     try {
@@ -67,12 +75,12 @@ class WebSocketService {
       // Parse base URL and add token as query parameter
       final baseUri = Uri.parse(wsUrl);
       final queryParams = {'token': token};
-      if (conversationId != null) {
-        queryParams['conversation_id'] = conversationId;
+      if (_conversationId != null) {
+        queryParams['conversation_id'] = _conversationId!;
       }
-      
+
       final uri = baseUri.replace(queryParameters: queryParams);
-      
+
       debugPrint('Connecting to WebSocket: $uri');
       _channel = WebSocketChannel.connect(uri);
       _isConnected = true;
@@ -88,11 +96,32 @@ class WebSocketService {
       );
 
       debugPrint('WebSocket connected');
+      _flushPendingQueue();
     } catch (e) {
       debugPrint('WebSocket connection error: $e');
       _isConnected = false;
       _isConnecting = false;
       _attemptReconnect();
+    }
+  }
+
+  void _flushPendingQueue() {
+    if (!_isConnected || _channel == null) return;
+    while (_pendingQueue.isNotEmpty) {
+      final content = _pendingQueue.first;
+      try {
+        final message = jsonEncode({
+          'content': content,
+          if (_conversationId != null) 'conversation_id': _conversationId,
+        });
+        _channel!.sink.add(message);
+        _pendingQueue.removeAt(0);
+        _messageCount++;
+        _lastMessageTime = DateTime.now();
+      } catch (e) {
+        debugPrint('Error flushing pending message: $e');
+        break;
+      }
     }
   }
 
@@ -121,7 +150,7 @@ class WebSocketService {
   void _handleDisconnect() {
     debugPrint('WebSocket disconnected');
     _isConnected = false;
-    
+
     if (_shouldReconnect) {
       _attemptReconnect();
     }
@@ -140,22 +169,21 @@ class WebSocketService {
 
     _reconnectAttempts++;
     final delay = Duration(seconds: _reconnectAttempts * _reconnectDelaySecondsPerAttempt);
-    
+
     debugPrint('Reconnecting in ${delay.inSeconds} seconds... (attempt $_reconnectAttempts/$_maxReconnectAttempts)');
-    
+
     Timer(delay, () {
       if (_shouldReconnect) {
-        connect();
+        connect(conversationId: _conversationId);
       }
     });
   }
 
-  /// Send message to backend
-  /// Returns false if rate limited
-  bool sendMessage(String content) {
-    if (!_isConnected) {
-      debugPrint('Cannot send message: WebSocket not connected');
-      return false;
+  /// Send message to backend.
+  /// Returns true if sent immediately, false if queued / not delivered yet.
+  bool sendMessage(String content, {String? conversationId}) {
+    if (conversationId != null) {
+      _conversationId = conversationId;
     }
 
     if (!canSendMessage()) {
@@ -167,8 +195,17 @@ class WebSocketService {
       return false;
     }
 
+    if (!_isConnected || _channel == null) {
+      debugPrint('WebSocket not connected — queuing message');
+      _pendingQueue.add(content);
+      return false;
+    }
+
     try {
-      final message = jsonEncode({'content': content});
+      final message = jsonEncode({
+        'content': content,
+        if (_conversationId != null) 'conversation_id': _conversationId,
+      });
       debugPrint('Sending message to WebSocket: $message');
       _channel!.sink.add(message);
       _messageCount++;
@@ -177,6 +214,7 @@ class WebSocketService {
       return true;
     } catch (e) {
       debugPrint('Error sending message: $e');
+      _pendingQueue.add(content);
       return false;
     }
   }
@@ -184,14 +222,14 @@ class WebSocketService {
   /// Check if user can send message (rate limiting)
   bool canSendMessage() {
     final now = DateTime.now();
-    
+
     // Reset counter every minute
-    if (_lastMessageTime == null || 
+    if (_lastMessageTime == null ||
         now.difference(_lastMessageTime!) > const Duration(minutes: 1)) {
       _messageCount = 0;
       _lastMessageTime = now;
     }
-    
+
     // 10 messages per minute limit
     return _messageCount < 10;
   }
@@ -202,10 +240,16 @@ class WebSocketService {
     return 10 - _messageCount;
   }
 
+  /// Drop any messages waiting to flush (e.g. after a reply timeout / failed send).
+  void clearPendingQueue() {
+    _pendingQueue.clear();
+  }
+
   /// Disconnect WebSocket
   void disconnect() {
     _shouldReconnect = false;
     _isConnected = false;
+    _pendingQueue.clear();
     _channel?.sink.close();
     _channel = null;
   }

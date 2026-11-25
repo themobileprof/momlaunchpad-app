@@ -58,8 +58,10 @@ class NetworkMonitor {
   Future<void> _reconnectChat() async {
     _lastReconnectAttempt = DateTime.now();
     try {
+      final chatState = _ref.read(chatProvider);
+      final conversationId = chatState.currentConversationId;
       final chatNotifier = _ref.read(chatProvider.notifier);
-      await chatNotifier.connect();
+      await chatNotifier.connect(conversationId: conversationId);
     } catch (e) {
       debugPrint('Failed to reconnect after network restore: $e');
     }
