@@ -18,7 +18,6 @@ import '../services/api_service.dart';
 import '../widgets/journey_transition_sheet.dart';
 import '../widgets/country_picker_field.dart';
 import '../widgets/facility_search_field.dart';
-import '../widgets/location_suggest_field.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -40,10 +39,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _stateController = TextEditingController();
   final _cityController = TextEditingController();
   String? _selectedFacilityId;
   String _selectedFacilityName = '';
+  String? _stateProvince;
+  String _city = '';
+  List<CommunityStateOption> _states = const [];
+  List<CommunityCityOption> _cities = const [];
+  bool _loadingStates = false;
+  bool _loadingCities = false;
 
   String? _countryCode;
 
@@ -87,7 +91,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     ref.read(previewBabyGenderProvider.notifier).clear();
     _nameController.dispose();
     _phoneController.dispose();
-    _stateController.dispose();
     _cityController.dispose();
     super.dispose();
   }
@@ -116,30 +119,74 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return null;
   }
 
-  Future<List<String>> _fetchStateSuggestions(String query) async {
-    if (_countryCode == null) return const [];
-    return ref.read(apiServiceProvider).getCommunityLocationSuggestions(
-          countryCode: _countryCode!,
-          field: 'state_province',
-          query: query,
-        );
+  Future<void> _loadStates(String countryCode, {String? preferState}) async {
+    setState(() {
+      _loadingStates = true;
+      _states = const [];
+    });
+    try {
+      final states =
+          await ref.read(apiServiceProvider).getCommunityStates(countryCode);
+      if (!mounted) return;
+      setState(() {
+        _states = states;
+        _loadingStates = false;
+        if (preferState != null &&
+            states.any((s) => s.name.toLowerCase() == preferState.toLowerCase())) {
+          _stateProvince = preferState;
+        }
+      });
+      final state = _stateProvince;
+      if (state != null && state.isNotEmpty) {
+        await _loadCities(countryCode, state, preferCity: _city.isNotEmpty ? _city : null);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _states = const [];
+        _loadingStates = false;
+      });
+    }
   }
 
-  Future<List<String>> _fetchCitySuggestions(String query) async {
-    if (_countryCode == null) return const [];
-    return ref.read(apiServiceProvider).getCommunityLocationSuggestions(
-          countryCode: _countryCode!,
-          field: 'city',
-          query: query,
-          stateProvince: _stateController.text.trim(),
-        );
+  Future<void> _loadCities(
+    String countryCode,
+    String stateProvince, {
+    String? preferCity,
+  }) async {
+    setState(() {
+      _loadingCities = true;
+      _cities = const [];
+    });
+    try {
+      final cities = await ref.read(apiServiceProvider).getCommunityCities(
+            countryCode: countryCode,
+            stateProvince: stateProvince,
+          );
+      if (!mounted) return;
+      setState(() {
+        _cities = cities;
+        _loadingCities = false;
+        if (preferCity != null &&
+            cities.any((c) => c.name.toLowerCase() == preferCity.toLowerCase())) {
+          _city = preferCity;
+          _cityController.text = preferCity;
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _cities = const [];
+        _loadingCities = false;
+      });
+    }
   }
 
   Future<List<CommunityHealthcareFacility>> _fetchFacilities(String query) async {
     if (_countryCode == null) return const [];
-    final stateProvince = _stateController.text.trim();
-    final city = _cityController.text.trim();
-    if (stateProvince.isEmpty || city.isEmpty) return const [];
+    final stateProvince = _stateProvince?.trim() ?? '';
+    if (stateProvince.isEmpty) return const [];
+    final city = _cities.isNotEmpty ? _city.trim() : _cityController.text.trim();
     return ref.read(apiServiceProvider).getHealthcareFacilities(
           countryCode: _countryCode!,
           stateProvince: stateProvince,
@@ -151,19 +198,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _onCountrySelected(String code, List<CommunityCountryOption> countries) {
     setState(() {
       if (_countryCode != code) {
-        _stateController.clear();
+        _stateProvince = null;
+        _city = '';
         _cityController.clear();
+        _cities = const [];
         _selectedFacilityId = null;
         _selectedFacilityName = '';
       }
       _countryCode = code;
     });
+    _loadStates(code);
   }
 
   bool get _facilityEnabled =>
-      _countryCode != null &&
-      _stateController.text.trim().isNotEmpty &&
-      _cityController.text.trim().isNotEmpty;
+      _countryCode != null && (_stateProvince?.trim().isNotEmpty ?? false);
 
   void _applyProfile(UserProfile profile, {bool force = false}) {
     if (_initialized && !force) return;
@@ -187,11 +235,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _lossDate = profile.lossDate;
     _dietPreference = profile.dietPreference ?? profile.diet ?? '';
     _countryCode = profile.countryCode;
-    _stateController.text = profile.stateProvince ?? '';
+    _stateProvince = profile.stateProvince;
+    _city = profile.city ?? '';
     _cityController.text = profile.city ?? '';
     _selectedFacilityName = profile.healthcareFacilityName ?? '';
     _selectedFacilityId = profile.healthcareFacilityId;
     _facilityAnnouncementsOptIn = profile.facilityAnnouncementsOptIn;
+    final code = profile.countryCode;
+    if (code != null && code.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _loadStates(code, preferState: profile.stateProvince);
+      });
+    }
   }
 
   Future<void> _openCommunityFeedTopics() async {
@@ -327,19 +383,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ref.read(communityProvider).countries,
               ),
               countryCode: _countryCode,
-              stateProvince: _stateController.text.trim().isEmpty
+              stateProvince: (_stateProvince?.trim().isEmpty ?? true)
                   ? null
-                  : _stateController.text.trim(),
-              city: _cityController.text.trim().isEmpty
-                  ? null
-                  : _cityController.text.trim(),
+                  : _stateProvince!.trim(),
+              city: () {
+                final city = _cities.isNotEmpty
+                    ? _city.trim()
+                    : _cityController.text.trim();
+                return city.isEmpty ? null : city;
+              }(),
               facilityAnnouncementsOptIn: _facilityAnnouncementsOptIn,
             ),
           );
 
       final facilityName = _selectedFacilityName.trim();
-      final stateProvince = _stateController.text.trim();
-      final city = _cityController.text.trim();
+      final stateProvince = _stateProvince?.trim() ?? '';
+      final city =
+          _cities.isNotEmpty ? _city.trim() : _cityController.text.trim();
       final facilityId =
           (_selectedFacilityId != null && _selectedFacilityId!.isNotEmpty)
               ? _selectedFacilityId
@@ -619,27 +679,92 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                         ),
                         const SizedBox(height: AppSpacing.spaceMD),
-                        LocationSuggestField(
-                          controller: _stateController,
-                          label: 'State / Province',
-                          enabled: _countryCode != null,
-                          fetchSuggestions: _fetchStateSuggestions,
-                          onChanged: (_) => setState(() {
-                            _selectedFacilityId = null;
-                            _selectedFacilityName = '';
-                          }),
+                        DropdownButtonFormField<String>(
+                          key: ValueKey('profile-state-$_countryCode-$_stateProvince'),
+                          initialValue: _stateProvince,
+                          decoration: InputDecoration(
+                            labelText: 'State / Province',
+                            filled: true,
+                            fillColor: context.appSurface,
+                          ),
+                          hint: Text(
+                            _countryCode == null
+                                ? 'Select country first'
+                                : _loadingStates
+                                    ? 'Loading states…'
+                                    : 'Select state',
+                          ),
+                          items: _states
+                              .map(
+                                (s) => DropdownMenuItem(
+                                  value: s.name,
+                                  child: Text(s.name),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: _countryCode == null || _loadingStates
+                              ? null
+                              : (value) {
+                                  if (value == null) return;
+                                  setState(() {
+                                    _stateProvince = value;
+                                    _city = '';
+                                    _cityController.clear();
+                                    _selectedFacilityId = null;
+                                    _selectedFacilityName = '';
+                                  });
+                                  _loadCities(_countryCode!, value);
+                                },
                         ),
                         const SizedBox(height: AppSpacing.spaceMD),
-                        LocationSuggestField(
-                          controller: _cityController,
-                          label: 'City',
-                          enabled: _countryCode != null,
-                          fetchSuggestions: _fetchCitySuggestions,
-                          onChanged: (_) => setState(() {
-                            _selectedFacilityId = null;
-                            _selectedFacilityName = '';
-                          }),
-                        ),
+                        if (_cities.isNotEmpty || _loadingCities)
+                          DropdownButtonFormField<String>(
+                            key: ValueKey('profile-city-$_stateProvince-$_city'),
+                            initialValue: _city.isEmpty ? null : _city,
+                            decoration: InputDecoration(
+                              labelText: _countryCode == 'NG'
+                                  ? 'City / LGA'
+                                  : 'City',
+                              filled: true,
+                              fillColor: context.appSurface,
+                            ),
+                            hint: Text(
+                              _loadingCities ? 'Loading…' : 'Select city / LGA',
+                            ),
+                            items: _cities
+                                .map(
+                                  (c) => DropdownMenuItem(
+                                    value: c.name,
+                                    child: Text(c.name),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: _loadingCities
+                                ? null
+                                : (value) {
+                                    setState(() {
+                                      _city = value ?? '';
+                                      _cityController.text = _city;
+                                      _selectedFacilityId = null;
+                                      _selectedFacilityName = '';
+                                    });
+                                  },
+                          )
+                        else
+                          TextField(
+                            controller: _cityController,
+                            enabled: _stateProvince != null,
+                            textCapitalization: TextCapitalization.words,
+                            decoration: InputDecoration(
+                              labelText: 'City',
+                              filled: true,
+                              fillColor: context.appSurface,
+                            ),
+                            onChanged: (_) => setState(() {
+                              _selectedFacilityId = null;
+                              _selectedFacilityName = '';
+                            }),
+                          ),
                         const SizedBox(height: AppSpacing.spaceMD),
                         FacilitySearchField(
                           selectedId: _selectedFacilityId,
@@ -655,6 +780,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 _selectedFacilityId =
                                     facility.id.isEmpty ? null : facility.id;
                                 _selectedFacilityName = facility.name;
+                                if (facility.city.trim().isNotEmpty) {
+                                  _city = facility.city.trim();
+                                  _cityController.text = _city;
+                                }
                               }
                             });
                           },
@@ -662,7 +791,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         Padding(
                           padding: const EdgeInsets.only(top: AppSpacing.spaceXS),
                           child: Text(
-                            'Pick from centers in your area. Missing ones can be added if not listed yet.',
+                            'Search within your state (e.g. Ikorodu). Missing centers can still be added.',
                             style: AppTypography.caption.copyWith(
                               color: context.appInkSubtle,
                             ),

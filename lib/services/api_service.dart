@@ -905,6 +905,46 @@ class ApiService {
         .toList();
   }
 
+  Future<List<CommunityStateOption>> getCommunityStates(String countryCode) async {
+    final uri = Uri.parse('$baseUrl/api/community/locations/states').replace(
+      queryParameters: {'country_code': countryCode},
+    );
+    final response = await _http.get(uri, headers: await _getHeaders());
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load states'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    return (body['states'] as List<dynamic>? ?? [])
+        .map((e) => CommunityStateOption.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<List<CommunityCityOption>> getCommunityCities({
+    required String countryCode,
+    required String stateProvince,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/community/locations/cities').replace(
+      queryParameters: {
+        'country_code': countryCode,
+        'state_province': stateProvince,
+      },
+    );
+    final response = await _http.get(uri, headers: await _getHeaders());
+    if (response.statusCode != 200) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _errorMessageFromBody(response, 'Failed to load cities'),
+      );
+    }
+    final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    return (body['cities'] as List<dynamic>? ?? [])
+        .map((e) => CommunityCityOption.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
   Future<List<String>> getCommunityLocationSuggestions({
     required String countryCode,
     required String field,
@@ -973,16 +1013,17 @@ class ApiService {
   Future<List<CommunityHealthcareFacility>> getHealthcareFacilities({
     required String countryCode,
     required String stateProvince,
-    required String city,
+    String city = '',
     String query = '',
     int limit = 50,
   }) async {
     final params = <String, String>{
       'country_code': countryCode,
       'state_province': stateProvince,
-      'city': city,
       'limit': '$limit',
     };
+    final cityTrimmed = city.trim();
+    if (cityTrimmed.isNotEmpty) params['city'] = cityTrimmed;
     final trimmed = query.trim();
     if (trimmed.isNotEmpty) params['q'] = trimmed;
     final uri = Uri.parse('$baseUrl/api/community/locations/healthcare-facilities')

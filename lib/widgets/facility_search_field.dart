@@ -86,7 +86,7 @@ class _FacilitySearchFieldState extends State<FacilitySearchField> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(
                 !widget.enabled
-                    ? 'Select country, state, and city first'
+                    ? 'Select country and state first'
                     : hasValue
                         ? widget.selectedName
                         : 'Search and select a health center',
@@ -275,6 +275,9 @@ class _FacilitySearchSheetState extends State<_FacilitySearchSheet> {
                               ..._options.map(
                                 (f) => ListTile(
                                   title: Text(f.name),
+                                  subtitle: f.city.trim().isEmpty
+                                      ? null
+                                      : Text(f.city),
                                   onTap: () => Navigator.pop(
                                     context,
                                     _FacilityPick.facility(f),

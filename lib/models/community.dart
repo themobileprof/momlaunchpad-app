@@ -449,6 +449,40 @@ class CommunityCountryOption {
   }
 }
 
+class CommunityStateOption {
+  final String code;
+  final String name;
+
+  const CommunityStateOption({required this.code, required this.name});
+
+  factory CommunityStateOption.fromJson(Map<String, dynamic> json) {
+    return CommunityStateOption(
+      code: json['code']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+    );
+  }
+}
+
+class CommunityCityOption {
+  final String id;
+  final String name;
+  final String stateProvince;
+
+  const CommunityCityOption({
+    required this.id,
+    required this.name,
+    required this.stateProvince,
+  });
+
+  factory CommunityCityOption.fromJson(Map<String, dynamic> json) {
+    return CommunityCityOption(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      stateProvince: json['state_province']?.toString() ?? '',
+    );
+  }
+}
+
 class CommunityRegionOption {
   final String id;
   final String countryCode;
