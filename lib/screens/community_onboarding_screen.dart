@@ -5,8 +5,10 @@ import '../providers/service_providers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
+import '../models/community.dart';
 import '../widgets/country_picker_field.dart';
 import '../widgets/community_interest_selector.dart';
+import '../widgets/facility_search_field.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/location_suggest_field.dart';
 
@@ -23,17 +25,16 @@ class _CommunityOnboardingScreenState
     extends ConsumerState<CommunityOnboardingScreen> {
   final _stateController = TextEditingController();
   final _cityController = TextEditingController();
-  final _facilityController = TextEditingController();
   final _selected = <String>{};
   String? _countryCode;
   String? _selectedFacilityId;
+  String _selectedFacilityName = '';
   bool _submitting = false;
 
   @override
   void dispose() {
     _stateController.dispose();
     _cityController.dispose();
-    _facilityController.dispose();
     super.dispose();
   }
 
@@ -51,14 +52,14 @@ class _CommunityOnboardingScreenState
   Future<void> _submit() async {
     final stateProvince = _stateController.text.trim();
     final city = _cityController.text.trim();
-    final facilityName = _facilityController.text.trim();
+    final facilityName = _selectedFacilityName.trim();
 
     if (_countryCode == null || stateProvince.isEmpty || city.isEmpty) {
       _showSnack('Please select your country and enter state and city.');
       return;
     }
     if (facilityName.isEmpty) {
-      _showSnack('Please enter your hospital or health center.');
+      _showSnack('Please select your hospital or health center.');
       return;
     }
     if (_selected.isEmpty) {
@@ -71,12 +72,14 @@ class _CommunityOnboardingScreenState
     }
 
     setState(() => _submitting = true);
-    await _syncSelectedFacilityId(facilityName);
+    final facilityId = (_selectedFacilityId != null && _selectedFacilityId!.isNotEmpty)
+        ? _selectedFacilityId
+        : null;
     final ok = await ref.read(communityProvider.notifier).completeOnboarding(
           countryCode: _countryCode!,
           stateProvince: stateProvince,
           city: city,
-          healthcareFacilityId: _selectedFacilityId,
+          healthcareFacilityId: facilityId,
           healthcareFacilityName: facilityName,
           interests: _selected.toList(),
         );
@@ -122,49 +125,23 @@ class _CommunityOnboardingScreenState
         );
   }
 
-  Future<List<String>> _fetchFacilitySuggestions(String query) async {
+  Future<List<CommunityHealthcareFacility>> _fetchFacilities(String query) async {
     if (_countryCode == null) return const [];
     final stateProvince = _stateController.text.trim();
     final city = _cityController.text.trim();
     if (stateProvince.isEmpty || city.isEmpty) return const [];
-    final facilities = await ref.read(apiServiceProvider).getHealthcareFacilities(
+    return ref.read(apiServiceProvider).getHealthcareFacilities(
           countryCode: _countryCode!,
           stateProvince: stateProvince,
           city: city,
           query: query,
         );
-    return facilities.map((f) => f.name).toList();
   }
 
-  Future<void> _syncSelectedFacilityId(String name) async {
-    final trimmed = name.trim();
-    if (_countryCode == null || trimmed.isEmpty) {
-      _selectedFacilityId = null;
-      return;
-    }
-    final stateProvince = _stateController.text.trim();
-    final city = _cityController.text.trim();
-    if (stateProvince.isEmpty || city.isEmpty) {
-      _selectedFacilityId = null;
-      return;
-    }
-    try {
-      final facilities =
-          await ref.read(apiServiceProvider).getHealthcareFacilities(
-                countryCode: _countryCode!,
-                stateProvince: stateProvince,
-                city: city,
-                query: trimmed,
-              );
-      for (final f in facilities) {
-        if (f.name.toLowerCase() == trimmed.toLowerCase()) {
-          _selectedFacilityId = f.id;
-          return;
-        }
-      }
-    } catch (_) {}
-    _selectedFacilityId = null;
-  }
+  bool get _facilityEnabled =>
+      _countryCode != null &&
+      _stateController.text.trim().isNotEmpty &&
+      _cityController.text.trim().isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -203,6 +180,7 @@ class _CommunityOnboardingScreenState
             onSelected: (code) => setState(() {
               _countryCode = code;
               _selectedFacilityId = null;
+              _selectedFacilityName = '';
             }),
           ),
           const SizedBox(height: AppSpacing.spaceSM),
@@ -211,6 +189,10 @@ class _CommunityOnboardingScreenState
             label: 'State / Province',
             enabled: _countryCode != null,
             fetchSuggestions: _fetchStateSuggestions,
+            onChanged: (_) => setState(() {
+              _selectedFacilityId = null;
+              _selectedFacilityName = '';
+            }),
           ),
           const SizedBox(height: AppSpacing.spaceSM),
           LocationSuggestField(
@@ -218,18 +200,34 @@ class _CommunityOnboardingScreenState
             label: 'City',
             enabled: _countryCode != null,
             fetchSuggestions: _fetchCitySuggestions,
+            onChanged: (_) => setState(() {
+              _selectedFacilityId = null;
+              _selectedFacilityName = '';
+            }),
           ),
           const SizedBox(height: AppSpacing.spaceSM),
-          LocationSuggestField(
-            controller: _facilityController,
-            label: 'Hospital / health center',
-            enabled: _countryCode != null,
-            fetchSuggestions: _fetchFacilitySuggestions,
+          FacilitySearchField(
+            selectedId: _selectedFacilityId,
+            selectedName: _selectedFacilityName,
+            enabled: _facilityEnabled,
+            fetchFacilities: _fetchFacilities,
+            onChanged: (facility) {
+              setState(() {
+                if (facility == null) {
+                  _selectedFacilityId = null;
+                  _selectedFacilityName = '';
+                } else {
+                  _selectedFacilityId =
+                      facility.id.isEmpty ? null : facility.id;
+                  _selectedFacilityName = facility.name;
+                }
+              });
+            },
           ),
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.spaceXS),
             child: Text(
-              'Start typing to search. If yours is missing, type the full name and we\'ll add it.',
+              'Pick from centers in your area. Missing ones can be added if not listed yet.',
               style: AppTypography.caption.copyWith(color: context.appInkMuted),
             ),
           ),

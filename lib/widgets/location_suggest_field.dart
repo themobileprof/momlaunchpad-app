@@ -13,6 +13,7 @@ class LocationSuggestField extends StatefulWidget {
   final LocationSuggestFetcher fetchSuggestions;
   final bool enabled;
   final TextCapitalization textCapitalization;
+  final ValueChanged<String>? onChanged;
 
   const LocationSuggestField({
     super.key,
@@ -21,6 +22,7 @@ class LocationSuggestField extends StatefulWidget {
     required this.fetchSuggestions,
     this.enabled = true,
     this.textCapitalization = TextCapitalization.words,
+    this.onChanged,
   });
 
   @override
@@ -33,10 +35,30 @@ class _LocationSuggestFieldState extends State<LocationSuggestField> {
   final _focusNode = FocusNode();
 
   @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_notifyChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant LocationSuggestField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_notifyChanged);
+      widget.controller.addListener(_notifyChanged);
+    }
+  }
+
+  @override
   void dispose() {
+    widget.controller.removeListener(_notifyChanged);
     _debounce?.cancel();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _notifyChanged() {
+    widget.onChanged?.call(widget.controller.text);
   }
 
   Future<void> _loadOptions(String query) async {

@@ -974,17 +974,19 @@ class ApiService {
     required String countryCode,
     required String stateProvince,
     required String city,
-    required String query,
+    String query = '',
+    int limit = 50,
   }) async {
+    final params = <String, String>{
+      'country_code': countryCode,
+      'state_province': stateProvince,
+      'city': city,
+      'limit': '$limit',
+    };
+    final trimmed = query.trim();
+    if (trimmed.isNotEmpty) params['q'] = trimmed;
     final uri = Uri.parse('$baseUrl/api/community/locations/healthcare-facilities')
-        .replace(
-      queryParameters: {
-        'country_code': countryCode,
-        'state_province': stateProvince,
-        'city': city,
-        'q': query,
-      },
-    );
+        .replace(queryParameters: params);
     final response = await _http.get(uri, headers: await _getHeaders());
     if (response.statusCode != 200) {
       throw ApiException(

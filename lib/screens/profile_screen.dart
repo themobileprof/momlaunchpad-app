@@ -17,6 +17,7 @@ import '../utils/pregnancy_timing.dart';
 import '../services/api_service.dart';
 import '../widgets/journey_transition_sheet.dart';
 import '../widgets/country_picker_field.dart';
+import '../widgets/facility_search_field.dart';
 import '../widgets/location_suggest_field.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
@@ -41,8 +42,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _phoneController = TextEditingController();
   final _stateController = TextEditingController();
   final _cityController = TextEditingController();
-  final _facilityController = TextEditingController();
   String? _selectedFacilityId;
+  String _selectedFacilityName = '';
 
   String? _countryCode;
 
@@ -88,7 +89,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _phoneController.dispose();
     _stateController.dispose();
     _cityController.dispose();
-    _facilityController.dispose();
     super.dispose();
   }
 
@@ -135,18 +135,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         );
   }
 
-  Future<List<String>> _fetchFacilitySuggestions(String query) async {
+  Future<List<CommunityHealthcareFacility>> _fetchFacilities(String query) async {
     if (_countryCode == null) return const [];
     final stateProvince = _stateController.text.trim();
     final city = _cityController.text.trim();
     if (stateProvince.isEmpty || city.isEmpty) return const [];
-    final facilities = await ref.read(apiServiceProvider).getHealthcareFacilities(
+    return ref.read(apiServiceProvider).getHealthcareFacilities(
           countryCode: _countryCode!,
           stateProvince: stateProvince,
           city: city,
           query: query,
         );
-    return facilities.map((f) => f.name).toList();
   }
 
   void _onCountrySelected(String code, List<CommunityCountryOption> countries) {
@@ -154,12 +153,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (_countryCode != code) {
         _stateController.clear();
         _cityController.clear();
-        _facilityController.clear();
         _selectedFacilityId = null;
+        _selectedFacilityName = '';
       }
       _countryCode = code;
     });
   }
+
+  bool get _facilityEnabled =>
+      _countryCode != null &&
+      _stateController.text.trim().isNotEmpty &&
+      _cityController.text.trim().isNotEmpty;
 
   void _applyProfile(UserProfile profile, {bool force = false}) {
     if (_initialized && !force) return;
@@ -185,7 +189,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _countryCode = profile.countryCode;
     _stateController.text = profile.stateProvince ?? '';
     _cityController.text = profile.city ?? '';
-    _facilityController.text = profile.healthcareFacilityName ?? '';
+    _selectedFacilityName = profile.healthcareFacilityName ?? '';
     _selectedFacilityId = profile.healthcareFacilityId;
     _facilityAnnouncementsOptIn = profile.facilityAnnouncementsOptIn;
   }
@@ -333,9 +337,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           );
 
-      final facilityName = _facilityController.text.trim();
+      final facilityName = _selectedFacilityName.trim();
       final stateProvince = _stateController.text.trim();
       final city = _cityController.text.trim();
+      final facilityId =
+          (_selectedFacilityId != null && _selectedFacilityId!.isNotEmpty)
+              ? _selectedFacilityId
+              : null;
       if (_countryCode != null &&
           stateProvince.isNotEmpty &&
           city.isNotEmpty &&
@@ -346,7 +354,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               countryCode: _countryCode!,
               stateProvince: stateProvince,
               city: city,
-              healthcareFacilityId: _selectedFacilityId,
+              healthcareFacilityId: facilityId,
               healthcareFacilityName: facilityName,
               interests: saved.communityInterests,
             );
@@ -616,6 +624,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           label: 'State / Province',
                           enabled: _countryCode != null,
                           fetchSuggestions: _fetchStateSuggestions,
+                          onChanged: (_) => setState(() {
+                            _selectedFacilityId = null;
+                            _selectedFacilityName = '';
+                          }),
                         ),
                         const SizedBox(height: AppSpacing.spaceMD),
                         LocationSuggestField(
@@ -623,18 +635,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           label: 'City',
                           enabled: _countryCode != null,
                           fetchSuggestions: _fetchCitySuggestions,
+                          onChanged: (_) => setState(() {
+                            _selectedFacilityId = null;
+                            _selectedFacilityName = '';
+                          }),
                         ),
                         const SizedBox(height: AppSpacing.spaceMD),
-                        LocationSuggestField(
-                          controller: _facilityController,
-                          label: 'Hospital / health center',
-                          enabled: _countryCode != null,
-                          fetchSuggestions: _fetchFacilitySuggestions,
+                        FacilitySearchField(
+                          selectedId: _selectedFacilityId,
+                          selectedName: _selectedFacilityName,
+                          enabled: _facilityEnabled,
+                          fetchFacilities: _fetchFacilities,
+                          onChanged: (facility) {
+                            setState(() {
+                              if (facility == null) {
+                                _selectedFacilityId = null;
+                                _selectedFacilityName = '';
+                              } else {
+                                _selectedFacilityId =
+                                    facility.id.isEmpty ? null : facility.id;
+                                _selectedFacilityName = facility.name;
+                              }
+                            });
+                          },
                         ),
                         Padding(
                           padding: const EdgeInsets.only(top: AppSpacing.spaceXS),
                           child: Text(
-                            'Start typing to search. Missing centers are added when you save.',
+                            'Pick from centers in your area. Missing ones can be added if not listed yet.',
                             style: AppTypography.caption.copyWith(
                               color: context.appInkSubtle,
                             ),
