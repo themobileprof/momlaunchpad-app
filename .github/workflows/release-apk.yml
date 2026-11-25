@@ -23,6 +23,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: "3.38.5"
           cache: true
 
       - run: flutter pub get
@@ -60,8 +61,7 @@ jobs:
           EOF
 
       - name: Build release APK
-        # Flutter 3.50+ wants Gradle 9.3+/AGP 9; skip until Android toolchain is migrated.
-        run: flutter build apk --release --android-skip-build-dependency-validation
+        run: flutter build apk --release
 
       - name: Rename APK for distribution
         run: cp build/app/outputs/flutter-apk/app-release.apk momlaunchpad.apk
