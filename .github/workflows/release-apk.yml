@@ -60,7 +60,8 @@ jobs:
           EOF
 
       - name: Build release APK
-        run: flutter build apk --release
+        # Flutter 3.50+ wants Gradle 9.3+/AGP 9; skip until Android toolchain is migrated.
+        run: flutter build apk --release --android-skip-build-dependency-validation
 
       - name: Rename APK for distribution
         run: cp build/app/outputs/flutter-apk/app-release.apk momlaunchpad.apk
