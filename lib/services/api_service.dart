@@ -1049,7 +1049,7 @@ class ApiService {
     required String city,
     String? healthcareFacilityId,
     String? healthcareFacilityName,
-    required List<String> interests,
+    List<String> interests = const [],
   }) async {
     final response = await _http.post(
       Uri.parse('$baseUrl/api/community/onboarding'),

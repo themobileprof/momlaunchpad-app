@@ -76,6 +76,13 @@ class CommunityNotifier extends Notifier<CommunityState> {
     } catch (_) {}
   }
 
+  Future<void> refreshStatus() async {
+    try {
+      final status = await _api.getCommunityStatus();
+      state = state.copyWith(status: status);
+    } catch (_) {}
+  }
+
   Future<void> bootstrap() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -116,7 +123,7 @@ class CommunityNotifier extends Notifier<CommunityState> {
     required String city,
     String? healthcareFacilityId,
     String? healthcareFacilityName,
-    required List<String> interests,
+    List<String> interests = const [],
   }) async {
     try {
       final status = await _api.completeCommunityOnboarding(

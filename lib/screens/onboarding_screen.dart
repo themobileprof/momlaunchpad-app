@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/journey_stage.dart';
-import '../models/baby_gender.dart';
-import '../models/user_profile.dart';
-import '../providers/baby_theme_provider.dart';
-import '../providers/auth_provider.dart';
-import '../providers/profile_provider.dart';
 import 'package:intl/intl.dart';
 import '../config/app_config.dart';
-import '../utils/journey_helpers.dart';
-import '../utils/pregnancy_timing.dart';
+import '../models/community.dart';
+import '../models/journey_stage.dart';
+import '../models/user_profile.dart';
+import '../providers/auth_provider.dart';
+import '../providers/community_provider.dart';
+import '../providers/profile_provider.dart';
+import '../providers/service_providers.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
+import '../utils/journey_helpers.dart';
+import '../utils/pregnancy_timing.dart';
 import '../widgets/app_background.dart';
+import '../widgets/country_picker_field.dart';
+import '../widgets/facility_search_field.dart';
 import '../widgets/glass_container.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/journey_stage_picker.dart';
-import '../widgets/gender_picker.dart';
 
-/// First-time walkthrough — pregnancy-first, with TTC support at signup.
+/// Combined first-run: journey + local circle. Interests deferred.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -31,13 +33,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _cityTextController = TextEditingController();
 
   int _step = 0;
   JourneyStage? _journeyStage;
   int _pregnancyWeek = 20;
-  bool? _isFirstPregnancy;
-  BabyGender? _babyGender;
   bool _isSubmitting = false;
+  bool _mainDone = false;
+
+  String? _countryCode;
+  String? _stateProvince;
+  String _city = '';
+  String? _selectedFacilityId;
+  String _selectedFacilityName = '';
+  List<CommunityStateOption> _states = const [];
+  List<CommunityCityOption> _cities = const [];
+  bool _loadingStates = false;
+  bool _loadingCities = false;
+  bool _hasExistingPhone = false;
 
   static const _stepCount = 4;
 
@@ -51,15 +64,39 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final profile = ref.read(profileProvider).profile;
     if (profile?.phoneNumber != null && profile!.phoneNumber!.isNotEmpty) {
       _phoneController.text = profile.phoneNumber!;
+      _hasExistingPhone = true;
     }
+    if (profile?.onboardingCompleted == true) {
+      _mainDone = true;
+      if (profile!.journeyStage != null) {
+        _journeyStage = profile.journeyStage;
+      }
+      if (profile.pregnancyWeek != null) {
+        _pregnancyWeek = profile.pregnancyWeek!;
+      }
+      // Resume at local-circle step when journey is already saved.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (profile.onboardingCompleted && !profile.communityOnboardingCompleted) {
+          setState(() => _step = 3);
+          _pageController.jumpToPage(3);
+        }
+      });
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final community = ref.read(communityProvider);
+      if (community.countries.isEmpty) {
+        ref.read(communityProvider.notifier).bootstrap();
+      }
+    });
   }
 
   @override
   void dispose() {
-    ref.read(previewBabyGenderProvider.notifier).clear();
     _pageController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
+    _cityTextController.dispose();
     super.dispose();
   }
 
@@ -68,7 +105,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       _showMessage('Please enter your name');
       return;
     }
-    if (_step == 1) {
+    if (_step == 1 && !_hasExistingPhone) {
       final raw = _phoneController.text.trim();
       if (raw.isNotEmpty) {
         final digits = raw.replaceAll(RegExp(r'[^\d]'), '');
@@ -83,22 +120,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       return;
     }
     if (_step == 3) {
-      if (_journeyStage == JourneyStage.pregnant && _isFirstPregnancy == null) {
-        _showMessage('Please let us know if this is your first pregnancy');
-        return;
-      }
-    }
-
-    if (_step < _stepCount - 1) {
-      setState(() => _step++);
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 320),
-        curve: Curves.easeOutCubic,
-      );
+      _submit();
       return;
     }
 
-    _submit();
+    setState(() => _step++);
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   void _previousStep() {
@@ -110,30 +140,130 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
+  Future<void> _loadStates(String countryCode) async {
+    setState(() {
+      _loadingStates = true;
+      _states = const [];
+      _stateProvince = null;
+      _city = '';
+      _cityTextController.clear();
+      _cities = const [];
+      _selectedFacilityId = null;
+      _selectedFacilityName = '';
+    });
+    try {
+      final states =
+          await ref.read(apiServiceProvider).getCommunityStates(countryCode);
+      if (!mounted) return;
+      setState(() {
+        _states = states;
+        _loadingStates = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _states = const [];
+        _loadingStates = false;
+      });
+    }
+  }
+
+  Future<void> _loadCities(String countryCode, String stateProvince) async {
+    setState(() {
+      _loadingCities = true;
+      _cities = const [];
+      _city = '';
+      _cityTextController.clear();
+      _selectedFacilityId = null;
+      _selectedFacilityName = '';
+    });
+    try {
+      final cities = await ref.read(apiServiceProvider).getCommunityCities(
+            countryCode: countryCode,
+            stateProvince: stateProvince,
+          );
+      if (!mounted) return;
+      setState(() {
+        _cities = cities;
+        _loadingCities = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _cities = const [];
+        _loadingCities = false;
+      });
+    }
+  }
+
+  Future<List<CommunityHealthcareFacility>> _fetchFacilities(String query) async {
+    if (_countryCode == null || (_stateProvince?.trim().isEmpty ?? true)) {
+      return const [];
+    }
+    final city =
+        _cities.isNotEmpty ? _city.trim() : _cityTextController.text.trim();
+    return ref.read(apiServiceProvider).getHealthcareFacilities(
+          countryCode: _countryCode!,
+          stateProvince: _stateProvince!.trim(),
+          city: city,
+          query: query,
+        );
+  }
+
   Future<void> _submit() async {
     final stage = _journeyStage;
-    if (stage == null) return;
+    final stateProvince = _stateProvince?.trim() ?? '';
+    final city =
+        _cities.isNotEmpty ? _city.trim() : _cityTextController.text.trim();
+    final facilityName = _selectedFacilityName.trim();
+
+    if (_countryCode == null || stateProvince.isEmpty || city.isEmpty) {
+      _showMessage('Please select your country, state, and city.');
+      return;
+    }
+    if (facilityName.isEmpty) {
+      _showMessage('Please select your hospital or health center.');
+      return;
+    }
 
     setState(() => _isSubmitting = true);
     try {
-      await ref.read(profileProvider.notifier).completeOnboarding(
-            ProfileSavePayload(
-              name: _nameController.text.trim(),
-              language: AppConfig.languageCode,
-              phoneNumber: _phoneController.text.trim().isEmpty
-                  ? null
-                  : _phoneController.text.trim(),
-              journeyStage: stage,
-              pregnancyWeek:
-                  JourneyHelpers.needsPregnancyWeek(stage) ? _pregnancyWeek : null,
-              isFirstPregnancy: _journeyStage == JourneyStage.pregnant
-                  ? (_isFirstPregnancy ?? true)
-                  : null,
-              babyGender: _journeyStage == JourneyStage.pregnant
-                  ? _babyGender
-                  : null,
-            ),
+      // Call APIs directly first so an intermediate profile update doesn't remount this screen.
+      if (!_mainDone) {
+        if (stage == null) {
+          _showMessage('Please choose where you are on your journey');
+          return;
+        }
+        await ref.read(apiServiceProvider).completeOnboarding(
+              ProfileSavePayload(
+                name: _nameController.text.trim(),
+                language: AppConfig.languageCode,
+                phoneNumber: _phoneController.text.trim().isEmpty
+                    ? null
+                    : _phoneController.text.trim(),
+                journeyStage: stage,
+                pregnancyWeek: JourneyHelpers.needsPregnancyWeek(stage)
+                    ? _pregnancyWeek
+                    : null,
+              ),
+            );
+        _mainDone = true;
+      }
+
+      final facilityId =
+          (_selectedFacilityId != null && _selectedFacilityId!.isNotEmpty)
+              ? _selectedFacilityId
+              : null;
+      await ref.read(apiServiceProvider).completeCommunityOnboarding(
+            countryCode: _countryCode!,
+            stateProvince: stateProvince,
+            city: city,
+            healthcareFacilityId: facilityId,
+            healthcareFacilityName: facilityName,
+            interests: const [],
           );
+      await ref.read(profileProvider.notifier).loadProfile();
+      await ref.read(communityProvider.notifier).refreshStatus();
     } catch (_) {
       if (mounted) {
         _showMessage('Something went wrong. Please try again.');
@@ -176,7 +306,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     _buildWelcomeStep(),
                     _buildNameStep(),
                     _buildJourneyStep(),
-                    _buildStageDetailsStep(),
+                    _buildLocalCircleStep(),
                   ],
                 ),
               ),
@@ -239,11 +369,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             const SizedBox(width: 64),
           Expanded(
             child: GradientButton(
-              label: _step == _stepCount - 1 ? 'Start chatting' : 'Continue',
+              label: _step == _stepCount - 1 ? 'Start your journey' : 'Continue',
               isLoading: _isSubmitting,
               onPressed: _isSubmitting ? null : _nextStep,
               icon: _step == _stepCount - 1
-                  ? Icons.chat_bubble_outline_rounded
+                  ? Icons.check_rounded
                   : Icons.arrow_forward_rounded,
             ),
           ),
@@ -285,15 +415,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
           const SizedBox(height: AppSpacing.spaceMD),
           Text(
-            'MomLaunchPad is your pregnancy companion — personalized chat, community, and gentle tools. We also support you if you\'re trying to conceive.',
+            'A short setup for chat and your local circle — not a long form.',
             style: AppTypography.bodyText.copyWith(color: context.appInkMuted),
           ),
           const SizedBox(height: AppSpacing.spaceLG),
-          _buildHighlight(Icons.favorite_outline_rounded, 'Pregnancy support, plus trying to conceive'),
+          _buildHighlight(Icons.chat_outlined, 'Chat that remembers your journey'),
           const SizedBox(height: AppSpacing.spaceSM),
-          _buildHighlight(Icons.health_and_safety_outlined, 'Support that grows with your journey'),
+          _buildHighlight(
+            Icons.location_on_outlined,
+            'Nearby moms at your health center',
+          ),
           const SizedBox(height: AppSpacing.spaceSM),
-          _buildHighlight(Icons.chat_outlined, 'We learn more as you chat'),
+          _buildHighlight(
+            Icons.health_and_safety_outlined,
+            'Support that grows with you',
+          ),
         ],
       ),
     );
@@ -319,7 +455,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('What should we call you?', style: AppTypography.headingMedium.copyWith(color: context.appInk)),
+          Text(
+            'What should we call you?',
+            style: AppTypography.headingMedium.copyWith(color: context.appInk),
+          ),
           const SizedBox(height: AppSpacing.spaceSM),
           Text(
             'We\'ll use this to make conversations feel personal.',
@@ -334,16 +473,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               hintText: 'e.g. Sarah',
             ),
           ),
-          const SizedBox(height: AppSpacing.spaceMD),
-          TextField(
-            controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(
-              labelText: 'WhatsApp number (optional)',
-              hintText: '+234…',
-              helperText: 'Optional — so we can reach you on WhatsApp later',
+          if (!_hasExistingPhone) ...[
+            const SizedBox(height: AppSpacing.spaceMD),
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'WhatsApp number (optional)',
+                hintText: '+234…',
+                helperText: 'Optional — so we can reach you on WhatsApp later',
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -354,10 +495,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Where are you today?', style: AppTypography.headingMedium.copyWith(color: context.appInk)),
+          Text(
+            'Where are you today?',
+            style: AppTypography.headingMedium.copyWith(color: context.appInk),
+          ),
           const SizedBox(height: AppSpacing.spaceSM),
           Text(
-            'Most moms join while pregnant; choose trying to conceive if that\'s where you are today. You can update your journey anytime.',
+            'You can update your journey anytime in profile.',
             style: AppTypography.caption.copyWith(color: context.appInkMuted),
           ),
           const SizedBox(height: AppSpacing.spaceLG),
@@ -366,34 +510,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             options: JourneyStage.signupStages,
             onSelected: (stage) => setState(() => _journeyStage = stage),
           ),
-          const SizedBox(height: AppSpacing.spaceMD),
-          Text(
-            'Healthcare professional at a clinic or hospital? Choose trying to conceive if you\'re not currently pregnant, then request your professional badge in Profile after signup.',
-            style: AppTypography.caption.copyWith(color: context.appInkMuted),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStageDetailsStep() {
-    final stage = _journeyStage;
-
-    return _buildStepCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            stage?.label ?? 'A few details',
-            style: AppTypography.headingMedium.copyWith(color: context.appInk),
-          ),
-          const SizedBox(height: AppSpacing.spaceSM),
-          Text(
-            _stageDetailsSubtitle(stage),
-            style: AppTypography.caption.copyWith(color: context.appInkMuted),
-          ),
-          const SizedBox(height: AppSpacing.spaceLG),
-          if (stage == JourneyStage.pregnant) ...[
+          if (_journeyStage == JourneyStage.pregnant) ...[
+            const SizedBox(height: AppSpacing.spaceLG),
             Center(
               child: Text(
                 'Week $_pregnancyWeek',
@@ -420,92 +538,150 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.spaceLG),
-            Text('First pregnancy?', style: AppTypography.bodyTextMedium.copyWith(color: context.appInk)),
-            const SizedBox(height: AppSpacing.spaceSM),
-            _buildChoiceChip(
-              label: 'Yes, my first',
-              selected: _isFirstPregnancy == true,
-              onTap: () => setState(() => _isFirstPregnancy = true),
-            ),
-            const SizedBox(height: AppSpacing.spaceSM),
-            _buildChoiceChip(
-              label: 'No, I\'ve been pregnant before',
-              selected: _isFirstPregnancy == false,
-              onTap: () => setState(() => _isFirstPregnancy = false),
-            ),
-            const SizedBox(height: AppSpacing.spaceLG),
-            Text(
-              'Baby gender (optional)',
-              style: AppTypography.bodyTextMedium.copyWith(color: context.appInk),
-            ),
-            const SizedBox(height: AppSpacing.spaceXS),
-            Text(
-              'Personalize your app colors — you can change this anytime in profile.',
-              style: AppTypography.caption.copyWith(color: context.appInkMuted),
-            ),
+          ] else if (_journeyStage == JourneyStage.ttc) ...[
             const SizedBox(height: AppSpacing.spaceMD),
-            GenderPicker(
-              value: _babyGender,
-              onChanged: (gender) {
-                setState(() => _babyGender = gender);
-                ref.read(previewBabyGenderProvider.notifier).set(gender);
-              },
-            ),
-          ] else ...[
             Text(
-              'We\'ll tailor support to your TTC journey — cycles, fertility questions, and the emotional side of waiting.',
-              style: AppTypography.bodyText.copyWith(color: context.appInk),
+              'We\'ll tailor support for your fertility journey — cycles, waiting, and the questions that come with trying to conceive.',
+              style: AppTypography.bodyText.copyWith(color: context.appInkMuted),
             ),
           ],
+          const SizedBox(height: AppSpacing.spaceMD),
+          Text(
+            'Healthcare professional at a clinic or hospital? Choose trying to conceive if you\'re not currently pregnant, then request your professional badge in Profile after signup.',
+            style: AppTypography.caption.copyWith(color: context.appInkMuted),
+          ),
         ],
       ),
     );
   }
 
-  String _stageDetailsSubtitle(JourneyStage? stage) {
-    switch (stage) {
-      case JourneyStage.pregnant:
-        return 'This helps us give stage-appropriate guidance.';
-      case JourneyStage.ttc:
-      case null:
-        return 'Help us personalize your experience.';
-      case JourneyStage.postpartum:
-      case JourneyStage.miscarriage:
-        return 'Help us personalize your experience.';
-    }
-  }
+  Widget _buildLocalCircleStep() {
+    final communityState = ref.watch(communityProvider);
+    final countries = communityState.countries
+        .map((c) => (code: c.code, name: c.name))
+        .toList();
+    final cityLabel = _countryCode == 'NG' ? 'City / LGA' : 'City';
+    final useCityDropdown = _cities.isNotEmpty;
+    final facilityEnabled =
+        _countryCode != null && (_stateProvince?.trim().isNotEmpty ?? false);
 
-  Widget _buildChoiceChip({
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.spaceMD,
-          vertical: AppSpacing.spaceMD,
-        ),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.radiusMedium),
-          color: selected ? context.appPrimary : context.appSurface,
-          border: Border.all(
-            color: selected
-                ? Colors.transparent
-                : context.appPrimary.withValues(alpha: 0.2),
+    return _buildStepCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Your local circle',
+            style: AppTypography.headingMedium.copyWith(color: context.appInk),
           ),
-        ),
-        child: Text(
-          label,
-          style: AppTypography.bodyText.copyWith(
-            color: selected ? context.appOnPrimary : context.appInk,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+          const SizedBox(height: AppSpacing.spaceSM),
+          Text(
+            'Share your area and health center so Nearby can show moms registered near you.',
+            style: AppTypography.caption.copyWith(color: context.appInkMuted),
           ),
-        ),
+          const SizedBox(height: AppSpacing.spaceLG),
+          CountryPickerField(
+            countryCode: _countryCode,
+            countries: countries,
+            onSelected: (code) {
+              setState(() => _countryCode = code);
+              _loadStates(code);
+            },
+          ),
+          const SizedBox(height: AppSpacing.spaceSM),
+          DropdownButtonFormField<String>(
+            key: ValueKey('state-$_countryCode-$_stateProvince'),
+            initialValue: _stateProvince,
+            decoration: InputDecoration(
+              labelText: 'State / Province',
+              filled: true,
+              fillColor: context.appSurface,
+            ),
+            hint: Text(
+              _countryCode == null
+                  ? 'Select country first'
+                  : _loadingStates
+                      ? 'Loading states…'
+                      : _states.isEmpty
+                          ? 'No states listed'
+                          : 'Select state',
+            ),
+            items: _states
+                .map((s) => DropdownMenuItem(value: s.name, child: Text(s.name)))
+                .toList(),
+            onChanged: _countryCode == null || _loadingStates
+                ? null
+                : (value) {
+                    if (value == null) return;
+                    setState(() => _stateProvince = value);
+                    _loadCities(_countryCode!, value);
+                  },
+          ),
+          const SizedBox(height: AppSpacing.spaceSM),
+          if (useCityDropdown || _loadingCities)
+            DropdownButtonFormField<String>(
+              key: ValueKey('city-$_stateProvince-$_city'),
+              initialValue: _city.isEmpty ? null : _city,
+              decoration: InputDecoration(
+                labelText: cityLabel,
+                filled: true,
+                fillColor: context.appSurface,
+              ),
+              hint: Text(_loadingCities ? 'Loading…' : 'Select $cityLabel'),
+              items: _cities
+                  .map((c) => DropdownMenuItem(value: c.name, child: Text(c.name)))
+                  .toList(),
+              onChanged: _loadingCities
+                  ? null
+                  : (value) {
+                      setState(() {
+                        _city = value ?? '';
+                        _selectedFacilityId = null;
+                        _selectedFacilityName = '';
+                      });
+                    },
+            )
+          else
+            TextField(
+              controller: _cityTextController,
+              enabled: _stateProvince != null,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                labelText: cityLabel,
+                hintText: _stateProvince == null
+                    ? 'Select state first'
+                    : 'Enter your city',
+                filled: true,
+                fillColor: context.appSurface,
+              ),
+              onChanged: (_) => setState(() {
+                _selectedFacilityId = null;
+                _selectedFacilityName = '';
+              }),
+            ),
+          const SizedBox(height: AppSpacing.spaceSM),
+          FacilitySearchField(
+            selectedId: _selectedFacilityId,
+            selectedName: _selectedFacilityName,
+            enabled: facilityEnabled,
+            fetchFacilities: _fetchFacilities,
+            onChanged: (facility) {
+              setState(() {
+                if (facility == null) {
+                  _selectedFacilityId = null;
+                  _selectedFacilityName = '';
+                } else {
+                  _selectedFacilityId =
+                      facility.id.isEmpty ? null : facility.id;
+                  _selectedFacilityName = facility.name;
+                  if (facility.city.trim().isNotEmpty) {
+                    _city = facility.city.trim();
+                    _cityTextController.text = _city;
+                  }
+                }
+              });
+            },
+          ),
+        ],
       ),
     );
   }

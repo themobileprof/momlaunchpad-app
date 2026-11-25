@@ -20,7 +20,8 @@ class ProfileState {
   });
 
   bool get needsOnboarding =>
-      profile != null && !profile!.onboardingCompleted;
+      profile != null &&
+      (!profile!.onboardingCompleted || !profile!.communityOnboardingCompleted);
 
   ProfileState copyWith({
     UserProfile? profile,
@@ -145,5 +146,6 @@ final needsOnboardingProvider = Provider<bool>((ref) {
   if (!auth.isLoggedIn) return false;
   if (profile.isLoading) return false;
   if (profile.profile == null) return false;
-  return !profile.profile!.onboardingCompleted;
+  final p = profile.profile!;
+  return !p.onboardingCompleted || !p.communityOnboardingCompleted;
 });

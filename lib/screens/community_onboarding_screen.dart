@@ -7,11 +7,10 @@ import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../widgets/country_picker_field.dart';
-import '../widgets/community_interest_selector.dart';
 import '../widgets/facility_search_field.dart';
 import '../widgets/gradient_button.dart';
 
-/// First-time community setup: location dropdowns + up to 5 interests.
+/// Location/facility only — edit and legacy users missing community setup.
 class CommunityOnboardingScreen extends ConsumerStatefulWidget {
   const CommunityOnboardingScreen({super.key});
 
@@ -22,7 +21,6 @@ class CommunityOnboardingScreen extends ConsumerStatefulWidget {
 
 class _CommunityOnboardingScreenState
     extends ConsumerState<CommunityOnboardingScreen> {
-  final _selected = <String>{};
   final _cityTextController = TextEditingController();
   String? _countryCode;
   String? _stateProvince;
@@ -46,7 +44,7 @@ class _CommunityOnboardingScreenState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = ref.read(communityProvider);
-      if (state.countries.isEmpty || state.interestGroups.isEmpty) {
+      if (state.countries.isEmpty) {
         ref.read(communityProvider.notifier).bootstrap();
       }
     });
@@ -121,14 +119,6 @@ class _CommunityOnboardingScreenState
       _showSnack('Please select your hospital or health center.');
       return;
     }
-    if (_selected.isEmpty) {
-      _showSnack('Pick at least one interest.');
-      return;
-    }
-    if (_selected.length > 5) {
-      _showSnack('You can select up to 5 interests.');
-      return;
-    }
 
     setState(() => _submitting = true);
     final facilityId =
@@ -141,7 +131,7 @@ class _CommunityOnboardingScreenState
           city: city,
           healthcareFacilityId: facilityId,
           healthcareFacilityName: facilityName,
-          interests: _selected.toList(),
+          interests: const [],
         );
     if (!mounted) return;
     setState(() => _submitting = false);
@@ -154,16 +144,6 @@ class _CommunityOnboardingScreenState
 
   void _showSnack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  void _toggleInterest(String key) {
-    setState(() {
-      if (_selected.contains(key)) {
-        _selected.remove(key);
-      } else {
-        _selected.add(key);
-      }
-    });
   }
 
   Future<List<CommunityHealthcareFacility>> _fetchFacilities(String query) async {
@@ -186,7 +166,6 @@ class _CommunityOnboardingScreenState
   @override
   Widget build(BuildContext context) {
     final communityState = ref.watch(communityProvider);
-    final groups = communityState.interestGroups;
     final countries = communityState.countries
         .map((c) => (code: c.code, name: c.name))
         .toList();
@@ -198,7 +177,7 @@ class _CommunityOnboardingScreenState
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('Join the community', style: AppTypography.headingMedium),
+        title: Text('Your local circle', style: AppTypography.headingMedium),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -209,8 +188,7 @@ class _CommunityOnboardingScreenState
         ),
         children: [
           Text(
-            'Your location and health center help us show Nearby posts from '
-            'moms registered where you are. Pick a few topics to personalize your feed.',
+            'Share your area and health center so Nearby can show moms registered near you.',
             style: AppTypography.bodyText.copyWith(color: context.appInkMuted),
           ),
           const SizedBox(height: AppSpacing.spaceLG),
@@ -325,15 +303,6 @@ class _CommunityOnboardingScreenState
               'Search within your state (e.g. Ikorodu). Picking a center sets the LGA when known.',
               style: AppTypography.caption.copyWith(color: context.appInkMuted),
             ),
-          ),
-          const SizedBox(height: AppSpacing.spaceLG),
-          CommunityInterestSelector(
-            groups: groups,
-            selected: _selected,
-            onToggle: _toggleInterest,
-            onSelectionLimitReached: () {
-              _showSnack('You can select up to 5 interests.');
-            },
           ),
           const SizedBox(height: AppSpacing.spaceXL),
           GradientButton(

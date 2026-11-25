@@ -118,7 +118,8 @@ class AppInitializer extends ConsumerWidget {
         );
       }
 
-      if (!profile.onboardingCompleted) {
+      if (!profile.onboardingCompleted ||
+          !profile.communityOnboardingCompleted) {
         return const OnboardingScreen();
       }
       return const HomeScreen();
