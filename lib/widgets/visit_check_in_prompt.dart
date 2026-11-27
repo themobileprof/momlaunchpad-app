@@ -215,6 +215,7 @@ class _UpcomingAppointmentCard extends StatelessWidget {
         _CardHeader(
           icon: Icons.event_outlined,
           title: isScheduledVisit ? 'Scheduled visit' : 'Upcoming appointment',
+          onDismiss: busy ? null : onDismiss,
         ),
         const SizedBox(height: AppSpacing.spaceSM),
         Text(
@@ -232,24 +233,10 @@ class _UpcomingAppointmentCard extends StatelessWidget {
           ),
         ],
         const SizedBox(height: AppSpacing.spaceMD),
-        Row(
-          children: [
-            Expanded(
-              child: AppButton(
-                label: 'Not now',
-                variant: AppButtonVariant.secondary,
-                onPressed: busy ? null : onDismiss,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.spaceSM),
-            Expanded(
-              child: AppButton(
-                label: 'Add to calendar',
-                isLoading: busy,
-                onPressed: busy ? null : onAddReminder,
-              ),
-            ),
-          ],
+        AppButton(
+          label: 'Add to calendar',
+          isLoading: busy,
+          onPressed: busy ? null : onAddReminder,
         ),
       ],
     );
@@ -274,9 +261,10 @@ class _RecentUpdateCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _CardHeader(
+        _CardHeader(
           icon: Icons.medical_information_outlined,
           title: 'After your visit',
+          onDismiss: onDismiss,
         ),
         const SizedBox(height: AppSpacing.spaceSM),
         Text(
@@ -292,23 +280,9 @@ class _RecentUpdateCard extends StatelessWidget {
           style: AppTypography.caption.copyWith(color: context.appInkSubtle),
         ),
         const SizedBox(height: AppSpacing.spaceMD),
-        Row(
-          children: [
-            Expanded(
-              child: AppButton(
-                label: 'Not now',
-                variant: AppButtonVariant.secondary,
-                onPressed: onDismiss,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.spaceSM),
-            Expanded(
-              child: AppButton(
-                label: 'Give update',
-                onPressed: onUpdate,
-              ),
-            ),
-          ],
+        AppButton(
+          label: 'Give update',
+          onPressed: onUpdate,
         ),
       ],
     );
@@ -331,9 +305,10 @@ class _MonthlyLogCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _CardHeader(
+        _CardHeader(
           icon: Icons.local_hospital_outlined,
           title: 'Doctor visit check-in',
+          onDismiss: onDismiss,
         ),
         const SizedBox(height: AppSpacing.spaceSM),
         Text(
@@ -346,14 +321,6 @@ class _MonthlyLogCard extends StatelessWidget {
         const SizedBox(height: AppSpacing.spaceMD),
         Row(
           children: [
-            Expanded(
-              child: AppButton(
-                label: 'Not now',
-                variant: AppButtonVariant.secondary,
-                onPressed: onDismiss,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.spaceSM),
             Expanded(
               child: AppButton(
                 label: 'Schedule',
@@ -378,8 +345,13 @@ class _MonthlyLogCard extends StatelessWidget {
 class _CardHeader extends StatelessWidget {
   final IconData icon;
   final String title;
+  final VoidCallback? onDismiss;
 
-  const _CardHeader({required this.icon, required this.title});
+  const _CardHeader({
+    required this.icon,
+    required this.title,
+    this.onDismiss,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -390,6 +362,16 @@ class _CardHeader extends StatelessWidget {
         Expanded(
           child: Text(title, style: AppTypography.bodyTextMedium),
         ),
+        if (onDismiss != null)
+          IconButton(
+            onPressed: onDismiss,
+            icon: const Icon(Icons.close_rounded),
+            tooltip: 'Dismiss',
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            color: context.appInkSubtle,
+          ),
       ],
     );
   }
