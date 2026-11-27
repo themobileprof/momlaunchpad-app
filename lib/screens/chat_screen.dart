@@ -5,13 +5,13 @@ import '../theme/spacing.dart';
 import '../theme/typography.dart';
 import '../providers/chat_provider.dart';
 import '../providers/reminders_provider.dart';
-import '../providers/home_navigation_provider.dart';
 import '../services/network_monitor.dart';
 import '../widgets/widgets.dart';
-import '../models/reminder.dart';
 import '../models/message.dart';
+import '../models/reminder.dart';
 import '../models/conversation_group.dart';
 import '../utils/conversation_list_utils.dart';
+import '../utils/reminder_save_feedback.dart';
 
 /// Chat screen - Primary text-based chat feature
 class ChatScreen extends ConsumerStatefulWidget {
@@ -107,11 +107,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         position.jumpTo(target);
       }
     });
-  }
-
-  void _navigateToCalendarReminder(Reminder reminder) {
-    ref.read(homeNavigationProvider.notifier).focusReminder(reminder);
-    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   @override
@@ -449,7 +444,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Add Reminder?'),
+            const Text('Add to calendar?'),
           ],
         ),
         content: Column(
@@ -457,8 +452,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(suggestion.title, style: AppTypography.headingMedium),
-            const SizedBox(height: 8),
-            Text(suggestion.description ?? '', style: AppTypography.bodyText),
+            if ((suggestion.description ?? '').isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(suggestion.description!, style: AppTypography.bodyText),
+            ],
             const SizedBox(height: 16),
             AppBadge(
               label: _formatDate(suggestion.suggestedTime),
@@ -467,19 +464,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ],
         ),
+        actionsAlignment: MainAxisAlignment.center,
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-            onPressed: () {
-              ref.read(chatProvider.notifier).clearCalendarSuggestion();
-              Navigator.pop(context);
-            },
-            child: const Text('Not Now'),
-          ),
-          AppButton(
-            label: 'Add Reminder',
-            onPressed: () => _createReminder(suggestion),
-            isFullWidth: false,
-            size: AppButtonSize.small,
+          SizedBox(
+            width: double.infinity,
+            child: Column(
+              children: [
+                AppButton(
+                  label: 'Save reminder',
+                  onPressed: () => _createReminder(suggestion),
+                ),
+                TextButton(
+                  onPressed: () {
+                    ref.read(chatProvider.notifier).clearCalendarSuggestion();
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Not now'),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -507,20 +511,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       if (mounted) Navigator.pop(context);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Reminder created successfully'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'View',
-              textColor: Colors.white,
-              onPressed: () => _navigateToCalendarReminder(reminder),
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        await showReminderSavedFeedback(
+          context,
+          ref,
+          reminder,
+          message: 'Reminder saved — your phone will nudge you',
         );
       }
     } catch (e) {

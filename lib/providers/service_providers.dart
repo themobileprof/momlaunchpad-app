@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../services/api_service.dart';
+import '../services/reminder_notification_service.dart';
 import '../services/storage_service.dart';
 import '../services/websocket_service.dart';
 import '../services/conversation_service.dart';
@@ -44,4 +45,10 @@ final analyticsServiceProvider = Provider<AnalyticsService>((ref) {
     return FirebaseAnalyticsService();
   }
   return NoOpAnalyticsService();
+});
+
+/// Local OS notifications for reminders / appointments.
+final reminderNotificationServiceProvider =
+    Provider<ReminderNotificationService>((ref) {
+  return ReminderNotificationService();
 });

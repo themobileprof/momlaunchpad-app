@@ -23,6 +23,11 @@ void main() async {
 
   final container = ProviderContainer();
   await container.read(analyticsServiceProvider).init();
+  try {
+    await container.read(reminderNotificationServiceProvider).initialize();
+  } catch (e) {
+    debugPrint('Reminder notifications init failed: $e');
+  }
   container.dispose();
 
   runApp(

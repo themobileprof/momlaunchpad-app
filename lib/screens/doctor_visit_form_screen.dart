@@ -3,10 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/doctor_visit.dart';
 import '../providers/doctor_visits_provider.dart';
+import '../providers/home_navigation_provider.dart';
+import '../providers/reminders_provider.dart';
 import '../services/api_service.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
+import '../utils/reminder_save_feedback.dart';
+import '../utils/visit_check_in_logic.dart';
 import '../widgets/widgets.dart';
 
 enum DoctorVisitFormMode {
@@ -369,6 +373,105 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
                 markCompleted: true,
               ),
             );
+        if (mounted) Navigator.pop(context, true);
+        return;
+      }
+
+      if (!mounted) return;
+      final addToCalendar = await showModalBottomSheet<bool>(
+        context: context,
+        backgroundColor: context.appSurface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (ctx) {
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.spaceLG,
+              AppSpacing.spaceMD,
+              AppSpacing.spaceLG,
+              AppSpacing.spaceLG + MediaQuery.of(ctx).padding.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: context.appInkSubtle.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.spaceLG),
+                Text(
+                  'Appointment saved',
+                  style: AppTypography.headingMedium.copyWith(
+                    color: context.appInk,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.spaceSM),
+                Text(
+                  'We can remind you on this phone and add it to your in-app calendar.',
+                  style: AppTypography.bodyText.copyWith(
+                    color: context.appInkMuted,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.spaceMD),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.spaceMD),
+                  decoration: BoxDecoration(
+                    color: context.appSurfaceMuted,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: context.appPrimary.withValues(alpha: 0.12),
+                    ),
+                  ),
+                  child: Text(
+                    appointmentReminderTitle(saved),
+                    style: AppTypography.bodyTextMedium.copyWith(
+                      color: context.appInk,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.spaceLG),
+                AppButton(
+                  label: 'Remind me',
+                  onPressed: () => Navigator.pop(ctx, true),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text(
+                    'Skip',
+                    style: AppTypography.button.copyWith(
+                      color: context.appPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+
+      if (addToCalendar == true) {
+        final reminder = await ref.read(remindersProvider.notifier).addReminder(
+              title: appointmentReminderTitle(saved),
+              description: appointmentReminderDescription(saved).isEmpty
+                  ? null
+                  : appointmentReminderDescription(saved),
+              scheduledTime: saved.visitDate,
+              priority: 'medium',
+            );
+        if (!mounted) return;
+        await showReminderSavedFeedback(context, ref, reminder);
+        if (!mounted) return;
+        ref.read(homeNavigationProvider.notifier).focusReminder(reminder);
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        return;
       }
 
       if (mounted) Navigator.pop(context, true);
@@ -393,9 +496,44 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('MMM d, yyyy • h:mm a');
 
+    final summary = DateFormat('EEE, MMM d · h:mm a').format(_visitDate.toLocal());
+
     return Scaffold(
       backgroundColor: context.appCanvas,
       appBar: MomAppBar(pageTitle: _title),
+      bottomNavigationBar: Material(
+        color: context.appSurface,
+        elevation: 12,
+        shadowColor: AppColors.shadowTintFor(context.appBrightness),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.spaceMD,
+              AppSpacing.spaceSM,
+              AppSpacing.spaceMD,
+              AppSpacing.spaceMD,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  summary,
+                  style: AppTypography.caption.copyWith(
+                    color: context.appInkMuted,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.spaceSM),
+                AppButton(
+                  label: _isSaving ? 'Saving...' : _saveLabel,
+                  onPressed: _isSaving ? null : _save,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -639,10 +777,6 @@ class _DoctorVisitFormScreenState extends ConsumerState<DoctorVisitFormScreen> {
               ],
             ],
             const SizedBox(height: AppSpacing.spaceXL),
-            AppButton(
-              label: _isSaving ? 'Saving...' : _saveLabel,
-              onPressed: _isSaving ? null : _save,
-            ),
           ],
         ),
       ),

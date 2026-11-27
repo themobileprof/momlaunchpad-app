@@ -10,8 +10,10 @@ import '../providers/profile_provider.dart';
 import '../models/journey_stage.dart';
 import '../models/reminder.dart';
 import '../utils/journey_helpers.dart';
+import '../utils/reminder_save_feedback.dart';
 import '../widgets/pregnancy_week_story.dart';
 import '../widgets/widgets.dart';
+import 'doctor_visit_form_screen.dart';
 
 /// Calendar/Reminders screen - Manage pregnancy-related reminders
 class CalendarScreen extends ConsumerStatefulWidget {
@@ -124,20 +126,54 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ),
         ],
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 80.0), // Raise above floating navbar
-        child: NeumorphicButton(
-          filled: true,
-          borderRadius: 30,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          onPressed: () => _showReminderDialog(initialDate: _selectedDay),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.add_rounded),
-              SizedBox(width: 8),
-              Text('Add Reminder'),
-            ],
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 72),
+        child: Material(
+          color: context.appSurface,
+          elevation: 8,
+          shadowColor: AppColors.shadowTintFor(context.appBrightness),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: AppButton(
+                    label: 'Schedule appointment',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const DoctorVisitFormScreen(
+                            mode: DoctorVisitFormMode.schedule,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: OutlinedButton(
+                    onPressed: () =>
+                        _showReminderDialog(initialDate: _selectedDay),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      foregroundColor: context.appPrimary,
+                      side: BorderSide(
+                        color: context.appPrimary.withValues(alpha: 0.35),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: const Text('Reminder'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -339,16 +375,51 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     if (reminders.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.event_available_rounded, size: 64, color: Colors.grey[300]),
-            const SizedBox(height: 16),
-            Text(
-              'No reminders for this day',
-              style: TextStyle(color: Colors.grey[500], fontSize: 16),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceLG),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.event_available_rounded,
+                size: 56,
+                color: context.appPrimary.withValues(alpha: 0.35),
+              ),
+              const SizedBox(height: AppSpacing.spaceMD),
+              Text(
+                'Nothing on this day',
+                style: AppTypography.headingMedium.copyWith(color: context.appInk),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.spaceSM),
+              Text(
+                'Schedule a clinic visit or add a gentle reminder — it only takes a moment.',
+                style: AppTypography.bodyText.copyWith(color: context.appInkMuted),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.spaceLG),
+              AppButton(
+                label: 'Schedule appointment',
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const DoctorVisitFormScreen(
+                        mode: DoctorVisitFormMode.schedule,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.spaceSM),
+              TextButton(
+                onPressed: () => _showReminderDialog(initialDate: _selectedDay),
+                child: Text(
+                  'Add reminder',
+                  style: AppTypography.button.copyWith(color: context.appPrimary),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -508,141 +579,157 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       );
     }
                            
-    String selectedPriority = reminder?.priority ?? 'medium';
-    
+    final selectedPriority = reminder?.priority ?? 'medium';
     final isEditing = reminder != null;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: context.appSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(isEditing ? 'Edit Reminder' : 'Add Reminder'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Title',
-                    hintText: 'e.g., Doctor Appointment',
-                  ),
-                  textCapitalization: TextCapitalization.sentences,
-                ),
-                const SizedBox(height: AppSpacing.spaceMD),
-                TextField(
-                  controller: descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Description (Optional)',
-                  ),
-                  textCapitalization: TextCapitalization.sentences,
-                  maxLines: 2,
-                ),
-                const SizedBox(height: AppSpacing.spaceMD),
-                
-                // Date & Time Picker
-                InkWell(
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: selectedDate,
-                      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                      lastDate: DateTime.now().add(const Duration(days: 365)),
-                    );
-                    if (date == null || !context.mounted) return;
-                    final time = await showTimePicker(
-                      context: context,
-                      initialTime: TimeOfDay.fromDateTime(selectedDate),
-                    );
-                    if (time != null) {
-                      setState(() {
-                        selectedDate = DateTime(
-                          date.year,
-                          date.month,
-                          date.day,
-                          time.hour,
-                          time.minute,
-                        );
-                      });
-                    }
-                  },
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Time',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      border: OutlineInputBorder(),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('${selectedDate.day}/${selectedDate.month}/${selectedDate.year} ${_formatTime(selectedDate)}'),
-                        Icon(Icons.calendar_today, size: 20),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.spaceMD),
-
-                // Priority Dropdown
-                DropdownButtonFormField<String>(
-                  initialValue: selectedPriority,
-                  decoration: const InputDecoration(labelText: 'Priority'),
-                  items: const [
-                    DropdownMenuItem(value: 'low', child: Text('Low')),
-                    DropdownMenuItem(value: 'medium', child: Text('Medium')),
-                    DropdownMenuItem(value: 'high', child: Text('High')),
-                    DropdownMenuItem(value: 'urgent', child: Text('Urgent')),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) setState(() => selectedPriority = value);
-                  },
-                ),
-              ],
-            ),
+        builder: (context, setState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.spaceLG,
+            AppSpacing.spaceMD,
+            AppSpacing.spaceLG,
+            MediaQuery.of(context).viewInsets.bottom + AppSpacing.spaceLG,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (titleController.text.trim().isEmpty) return;
-
-                try {
-                  if (isEditing) {
-                    await ref.read(remindersProvider.notifier).updateReminder(
-                      id: reminder.id,
-                      title: titleController.text,
-                      description: descriptionController.text,
-                      scheduledTime: selectedDate,
-                      priority: selectedPriority,
-                    );
-                  } else {
-                    await ref.read(remindersProvider.notifier).addReminder(
-                      title: titleController.text,
-                      description: descriptionController.text,
-                      scheduledTime: selectedDate,
-                      priority: selectedPriority,
-                    );
-                  }
-                  if (context.mounted) Navigator.pop(context);
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to save: $e')),
-                    );
-                  }
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.appAccent,
-                foregroundColor: Colors.white,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: context.appInkSubtle.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
               ),
-              child: Text(isEditing ? 'Save' : 'Add'),
-            ),
-          ],
+              const SizedBox(height: AppSpacing.spaceLG),
+              Text(
+                isEditing ? 'Edit reminder' : 'Quick reminder',
+                style: AppTypography.headingMedium.copyWith(color: context.appInk),
+              ),
+              const SizedBox(height: AppSpacing.spaceMD),
+              TextField(
+                controller: titleController,
+                autofocus: !isEditing,
+                decoration: const InputDecoration(
+                  labelText: 'What for?',
+                  hintText: 'e.g. Take folic acid',
+                ),
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: AppSpacing.spaceMD),
+              TextField(
+                controller: descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Note (optional)',
+                ),
+                textCapitalization: TextCapitalization.sentences,
+                maxLines: 2,
+              ),
+              const SizedBox(height: AppSpacing.spaceMD),
+              InkWell(
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (date == null || !context.mounted) return;
+                  final time = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.fromDateTime(selectedDate),
+                  );
+                  if (time != null) {
+                    setState(() {
+                      selectedDate = DateTime(
+                        date.year,
+                        date.month,
+                        date.day,
+                        time.hour,
+                        time.minute,
+                      );
+                    });
+                  }
+                },
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'When',
+                    border: OutlineInputBorder(),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${selectedDate.day}/${selectedDate.month}/${selectedDate.year} ${_formatTime(selectedDate)}',
+                      ),
+                      const Icon(Icons.calendar_today, size: 20),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.spaceLG),
+              AppButton(
+                label: isEditing ? 'Save reminder' : 'Save reminder',
+                onPressed: () async {
+                  if (titleController.text.trim().isEmpty) return;
+                  try {
+                    Reminder? saved;
+                    if (isEditing) {
+                      await ref.read(remindersProvider.notifier).updateReminder(
+                            id: reminder.id,
+                            title: titleController.text,
+                            description: descriptionController.text,
+                            scheduledTime: selectedDate,
+                            priority: selectedPriority,
+                          );
+                      saved = ref
+                          .read(remindersProvider)
+                          .reminders
+                          .where((r) => r.id == reminder.id)
+                          .firstOrNull;
+                    } else {
+                      saved = await ref
+                          .read(remindersProvider.notifier)
+                          .addReminder(
+                            title: titleController.text,
+                            description: descriptionController.text,
+                            scheduledTime: selectedDate,
+                            priority: selectedPriority,
+                          );
+                    }
+                    if (!context.mounted) return;
+                    Navigator.pop(context);
+                    if (saved != null) {
+                      await showReminderSavedFeedback(context, ref, saved);
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to save: $e')),
+                      );
+                    }
+                  }
+                },
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Cancel',
+                  style: AppTypography.button.copyWith(color: context.appPrimary),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

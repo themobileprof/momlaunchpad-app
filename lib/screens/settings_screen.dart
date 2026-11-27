@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -135,8 +136,8 @@ class SettingsScreen extends ConsumerWidget {
           AppListTileCard(
             leadingIcon: Icons.notifications_rounded,
             title: 'Notifications',
-            subtitle: 'Manage reminders & alerts',
-            onTap: () => _showComingSoon(context, 'Notification settings'),
+            subtitle: 'Phone alerts for appointments & reminders',
+            onTap: () => _enableDeviceNotifications(context, ref),
           ),
           AppListTileCard(
             leadingIcon: Icons.dark_mode_rounded,
@@ -313,6 +314,40 @@ class SettingsScreen extends ConsumerWidget {
         );
       },
     );
+  }
+
+  Future<void> _enableDeviceNotifications(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final granted =
+        await ref.read(remindersProvider.notifier).enableDeviceNotifications();
+    if (!context.mounted) return;
+    if (granted) {
+      await ref.read(remindersProvider.notifier).fetchReminders();
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Notifications on — we will nudge you for upcoming reminders',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Notifications are blocked. Enable them in system settings.',
+          ),
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(
+            label: 'Open settings',
+            onPressed: openAppSettings,
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _setGoogleCalendarSync(

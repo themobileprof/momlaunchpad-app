@@ -10,6 +10,7 @@ import '../services/api_service.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
+import '../utils/reminder_save_feedback.dart';
 import '../utils/visit_check_in_dismissals.dart';
 import '../utils/visit_check_in_logic.dart';
 import 'app_button.dart';
@@ -69,9 +70,8 @@ class _VisitCheckInPromptState extends ConsumerState<VisitCheckInPrompt> {
     final visit = checkIn.visit!;
     final appt = checkIn.appointmentAt!;
     setState(() => _busy = true);
-    final messenger = ScaffoldMessenger.of(context);
     try {
-      await ref.read(remindersProvider.notifier).addReminder(
+      final reminder = await ref.read(remindersProvider.notifier).addReminder(
             title: appointmentReminderTitle(visit),
             description: appointmentReminderDescription(visit).isEmpty
                 ? null
@@ -81,12 +81,16 @@ class _VisitCheckInPromptState extends ConsumerState<VisitCheckInPrompt> {
           );
       if (!mounted) return;
       await _dismiss(checkIn);
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Appointment added to your calendar')),
+      if (!mounted) return;
+      await showReminderSavedFeedback(
+        context,
+        ref,
+        reminder,
+        message: 'Appointment saved — your phone will remind you',
       );
     } on ApiException catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message)),
       );
     } finally {

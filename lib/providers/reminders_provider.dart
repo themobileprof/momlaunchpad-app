@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/reminder.dart';
 import '../services/api_service.dart';
 import '../services/google_calendar_sync_service.dart';
+import '../services/reminder_notification_service.dart';
 import 'google_calendar_sync_provider.dart';
 import 'service_providers.dart';
 
@@ -77,11 +78,22 @@ class RemindersNotifier extends Notifier<RemindersState> {
   GoogleCalendarSyncService get _googleSync =>
       ref.read(googleCalendarSyncServiceProvider);
 
+  ReminderNotificationService get _notifications =>
+      ref.read(reminderNotificationServiceProvider);
+
   void _replaceReminder(Reminder reminder) {
     final updated = state.reminders
         .map((r) => r.id == reminder.id ? reminder : r)
         .toList();
     state = state.copyWith(reminders: updated);
+  }
+
+  Future<void> _scheduleLocal(Reminder reminder) async {
+    try {
+      await _notifications.scheduleReminder(reminder);
+    } catch (e) {
+      debugPrint('Local notification schedule failed: $e');
+    }
   }
 
   /// Fetch all reminders from backend
@@ -91,6 +103,11 @@ class RemindersNotifier extends Notifier<RemindersState> {
     try {
       final reminders = await _apiService.getReminders();
       state = RemindersState(reminders: reminders, isLoading: false);
+      try {
+        await _notifications.rescheduleAll(reminders);
+      } catch (e) {
+        debugPrint('Local notification reschedule failed: $e');
+      }
     } on ApiException catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -182,6 +199,7 @@ class RemindersNotifier extends Notifier<RemindersState> {
       state = state.copyWith(
         reminders: [...state.reminders, reminder],
       );
+      await _scheduleLocal(reminder);
       return reminder;
     } on ApiException catch (e) {
       state = state.copyWith(error: e.message);
@@ -210,6 +228,7 @@ class RemindersNotifier extends Notifier<RemindersState> {
 
       reminder = await _syncReminderChange(reminder);
       _replaceReminder(reminder);
+      await _scheduleLocal(reminder);
     } on ApiException catch (e) {
       state = state.copyWith(error: e.message);
       rethrow;
@@ -231,6 +250,11 @@ class RemindersNotifier extends Notifier<RemindersState> {
       }
 
       await _apiService.deleteReminder(id);
+      try {
+        await _notifications.cancelReminder(id);
+      } catch (e) {
+        debugPrint('Local notification cancel failed: $e');
+      }
 
       final updatedReminders =
           state.reminders.where((r) => r.id != id).toList();
@@ -240,6 +264,15 @@ class RemindersNotifier extends Notifier<RemindersState> {
       state = state.copyWith(error: e.message);
       rethrow;
     }
+  }
+
+  /// Ask OS for notification permission (Settings / first save).
+  Future<bool> enableDeviceNotifications() async {
+    return _notifications.requestPermission();
+  }
+
+  Future<bool> deviceNotificationsEnabled() async {
+    return _notifications.hasPermission();
   }
 
   /// Toggle reminder completion
