@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -72,32 +71,46 @@ class ReminderNotificationService {
   Future<bool> requestPermission() async {
     if (!_initialized) await initialize();
 
-    var granted = false;
     if (defaultTargetPlatform == TargetPlatform.android) {
-      final status = await Permission.notification.request();
-      granted = status.isGranted || status.isLimited;
-
       final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
+      final granted =
+          await androidPlugin?.requestNotificationsPermission() ?? false;
       await androidPlugin?.requestExactAlarmsPermission();
-    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return granted;
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
       final ios = _plugin.resolvePlatformSpecificImplementation<
           IOSFlutterLocalNotificationsPlugin>();
-      granted = await ios?.requestPermissions(
+      return await ios?.requestPermissions(
             alert: true,
             badge: true,
             sound: true,
           ) ??
           false;
-    } else {
-      granted = true;
     }
-    return granted;
+
+    return true;
   }
 
   Future<bool> hasPermission() async {
-    final status = await Permission.notification.status;
-    return status.isGranted || status.isLimited;
+    if (!_initialized) await initialize();
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      return await androidPlugin?.areNotificationsEnabled() ?? false;
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final ios = _plugin.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      final options = await ios?.checkPermissions();
+      return options?.isEnabled ?? false;
+    }
+
+    return true;
   }
 
   Future<void> scheduleReminder(Reminder reminder) async {

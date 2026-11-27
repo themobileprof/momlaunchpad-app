@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -336,15 +335,11 @@ class SettingsScreen extends ConsumerWidget {
       );
     } else {
       messenger.showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Notifications are blocked. Enable them in system settings.',
+        const SnackBar(
+          content: Text(
+            'Notifications are blocked. Enable them in your phone’s app settings.',
           ),
           behavior: SnackBarBehavior.floating,
-          action: SnackBarAction(
-            label: 'Open settings',
-            onPressed: openAppSettings,
-          ),
         ),
       );
     }
